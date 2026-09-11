@@ -6,14 +6,14 @@ schema, rule-set model, simulator skeleton). See `docs/PHASE1_REPORT.md`.
 
 ## Documents
 
-| Document | Content |
-|---|---|
-| `docs/SOURCE_ANALYSIS.md` | Evidence from the 2026 data and printed draw; facts, rules, contradictions, questions |
-| `docs/PHASE0_PROPOSAL.md` | Architecture, domain, algorithm, plan (superseded where an ADR differs) |
-| `docs/adr/` | Architecture decision records 0001–0015 |
-| `docs/DOMAIN_MODEL.md` | Entity diagram, state machines, rule-set model |
-| `docs/ACCEPTANCE_CRITERIA.md` | Safety invariants (correctness) vs quality benchmark; test matrix; phase gates |
-| `docs/PHASE1_REPORT.md` | What Phase 1 delivered and how it was verified |
+| Document                      | Content                                                                               |
+| ----------------------------- | ------------------------------------------------------------------------------------- |
+| `docs/SOURCE_ANALYSIS.md`     | Evidence from the 2026 data and printed draw; facts, rules, contradictions, questions |
+| `docs/PHASE0_PROPOSAL.md`     | Architecture, domain, algorithm, plan (superseded where an ADR differs)               |
+| `docs/adr/`                   | Architecture decision records 0001–0015                                               |
+| `docs/DOMAIN_MODEL.md`        | Entity diagram, state machines, rule-set model                                        |
+| `docs/ACCEPTANCE_CRITERIA.md` | Safety invariants (correctness) vs quality benchmark; test matrix; phase gates        |
+| `docs/PHASE1_REPORT.md`       | What Phase 1 delivered and how it was verified                                        |
 
 ## Requirements
 

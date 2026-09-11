@@ -116,13 +116,13 @@ stateDiagram-v2
 
 `EligibilityStatus` is **derived**, not a workflow:
 
-| Condition (first match wins) | Eligibility |
-|---|---|
-| Registration is WITHDRAWN / DQ / NO_SHOW | BLOCKED |
-| Open ERROR without override, rule gap, or unconfirmed entry group | BLOCKED |
-| Placed in a LOCKED or PUBLISHED revision | DRAWN |
-| At least one ERROR covered by an active TD override | OVERRIDDEN |
-| Otherwise | READY |
+| Condition (first match wins)                                      | Eligibility |
+| ----------------------------------------------------------------- | ----------- |
+| Registration is WITHDRAWN / DQ / NO_SHOW                          | BLOCKED     |
+| Open ERROR without override, rule gap, or unconfirmed entry group | BLOCKED     |
+| Placed in a LOCKED or PUBLISHED revision                          | DRAWN       |
+| At least one ERROR covered by an active TD override               | OVERRIDDEN  |
+| Otherwise                                                         | READY       |
 
 ### Complaint
 
@@ -136,15 +136,15 @@ RESOLVED must reference the resulting command or revision.
 
 ## 4. Rule-set model (ADR-0007/0008/0009)
 
-| Part | Content |
-|---|---|
-| Age | policy `BIRTH_YEAR` / `AGE_ON_EVENT_DATE` / `AGE_ON_CUTOFF_DATE` / `CUSTOM`; divisions with birth-year bands, streams, play-up policy |
-| Belts | code, rank, exact source labels; band schemes (MOVEMENT / COMPATIBILITY) |
-| Movement map | band → Taegeuk (2026: 9–8 → T1, 7–6 → T3, 5–4 → T5, 3 → T6) |
-| Weight classes | per stream × division × gender, bounds in grams, completeness `OFFICIAL` / `OBSERVED_SUBSET` |
-| Category templates | stream × discipline × format → partition dimensions, gender mode (`BY_ENTRY` / `MIXED`), draw format, bye policy, bronzes |
-| Pool policy | min/target/max size, size penalties, belt policy HARD/SOFT/DISABLED, tolerances (ideal + max UNSET/NONE/SET), tier weights and slack, singleton policy, measurement source, contingent key |
-| Provenance | every decision: COMMITTEE / STAKEHOLDER / EVIDENCE_2026 / ENGINEERING_DEFAULT / TBD |
+| Part               | Content                                                                                                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Age                | policy `BIRTH_YEAR` / `AGE_ON_EVENT_DATE` / `AGE_ON_CUTOFF_DATE` / `CUSTOM`; divisions with birth-year bands, streams, play-up policy                                                      |
+| Belts              | code, rank, exact source labels; band schemes (MOVEMENT / COMPATIBILITY)                                                                                                                   |
+| Movement map       | band → Taegeuk (2026: 9–8 → T1, 7–6 → T3, 5–4 → T5, 3 → T6)                                                                                                                                |
+| Weight classes     | per stream × division × gender, bounds in grams, completeness `OFFICIAL` / `OBSERVED_SUBSET`                                                                                               |
+| Category templates | stream × discipline × format → partition dimensions, gender mode (`BY_ENTRY` / `MIXED`), draw format, bye policy, bronzes                                                                  |
+| Pool policy        | min/target/max size, size penalties, belt policy HARD/SOFT/DISABLED, tolerances (ideal + max UNSET/NONE/SET), tier weights and slack, singleton policy, measurement source, contingent key |
+| Provenance         | every decision: COMMITTEE / STAKEHOLDER / EVIDENCE_2026 / ENGINEERING_DEFAULT / TBD                                                                                                        |
 
 Readiness per purpose: `SIMULATION` and `CANDIDATE` need a structurally valid rule set; `LOCK`
 additionally needs every active maximum decided, no `TBD`, an `ACTIVE` rule set, and
@@ -152,10 +152,10 @@ acknowledgement of warnings (non-committee values, observed-subset weight tables
 
 ## 5. Aggregate boundaries (for Phase 4 commands)
 
-| Aggregate | Root | Consistency boundary |
-|---|---|---|
-| Rule set | `rule_set` | edited as DRAFT; frozen on activation |
-| Participant data | `athlete`, `entry` | import batch transaction; corrections one record at a time |
-| Draw run | `draw_run` | written once by the worker |
-| Revision | `draw_revision` | one command = one transaction = new state + command + audit event; guarded by `lock_version` |
-| Complaint | `complaint` | status transitions; resolution references a command/revision |
+| Aggregate        | Root               | Consistency boundary                                                                         |
+| ---------------- | ------------------ | -------------------------------------------------------------------------------------------- |
+| Rule set         | `rule_set`         | edited as DRAFT; frozen on activation                                                        |
+| Participant data | `athlete`, `entry` | import batch transaction; corrections one record at a time                                   |
+| Draw run         | `draw_run`         | written once by the worker                                                                   |
+| Revision         | `draw_revision`    | one command = one transaction = new state + command + audit event; guarded by `lock_version` |
+| Complaint        | `complaint`        | status transitions; resolution references a command/revision                                 |

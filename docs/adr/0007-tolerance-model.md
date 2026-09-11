@@ -21,11 +21,11 @@ Every tolerance dimension (WEIGHT g, HEIGHT mm, BELT ranks) of a pool policy has
 
 Readiness is purpose-specific (`packages/rules/src/readiness.ts`):
 
-| Purpose | Allowed with an active dimension whose max is `UNSET`? |
-|---|---|
-| `SIMULATION` | Yes. What-if maxima may be passed as **assumptions**, recorded in the report, never written to the rule set. |
-| `CANDIDATE` | Yes, without assumptions (a candidate carrying assumptions is refused). |
-| `LOCK` / `PUBLISH` | **No** — `MAX_TOLERANCE_UNSET` is a lock blocker. |
+| Purpose            | Allowed with an active dimension whose max is `UNSET`?                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `SIMULATION`       | Yes. What-if maxima may be passed as **assumptions**, recorded in the report, never written to the rule set. |
+| `CANDIDATE`        | Yes, without assumptions (a candidate carrying assumptions is refused).                                      |
+| `LOCK` / `PUBLISH` | **No** — `MAX_TOLERANCE_UNSET` is a lock blocker.                                                            |
 
 Values can differ per age division (`ageDivisionCode` override), and each carries provenance
 (`COMMITTEE`, `STAKEHOLDER`, `EVIDENCE_2026`, `ENGINEERING_DEFAULT`, `TBD`).

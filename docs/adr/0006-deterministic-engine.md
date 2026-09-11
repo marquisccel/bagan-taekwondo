@@ -13,16 +13,16 @@ drift, random UUIDs, insertion order) would make that impossible.
 
 The engine is a pure function `(input, rules, seed) → output`:
 
-| Source of nondeterminism | Rule |
-|---|---|
-| Randomness | Only `Prng` (xoshiro128**) from `@bagantkd/shared`. State = SHA-256(`prefix ␀ seed ␀ label`)[0..16]; one stream per label (e.g. per category), so re-drawing one category never shifts another. |
-| Seeds | Unsigned 64-bit integers written in decimal, stored on every `draw_run`. |
-| Clock | Never read inside pure packages. The worker measures wall time around the engine. |
-| Numbers | Integer units: millimetres, grams, belt ranks. Costs are fixed-point integers (`FP_SCALE = 10_000`), weights per mille; overflow throws instead of wrapping. |
-| Ordering | Explicit total-order comparators ending in a unique id; `compareStrings` orders by UTF-16 code units; never `localeCompare`. |
-| Identifiers | `deterministicUuid(namespace, name)` (UUIDv8 from SHA-256) for pool/match identities. |
-| Serialization | Canonical JSON (sorted keys, strict types) → SHA-256 fingerprint for input, rules, output and quality report. |
-| Replay check | Candidate runs execute the engine twice; a run is `SAFE` only if both output fingerprints match (DB check `draw_run_candidate_dual_run_ck`). |
+| Source of nondeterminism | Rule                                                                                                                                                                                            |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Randomness               | Only `Prng` (xoshiro128**) from `@bagantkd/shared`. State = SHA-256(`prefix ␀ seed ␀ label`)[0..16]; one stream per label (e.g. per category), so re-drawing one category never shifts another. |
+| Seeds                    | Unsigned 64-bit integers written in decimal, stored on every `draw_run`.                                                                                                                        |
+| Clock                    | Never read inside pure packages. The worker measures wall time around the engine.                                                                                                               |
+| Numbers                  | Integer units: millimetres, grams, belt ranks. Costs are fixed-point integers (`FP_SCALE = 10_000`), weights per mille; overflow throws instead of wrapping.                                    |
+| Ordering                 | Explicit total-order comparators ending in a unique id; `compareStrings` orders by UTF-16 code units; never `localeCompare`.                                                                    |
+| Identifiers              | `deterministicUuid(namespace, name)` (UUIDv8 from SHA-256) for pool/match identities.                                                                                                           |
+| Serialization            | Canonical JSON (sorted keys, strict types) → SHA-256 fingerprint for input, rules, output and quality report.                                                                                   |
+| Replay check             | Candidate runs execute the engine twice; a run is `SAFE` only if both output fingerprints match (DB check `draw_run_candidate_dual_run_ck`).                                                    |
 
 ## Consequences
 

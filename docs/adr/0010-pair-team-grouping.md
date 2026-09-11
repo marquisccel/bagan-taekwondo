@@ -6,20 +6,21 @@
 
 The 2026 export has one row per person and **no entry identifier** (F-03). Pairs (one male + one
 female) and teams (three of one gender) could be reconstructed only by heuristic (same contingent
-+ category + composition). That worked for all 17 pairs and 11 teams in 2026, but a contingent
-entering two pairs in the same category would be ambiguous.
+
+- category + composition). That worked for all 17 pairs and 11 teams in 2026, but a contingent
+  entering two pairs in the same category would be ambiguous.
 
 ## Decision
 
 `entry_group` records, per pair/team entry:
 
-| Field | Values |
-|---|---|
-| `source` | `EXPLICIT` (registration system's entry id), `IMPORTED` (operator grouping column in the uploaded file), `HEURISTIC` (system inference), `MANUAL` (operator in the app) |
-| `status` | `PROPOSED`, `CONFIRMED`, `REJECTED` |
-| `confidence` | `HIGH`, `MEDIUM`, `LOW` |
-| `evidence` | JSON: rule used, candidates considered |
-| `confirmed_by/at` | the person who confirmed |
+| Field             | Values                                                                                                                                                                  |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `source`          | `EXPLICIT` (registration system's entry id), `IMPORTED` (operator grouping column in the uploaded file), `HEURISTIC` (system inference), `MANUAL` (operator in the app) |
+| `status`          | `PROPOSED`, `CONFIRMED`, `REJECTED`                                                                                                                                     |
+| `confidence`      | `HIGH`, `MEDIUM`, `LOW`                                                                                                                                                 |
+| `evidence`        | JSON: rule used, candidates considered                                                                                                                                  |
+| `confirmed_by/at` | the person who confirmed                                                                                                                                                |
 
 - `HEURISTIC` groups start `PROPOSED`; they become usable only when a person confirms them.
 - An entry is `DRAW_ELIGIBLE` only if its group is final (`isEntryGroupFinal`).

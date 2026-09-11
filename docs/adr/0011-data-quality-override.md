@@ -13,8 +13,8 @@ entry can be drawn under the current rules.
 
 **Two independent statuses on `entry`:**
 
-| RegistrationStatus (administrative) | EligibilityStatus (draw) |
-|---|---|
+| RegistrationStatus (administrative)                | EligibilityStatus (draw)                  |
+| -------------------------------------------------- | ----------------------------------------- |
 | `REGISTERED → VERIFIED → WITHDRAWN / DQ / NO_SHOW` | `BLOCKED`, `READY`, `OVERRIDDEN`, `DRAWN` |
 
 `deriveEligibility` is total and pure: terminal registration, an open blocking issue, a rule gap
