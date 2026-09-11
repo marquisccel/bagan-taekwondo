@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "code": "COMMITTEE_2026",
+  "kind": "HISTORICAL_QUALITY_BENCHMARK",
+  "notCorrectness": "These values describe what the 2026 committee achieved by hand. They are a benchmark for quality, never ground truth. Correctness is defined by the safety invariants (ACCEPTANCE_CRITERIA.md §2).",
+  "provenance": {
+    "csvSha256": "5b7539410cd7663c568113ba3a67d8bbace12fe123bed4a13d7b647254015cce",
+    "zipSha256": "518d0b1176b08e9d09d0bf81f33e0380d0f8bd5d5ba7fe7002346c3466336331",
+    "script": "tools/source-analysis/analyze.py + export_baseline.py",
+    "method": "Pools reconstructed from PDF row geometry and joined to the registration CSV by id. Dirty-measurement pools are excluded from physical metrics (SOURCE_ANALYSIS §1.1, F-34).",
+    "uncertainty": "About 1% at the margins: the CSV is an earlier snapshot than the printed draw."
+  },
+  "semiPrestasi": {
+    "entriesPlaced": 2396,
+    "pools": 695,
+    "poolSizeDistribution": {
+      "1": 25,
+      "2": 75,
+      "3": 161,
+      "4": 433,
+      "6": 1
+    },
+    "singletonPools": {
+      "value": 25,
+      "direction": "LOWER_IS_BETTER",
+      "unit": "pools"
+    },
+    "poolsCrossingCategory": {
+      "value": 6,
+      "direction": "INFO",
+      "unit": "pools",
+      "note": "Committee exceptions (adjacent-class and one cross-gender merge); the engine never merges automatically."
+    },
+    "kyorugi": {
+      "poolsSizeAtLeast2": {
+        "value": 523,
+        "direction": "INFO",
+        "unit": "pools"
+      },
+      "poolsWithoutDirtyRows": {
+        "value": 505,
+        "direction": "INFO",
+        "unit": "pools"
+      },
+      "heightRangeMedianCm": {
+        "value": 6.0,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "cm"
+      },
+      "heightRangeP90Cm": {
+        "value": 14.0,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "cm"
+      },
+      "heightRangeMaxCm": {
+        "value": 36.0,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "cm"
+      },
+      "pctPoolsHeightWithin5cm": {
+        "value": 45.3,
+        "direction": "HIGHER_IS_BETTER",
+        "unit": "%"
+      },
+      "pctPoolsHeightWithin10cm": {
+        "value": 76.6,
+        "direction": "HIGHER_IS_BETTER",
+        "unit": "%"
+      },
+      "weightRangeMedianKg": {
+        "value": 2.0,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "kg"
+      },
+      "weightRangeP90Kg": {
+        "value": 5.0,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "kg"
+      },
+      "pctPoolsWeightWithin3kg": {
+        "value": 79.6,
+        "direction": "HIGHER_IS_BETTER",
+        "unit": "%"
+      },
+      "pctPoolsWeightWithin5kg": {
+        "value": 91.9,
+        "direction": "HIGHER_IS_BETTER",
+        "unit": "%"
+      },
+      "poolsCrossingMovementBand": {
+        "value": 271,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "pools"
+      },
+      "singleContingentPools": {
+        "value": 14,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "pools"
+      },
+      "round1SameContingentPct": {
+        "value": 4.9,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "%"
+      }
+    },
+    "poomsae": {
+      "poolsSizeAtLeast2": {
+        "value": 147,
+        "direction": "INFO",
+        "unit": "pools"
+      },
+      "poolsWithoutDirtyRows": {
+        "value": 142,
+        "direction": "INFO",
+        "unit": "pools"
+      },
+      "heightRangeMedianCm": {
+        "value": 4.0,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "cm"
+      },
+      "heightRangeP90Cm": {
+        "value": 10.0,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "cm"
+      },
+      "heightRangeMaxCm": {
+        "value": 20.0,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "cm"
+      },
+      "pctPoolsHeightWithin5cm": {
+        "value": 68.3,
+        "direction": "HIGHER_IS_BETTER",
+        "unit": "%"
+      },
+      "pctPoolsHeightWithin10cm": {
+        "value": 93.0,
+        "direction": "HIGHER_IS_BETTER",
+        "unit": "%"
+      },
+      "weightRangeMedianKg": {
+        "value": 8.0,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "kg"
+      },
+      "weightRangeP90Kg": {
+        "value": 21.0,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "kg"
+      },
+      "pctPoolsWeightWithin3kg": {
+        "value": 12.7,
+        "direction": "HIGHER_IS_BETTER",
+        "unit": "%"
+      },
+      "pctPoolsWeightWithin5kg": {
+        "value": 27.5,
+        "direction": "HIGHER_IS_BETTER",
+        "unit": "%"
+      },
+      "poolsCrossingMovementBand": {
+        "value": 0,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "pools"
+      },
+      "singleContingentPools": {
+        "value": 6,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "pools"
+      },
+      "round1SameContingentPct": {
+        "value": 5.8,
+        "direction": "LOWER_IS_BETTER",
+        "unit": "%"
+      }
+    }
+  }
+}

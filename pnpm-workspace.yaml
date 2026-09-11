@@ -1,0 +1,10 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'tools/draw-simulator'
+
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - esbuild
+  - sharp
+  - unrs-resolver

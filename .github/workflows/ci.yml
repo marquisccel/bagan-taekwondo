@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: bagantkd
+          POSTGRES_PASSWORD: bagantkd_ci
+          POSTGRES_DB: bagantkd
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U bagantkd -d bagantkd"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      DATABASE_URL: postgres://bagantkd:bagantkd_ci@127.0.0.1:5432/bagantkd
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm test:unit
+      - run: pnpm test:property
+      # Runs on PGlite and PostgreSQL 16 (DATABASE_URL is set).
+      - run: pnpm test:db
+      # The private 2026 dataset is not available in CI; the golden tier reports SKIPPED explicitly.
+      - run: pnpm test:golden

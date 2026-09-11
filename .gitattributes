@@ -1,0 +1,6 @@
+# Keep LF everywhere: fingerprints, SQL migrations and fixtures must be byte-identical on every OS.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
+*.zip binary

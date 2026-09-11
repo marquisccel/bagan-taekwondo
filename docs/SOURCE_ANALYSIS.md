@@ -1,0 +1,306 @@
+# Source Analysis — Phase 0
+
+| | |
+|---|---|
+| Status | Accepted (Phase 0 approved 2026-09-11); provisional committee answers in §7.1 |
+| Date | 2026-09-11 |
+| Scope | Registration CSV, tournament bracket PDFs (ZIP), PRD v1.0 |
+| Reproduce | `python tools/source-analysis/analyze.py --csv <csv> --zip <zip> --out facts.json` |
+
+This document separates what the sources **prove** from what we **infer**, what we **assume**, where the sources **contradict each other**, and what must be **decided by the tournament committee** before the draw engine is built.
+
+The PRD (`PRDSistemBaganTaekwondo.md`, byte-identical to `docs/PRD-Sistem-Bagan-Taekwondo.md`) was written before this analysis. It is treated here as a proposal under test, not as a specification. Several of its core assumptions are refuted by the data (see §5).
+
+---
+
+## 1. Source inventory
+
+| ID | Source | Identity | Nature |
+|---|---|---|---|
+| S1 | `DATA_KOLEKTIF_FESTIVAL_PRESTASI - query_kolektif.csv` | sha256 `5b7539410cd7663c568113ba3a67d8bbace12fe123bed4a13d7b647254015cce` | Registration export, 3,154 data rows, 13 columns |
+| S2 | `BAGAN PERTANDINGAN PIALA GUBERNUR ANTAR PELAJAR 2026-…zip` | 23 PDF files | Official printed draw of the tournament actually held on 27–30 Aug 2026 |
+| S3 | `PRDSistemBaganTaekwondo.md` | PRD v1.0, 2026-09-09 | Proposal |
+| S4 | Stakeholder statements in conversation | — | Rules as described by the requester (tolerances, pool-size examples) |
+
+### 1.1 Method and limits
+
+- CSV: parsed with a standards-compliant CSV reader. No file was modified; analysis ran on copies.
+- PDFs: two generators are present.
+  - **Prestasi** (Kyorugi & Poomsae): produced by *TKD Tomato* (footer "Printed by Tomato, Copyright 2015"). Only category headers and competitor counts were parsed; bracket geometry was not reconstructed.
+  - **Semi prestasi**: produced from a spreadsheet template. Pools were reconstructed from **row geometry** (y-coordinate clustering with PyMuPDF), then joined to S1 by the printed registration id. Seven pages were visually inspected to validate the parser.
+- Known parser limits: one reconstructed "pool of 6" is almost certainly two adjacent pools on a page with irregular spacing. Pool membership is exact; the pairing inside a pool is inferred from the fixed template (rows 1–2 and rows 3–4 meet in round 1).
+- S1 is an **earlier snapshot** than the one used to print S2 (§2.4, F-24). Comparisons between them are therefore approximate at the margins (≈ 1% of entries).
+
+---
+
+## 2. Confirmed facts
+
+Every fact below is reproducible with the script and cites its evidence.
+
+### 2.1 Structure of the registration data
+
+| ID | Fact | Evidence |
+|---|---|---|
+| F-01 | S1 has **3,154** data rows. The file has no trailing newline, so `wc -l` reports one line fewer; the PRD's figure of 3,153 is an off-by-one error. | Row count; byte tail of file |
+| F-02 | Columns: `id_athlete, nama_tim, nik, namalengkap, jeniskelamin, tanggallahir, tinggibadan, beratbadan, sabuk, klasifikasi, divisi, class, tim_kontingen`. `id_athlete` is unique. `nama_tim` equals `tim_kontingen` in every row. | 0 duplicate ids; 0 differing rows |
+| F-03 | A row is **one person in one competition entry**. There is **no entry or team identifier**: a Poomsae pair appears as two independent rows, a team as three. | 17 pairs, 11 teams reconstructed only by heuristic |
+| F-04 | Each pair/team row carries the **member's own gender**. Every pair in S1 is one male + one female. Every team is three members of the same gender. | Gender counts per contingent × category; the PDF prints each pair as one competitor, with a male and a female member name joined by `\|` |
+| F-05 | **30 persons** own more than one row (63 rows). In every case name and date of birth are identical: these are **legitimate multiple entries** (individual + pair + team + freestyle), not duplicates. 6 of the 30 are only detectable after stripping a trailing `.` from the NIK. | NIK grouping |
+| F-06 | **11 persons** are registered under **different contingents** in different entries (e.g. one athlete under "Kota Surabaya 1" for a pair and "Kota Surabaya 4" for individual). Contingent is a property of the entry, not of the person. | NIK grouping |
+| F-07 | One person has **conflicting belt values** across rows (GEUP 4 vs GEUP 5). | NIK grouping (one person) |
+| F-08 | Streams: Kyorugi Semi Prestasi 1,863 · Kyorugi Prestasi 591 · Poomsae Semi Prestasi 533 · Poomsae Prestasi 146 · Freestyle 21. | `klasifikasi` |
+| F-09 | Age divisions present: PRA CADET A/B/C (semi prestasi only), PRA CADET (prestasi only), CADET, JUNIOR, SENIOR. | `divisi` × `klasifikasi` |
+| F-10 | Belt ranges differ by stream. Semi prestasi contains **only GEUP 9 → GEUP 3**. Prestasi contains **GEUP 7 → DAN 3**. **GEUP 10 does not occur anywhere.** | Belt × stream crosstab |
+| F-11 | Weight classes use `-NN` (up to NN kg) and `=+NN` (above NN kg). 145 rows use the `=+` form. Observed class tables differ between streams (e.g. PRA CADET A/B exist only in semi prestasi). Tables contain only classes that received registrations, so the full official table **cannot be derived from S1**. | Class inventory per stream/division/gender |
+| F-12 | 89 distinct contingent strings collapse to **44 base names** when a trailing number is removed (`Kota Surabaya 1` … `Kota Surabaya 11`). `Kota Surabaya 2` alone holds 848 rows (26.9%). | Contingent inventory |
+| F-13 | No club/dojang field exists. | Column list |
+
+### 2.2 Data quality in the registration data
+
+| ID | Fact | Count |
+|---|---|---|
+| F-14 | Height = 0 | 9 |
+| F-15 | Weight = 0 | 9 (8 rows have both zero) |
+| F-16 | **Height and weight swapped** (height < 100 while weight > 100). In the Kyorugi cases the "height" value fits the declared weight class, e.g. id 4086: `TB=45, BB=160`, class `-45`. | 12 |
+| F-17 | Height = 734 cm (id 2654) | 1 |
+| F-18 | Weight = 420 kg (id 4838, Poomsae, height 150 cm) | 1 |
+| F-19 | Registered weight **outside the declared class** (Kyorugi rows with usable weight). Most deviations are ≤ 2 kg. | 252 of 2,437 (10.3%): 132 over, 120 under |
+| F-20 | NIK not 16 digits after removing a trailing `.` | 56 |
+| F-21 | NIK with trailing `.` | 6 |
+| F-22 | NIK-encoded gender (day + 40 for women) disagrees with `jeniskelamin` | 22 |
+| F-23 | NIK-encoded birth year disagrees with `tanggallahir` | 59 (plus 155 with same year but different day/month) |
+| F-24 | Date of birth on 1 January (possible placeholder) | 14 |
+| F-25 | Cosmetic name issues: double spaces 16, all-lowercase 57 | — |
+
+### 2.3 Age
+
+| ID | Fact | Evidence |
+|---|---|---|
+| F-26 | Divisions follow **birth-year bands** for a 2026 event: PRA CADET A 2020–21 · B 2018–19 · C 2015–17 · PRA CADET (prestasi) 2015–17 · CADET 2012–14 · JUNIOR 2009–11 · SENIOR ≤ 2008. These match World Taekwondo birth-year ages (Cadet 12–14, Junior 15–17). | Birth-year histogram per division |
+| F-27 | **64 entries fall outside their band, all younger than the band** ("play-up"). Zero entries are older than their band. 21 of them are 2012-born athletes in Kyorugi Prestasi Junior. | Band check |
+
+### 2.4 The tournament as actually drawn (S2)
+
+| ID | Fact | Evidence |
+|---|---|---|
+| F-28 | Event dates: Thursday 27 – Sunday 30 August 2026. Semi prestasi on arenas C–G, Kyorugi prestasi on arena A, Poomsae prestasi on competition areas V–Y. | PDF cover pages and headers |
+| F-29 | The reconstructed semi prestasi draw contains **every one of the 2,396 semi prestasi rows (1,863 + 533) exactly once**, including the rows with zero, swapped and absurd measurements. | 695 pools, 2,396 unique placements |
+| F-30 | **Semi prestasi pools never exceed 4 entries.** Distribution: 433 × 4, 161 × 3, 75 × 2, 25 × 1 (and one parser artifact of 6). | Row geometry |
+| F-31 | Templates are fixed: **4** = two semi-finals + final; **3** = one semi-final, third entry waits in the final; **2** = one match; **1** = standalone line that still consumes a public match number. | Visual inspection, DAY 1 arena D pp. 8 & 11 |
+| F-32 | How a category of *m* entries was split: m=5 → 3+2 · m=6 → 3+3 · m=7 → 4+3 · m=8 → 4+4 · m=14 → 4+4+3+3 · m=15 → 4+4+4+3 · m=30 → 6×4 + 2×3. Occasionally smaller pools are used (m=8 → 3+3+2; m=12 → six pools of 2). | Category size → pool sizes |
+| F-33 | Poomsae semi prestasi PDFs print a **movement column** (`Taegeuk 1/3/5/6`) that **does not exist in S1**. It is a deterministic function of belt with zero exceptions across 533 entries: GEUP 9–8 → Taegeuk 1 · GEUP 7–6 → Taegeuk 3 · GEUP 5–4 → Taegeuk 5 · GEUP 3 → Taegeuk 6. **No pool mixes movements.** | Printed rows joined to S1 |
+| F-34 | Physical homogeneity the committee actually achieved (pools of ≥ 2 with clean data): | see table below |
+| F-35 | 6 semi pools cross a category boundary: 5 merge **adjacent weight classes** (`-55`+`-59`, `-30`+`-33`, `-53`+`+53` ×2) and 1 **mixes genders** in Poomsae Junior individual. | Category key per pool |
+| F-36 | One printed gender differs from S1 (id 5455, printed *Perempuan*, S1 *Laki-laki*). The NIK encodes female, supporting the printed value. | Printed row vs S1 vs NIK |
+| F-37 | In 22 printed rows the class `=+53` appears as **`53`**: the spreadsheet evaluated `=+53` as a formula, silently dropping the `+`. Printed brackets thus show an over-class indistinguishable from an under-class label. | Printed row vs S1 |
+| F-38 | Prestasi (Tomato): 85 category headers, brackets of 1–24 competitors, 6 categories printed with a single competitor. 12 Kyorugi prestasi categories have a different count than S1: single athletes moved into an adjacent class (PRE CADET M `-48` → `-53`, SENIOR F `-73` → `+73`) and a few entries withdrawn. | Header counts vs S1 |
+| F-39 | Semi prestasi match numbers are sequential per arena file and interleave rounds across neighbouring pools (e.g. semi-finals 60, 61 → final 63; 64 → 67; 65 → 68). | Visual inspection |
+| F-40 | Prestasi PDFs carry a medal block `1. / 2. / 3. / 3.`; **semi prestasi PDFs carry none**. | All PDFs |
+| F-41 | Printed brackets show the registration id, name, gender, division, class and contingent. They do **not** show NIK. | All semi PDFs |
+
+**F-34 — achieved homogeneity in the committee's semi prestasi draw**
+
+| Metric | Kyorugi semi (505 clean pools) | Poomsae semi (142 clean pools) |
+|---|---|---|
+| Height range within pool — median / p90 / max | 6 / 14 / 36 cm | 4 / 10 / 20 cm |
+| Pools within 5 cm | **45.3%** | 68.3% |
+| Pools within 10 cm | 76.6% | 93.0% |
+| Weight range — median / p90 / max | 2 / 5 / 34 kg | 8 / 21 / 49 kg |
+| Pools within 5 kg | **91.9%** | 27.5% |
+| Pools spanning more than one movement band (belt) | 271 of 523 | **0** of 147 |
+| Belt-rank range 0 / 1 / 2 / ≥3 (Kyorugi) | 118 / 189 / 145 / 71 | — |
+| Single-contingent pools | 14 of 523 | 6 of 147 |
+| Round-1 pairs from the same contingent | 42 of 860 (**4.9%**) | 14 of 243 (5.8%) |
+
+This table is the **historical quality benchmark** (see §8.1 and ADR-0012). It is not a definition of correctness.
+
+---
+
+## 3. Inferred rules
+
+Confidence: **High** = consistent across essentially all evidence; **Medium** = consistent pattern with exceptions or a single source; **Low** = plausible reading only.
+
+| ID | Inferred rule | Confidence | Basis |
+|---|---|---|---|
+| R-01 | Age division is determined by **birth year** relative to the event year. | High | F-26 |
+| R-02 | Competing in an **older** division (play-up) is tolerated; competing in a younger one is not. | Medium | F-27: 64 up, 0 down, all printed in S2 |
+| R-03 | **Semi prestasi is a festival format: a category is split into independent pools of at most 4.** The stakeholder's "5 = 3 and 2 … 8 = 4 and 4" rule describes this pool split, not the halves of one bracket. | High | F-30, F-32 match the stated examples exactly |
+| R-04 | Preferred pool sizes are 4, then 3; pools of 2 and 1 are used when the category is small or physically heterogeneous. | High | F-30, F-32 |
+| R-05 | Poomsae semi prestasi has an extra hard partition dimension, **movement**, derived from belt. | High | F-33 |
+| R-06 | For Kyorugi semi prestasi, **weight is the dominant grouping criterion, height is secondary, and belt is soft**. | High | F-34 |
+| R-07 | For Poomsae semi prestasi, **weight is not used** for grouping; height is. | Medium | F-34 (27.5% within 5 kg is no better than chance within a division) |
+| R-08 | The stated tolerances (TB ≈ 5 cm, BB ≈ 5 kg) are **ideals**, not hard limits. The committee breaches 5 cm in 55% of Kyorugi pools; the committee's p90 height range was 14 cm — an observation, not a proposed limit. | High | F-34 |
+| R-09 | Contingent separation is a soft objective applied inside pools. | High | F-34: 4.9% same-contingent round-1 pairs, 20 single-contingent pools |
+| R-10 | A singleton is normally left as a walk-over pool with its own match number; merging into an adjacent weight class is an exception decided by the committee. | Medium | F-31, F-35, F-38 |
+| R-11 | Poomsae pair is a mixed-gender category; team is single-gender, 3 members. | High | F-04, PDF labels "M PAIR" containing mixed pairs, "Junior M TEAM 2 competitors" = 6 male rows |
+| R-12 | The draw is made from a corrected snapshot, later than the exported CSV. Gender corrections and class moves happen between registration and draw. | High | F-36, F-38 |
+| R-13 | Semi prestasi match numbering interleaves rounds of neighbouring pools so athletes get rest between their semi-final and final. | Low | F-39; no schedule rules documented |
+
+---
+
+## 4. Assumptions
+
+These are the safe defaults the implementation will use **until the committee confirms or overrides them**. Each is a configuration value, not code.
+
+| ID | Assumption | Default | Why this default |
+|---|---|---|---|
+| A-01 | Age policy | `BIRTH_YEAR` | R-01 |
+| A-02 | Play-up | Allowed, one division up, raised as `WARNING` | R-02; play-down raised as `ERROR` |
+| A-03 | Semi prestasi pool size | `pool_max = 4`, preference 4 > 3 > 2 > 1 | R-03, R-04 |
+| A-04 | Semi prestasi Kyorugi physical priority | weight > height > belt | R-06 |
+| A-05 | Ideal tolerances | TB 5 cm, BB 5 kg (stakeholder) | S4 |
+| A-06 | Maximum tolerances | **UNSET** until the committee sets them: simulation and candidate draws allowed, LOCK/PUBLISH refused. The simulator can show the effect of candidate values as recorded assumptions; no value is filled automatically (ADR-0007). | Inventing a hard limit would be inventing a rule |
+| A-07 | Poomsae semi belt policy | `HARD` via movement map F-33 | R-05 |
+| A-08 | Kyorugi semi belt policy | `SOFT` | R-06 |
+| A-09 | Contingent identity for separation | Exact registered string | Only field available; region grouping configurable |
+| A-10 | Singleton policy | `WALKOVER` + suggestion list of adjacent-class merges for operator decision; never automatic | R-10 |
+| A-11 | Measurement source | `REGISTERED_DATA` | No weigh-in data exists in the sources |
+| A-12 | Category comes from the **declared** class, never recomputed from registered weight | — | F-19: recomputing would silently move 252 entries |
+| A-13 | Semi prestasi medals | Unknown — does not affect pooling or bracket structure; affects only exports | F-40 |
+| A-14 | Pair/team grouping | Explicit `entry_group` column required; heuristic grouping allowed as a proposal that the operator must confirm; any ambiguity blocks those entries | F-03 |
+
+---
+
+## 5. Contradictions
+
+### 5.1 PRD vs data vs documents
+
+| ID | PRD states | Evidence shows | Severity | Resolution |
+|---|---|---|---|---|
+| C-01 | BR-5: "5 = 3 + 2 … 8 = 4 + 4" are the two halves of one 8-slot bracket; pool target 8, max 16. | Separate pools of max 4 (F-30, F-32). An 8-slot bracket produces one champion; two pools of 4 produce two. | **Critical** | Pool engine with `pool_max = 4`; bracket engine stays generic for prestasi |
+| C-02 | BR-1: gender is a hard partition for all Poomsae. | Pairs are mixed-gender (F-04). The rule would split every pair. | **Critical** | Category gender is `MALE / FEMALE / MIXED`, derived per format |
+| C-03 | BR-2: TB 5 cm / BB 5 kg tolerances with `tol_max` escalation. | Committee meets 5 cm in only 45% of Kyorugi pools (F-34). Enforcing 5 cm as a limit would multiply singletons. | High | Ideal vs max tolerance; max calibrated from data and confirmed by committee |
+| C-04 | BR-3: four belt bands Pemula/Madya/Lanjut/Mahir, including GEUP 10 and a Mahir band. | Semi prestasi has no GEUP 10, 2, 1 or DAN. The committee's actual bands are {9,8} {7,6} {5,4} {3} (F-33). | High | Band map is configuration; default = observed movement map |
+| C-05 | FR-3.2: assign weight class automatically from registered weight. | 252 entries would move category (F-19). | High | Declared class is authoritative (A-12) |
+| C-06 | BR-9: number all round-1 matches of the arena first, then round 2. | Rounds interleave across neighbouring pools (F-39). | Medium | Numbering is a policy; schedule rules are an open question |
+| C-07 | Appendix A: Poomsae semi prestasi = 12 groups, max 135. | With the movement dimension the real categories are smaller (F-33). | Medium | Category engine includes movement for poomsae semi |
+| C-08 | Appendix A: 12 singleton groups. | After pooling the committee produced 25 singleton pools (F-30). | Low | Report both raw and post-pooling counts |
+| C-09 | Row count 3,153 | 3,154 (F-01) | Low | Corrected |
+| C-10 | BR-7: two bronzes by default. | True for prestasi PDFs; semi prestasi PDFs have no medal block (F-40). | Low | A-13 |
+
+### 5.2 Engineering brief (this phase's instructions) vs data
+
+| ID | Brief states | Evidence shows | Resolution |
+|---|---|---|---|
+| C-11 | "There are also duplicate NIK candidates" (framed as dirty data). | All 30 multi-row NIKs are the same person with several entries (F-05). The real NIK problems are format (F-20, F-21) and NIK-vs-DOB/gender inconsistency (F-22, F-23). | Athlete ≠ Entry resolves it; NIK checks become validation rules |
+| C-12 | "Poomsae movement … is not always present in the source dataset", modelled as optional. | Absent from the CSV, but present and **mandatory** in the actual semi prestasi draw, derivable from belt (F-33). | Optional dimension in the model; enabled for poomsae semi via rule set |
+| C-13 | Examples 734 cm and 420 kg as impossible values. | Confirmed. But the largest anomaly class is **swapped columns** (12 rows), which is recoverable with operator confirmation. | Dedicated code `HEIGHT_WEIGHT_LIKELY_SWAPPED` with suggested correction |
+
+### 5.3 Stakeholder statements vs documents
+
+| ID | Statement | Evidence | Resolution |
+|---|---|---|---|
+| C-14 | Poomsae is divided by belt, height, **weight**, movement, contingent, gender. | Weight is not reflected in the actual Poomsae pools (F-34). | Weight weight = 0 for poomsae semi by default; confirm (Q-05) |
+| C-15 | "Every bagan should contain other contingents." | 20 single-contingent pools in the committee's own draw; in 66 Kyorugi pools one contingent holds the majority. | Soft objective with explicit infeasibility reporting |
+
+### 5.4 Registration data vs printed draw
+
+| ID | Difference | Resolution |
+|---|---|---|
+| C-16 | Gender of id 5455 (F-36) | Import must accept corrections with audit; NIK cross-check flags it |
+| C-17 | 12 prestasi category counts (F-38) | Class moves are commands with reasons, not re-imports |
+| C-18 | Rows with zero/absurd measurements were drawn anyway (F-29) | The new system blocks them until reviewed; this is a deliberate behaviour change the committee must accept (Q-10) |
+
+---
+
+## 6. Data quality register
+
+Severity decides eligibility. `ERROR` blocks the entry from any draw that uses the affected field; `WARNING` requires acknowledgement before lock; `INFO` is recorded only. **Severity depends on the active rule set**: a missing height is an `ERROR` for semi prestasi Kyorugi (height is a grouping input) but only `INFO` for Kyorugi prestasi (height is unused).
+
+| Code | Trigger | Count in S1 | Default severity | Suggested correction |
+|---|---|---|---|---|
+| `HEIGHT_MISSING` | height = 0 | 9 | ERROR if used | None |
+| `WEIGHT_MISSING` | weight = 0 | 9 | ERROR if used | None |
+| `HEIGHT_WEIGHT_LIKELY_SWAPPED` | height < 100 and weight > 100 | 12 | ERROR | Swap, shown with evidence (swapped weight fits declared class) — operator must accept |
+| `HEIGHT_OUT_OF_RANGE` | outside configured plausible range | 1 | ERROR if used | None (734 cm could be 134 or 173) |
+| `WEIGHT_OUT_OF_RANGE` | outside configured plausible range | 1 | ERROR if used | Possible decimal slip (420 → 42.0) shown as hint only |
+| `BMI_IMPLAUSIBLE` | BMI outside configured range (11–40 used for this count) | 3 | WARNING | None |
+| `WEIGHT_CLASS_MISMATCH` | registered weight outside declared class | 252 | WARNING | Resolve at weigh-in |
+| `AGE_DIVISION_PLAY_UP` | birth year younger than division | 64 | WARNING | — |
+| `AGE_DIVISION_CONFLICT` | birth year older than division | 0 | ERROR | — |
+| `NIK_INVALID_FORMAT` | not 16 digits after normalization | 56 | WARNING | — |
+| `NIK_NORMALIZED` | trailing punctuation removed | 6 | INFO | Original preserved |
+| `NIK_GENDER_MISMATCH` | NIK day ≥ 41 vs gender | 22 | WARNING | Show both; never auto-apply |
+| `NIK_BIRTHDATE_MISMATCH` | NIK date vs `tanggallahir` | 59 year / 155 day-month | WARNING (year mismatch that changes division: ERROR) | Show both |
+| `DOB_POSSIBLE_PLACEHOLDER` | 1 January | 14 | INFO | — |
+| `ATHLETE_ATTRIBUTE_CONFLICT` | same person, different belt/height/weight across rows | 1 | ERROR | Operator picks the value |
+| `ATHLETE_MULTIPLE_CONTINGENTS` | same person under several contingents | 11 | INFO | — |
+| `ENTRY_GROUP_AMBIGUOUS` | pair/team members cannot be grouped uniquely | 0 | ERROR | Operator groups manually |
+| `ENTRY_GROUP_INCOMPLETE` | pair ≠ 1M+1F, team ≠ 3 | 0 | ERROR | — |
+| `CLASS_FORMAT_NORMALIZED` | `=+NN` → `+NN` | 145 | INFO | Original preserved |
+| `UNKNOWN_CLASS` / `UNKNOWN_BELT` / `UNKNOWN_DIVISION` | not in rule set | 0 | ERROR | — |
+| `INVALID_DATE` | unparseable date | 0 | ERROR | — |
+
+Physical anomalies affect **24 rows** (22 semi prestasi, 2 prestasi). With the default rule set, **21 semi prestasi entries** would be ineligible on import: 17 Kyorugi (height or weight unusable) and 4 Poomsae (height unusable; the 420 kg entry stays eligible because Poomsae grouping does not use weight by default). The 2 prestasi rows stay eligible because prestasi draws do not use measurements. The committee drew all 24 in 2026.
+
+---
+
+## 7. Unresolved questions
+
+**Blocking** questions must be answered before Phase 3 (draw engine) is finalized; the engine can be built configurable, but defaults and acceptance tests depend on them.
+
+| ID | Question | Blocking | Why it matters |
+|---|---|---|---|
+| Q-01 | In semi prestasi, is every pool its own podium (gold, silver, two bronze per pool of 4)? | **Yes** | Confirms R-03 and whether `pool_max = 4` is a rule or a habit |
+| Q-02 | Maximum acceptable height and weight difference inside a semi prestasi pool, per division? (2026 observation: p90 height range 14 cm, weight 5 kg — evidence for the discussion, not a default.) | **Yes** (ideal answered: 5 cm / 5 kg; maximum still open) | Defines hard feasibility; without it the draw cannot be locked (A-06) |
+| Q-03 | Kyorugi semi prestasi: is belt a hard band or a soft preference? If hard, which bands? | **Yes** | 271 of 523 committee pools cross the poomsae bands |
+| Q-04 | Singletons: walk-over, merge into adjacent weight class, or committee decision per case? | **Yes** | Changes category membership |
+| Q-05 | Poomsae semi prestasi: should weight be ignored? Is the belt→Taegeuk map (1/3/5/6) official? | Yes | F-33, C-14 |
+| Q-06 | For separation, is `Kota Surabaya 1` the same contingent as `Kota Surabaya 2`? | No | Changes separation penalties; not eligibility |
+| Q-07 | Play-up: allowed officially? Limit of one division? Only certain streams? | No | 64 entries |
+| Q-08 | Cross-gender and cross-class merges seen in the 2026 draw (F-35): permitted, and who approves? | No | Defines hard vs committee-override constraints |
+| Q-09 | Is there a weigh-in for semi prestasi? Which measurement does the draw use? | No | Draw policy `REGISTERED_DATA` vs `VERIFIED_WEIGH_IN` |
+| Q-10 | Is the committee willing to block entries with missing or impossible measurements, which it drew in 2026? | No | 21 entries become ineligible until corrected |
+| Q-11 | Prestasi rules: WT standard seeding, byes to seeds, two bronzes, no repechage? | No | Bracket engine options |
+| Q-12 | Can the registration system export an entry/team id and a club field, from the final snapshot? | No | Removes pair/team heuristic; improves separation |
+| Q-13 | Freestyle: how is the performance order determined? | No | Freestyle has no bracket |
+| Q-14 | Scheduling: minimum rest between an athlete's matches; is interleaved numbering required? | No | Match numbering policy |
+| Q-15 | Which people approve, lock, and publish (real committee roles)? | No | RBAC mapping |
+| Q-16 | Data protection requirements for NIK and birth dates (retention, who may view)? | No | UU PDP compliance |
+| Q-17 | Deployment: one laptop at the venue, a hosted server, or both? | No | Operations; architecture supports both |
+
+---
+
+### 7.1 Provisional answers (2026-09-11)
+
+Recorded in `fixtures/rulesets/piala-gubernur-2026.provisional.json` with provenance `STAKEHOLDER`.
+
+| Question | Provisional answer |
+|---|---|
+| Q-01 | Yes — each semi prestasi pool (1, 2, 3 or 4 entries) is an independent competition unit. The medal structure per pool is still undecided (`TBD`, blocks LOCK). |
+| Q-02 | Ideal height range 5 cm, ideal weight range 5 kg. **Maximum: TBD by the committee** — not derived from the 2026 p90. |
+| Q-03 | Kyorugi semi prestasi belt = SOFT (2026 evidence). |
+| Q-04 | Singleton = walkover + merge suggestions; never an automatic merge. |
+| Q-05 | Poomsae semi prestasi: movement is a hard partition through a configurable belt→movement map; weight disabled by default, configurable. |
+
+## 8. Implementation risks surfaced by the sources
+
+| ID | Risk | Evidence | Mitigation |
+|---|---|---|---|
+| IR-01 | Building the PRD as written would produce 8-slot brackets for semi prestasi — a structurally different competition. | C-01 | Pool engine per R-03; golden test against the 2026 committee draw |
+| IR-02 | Pair/team entries cannot be reconstructed reliably in future imports. | F-03 | Explicit `entry_group` column; heuristic proposals require confirmation |
+| IR-03 | Hard 5 cm limit would fragment categories into singletons. | C-03 | Ideal vs max tolerance; calibration report |
+| IR-04 | Dirty data silently drawn, as in 2026. | F-29 | Eligibility gate; draw returns `CANNOT_BE_SAFELY_GENERATED` with reasons |
+| IR-05 | Spreadsheet formula evaluation corrupts values (`=+53` → `53`). | F-37 | Normalize on import; neutralize formula prefixes in every CSV/XLSX export |
+| IR-06 | Registration snapshot differs from the draw snapshot. | R-12 | Corrections are audited commands; re-import produces a diff, never a silent overwrite |
+| IR-07 | Contingent identity is ambiguous. | F-12 | Configurable contingent grouping key |
+| IR-08 | Committee may reject an automated draw that "looks different". | F-34 | Quality report compares every metric against the committee baseline; explanations per pool |
+| IR-09 | Official weight-class tables cannot be derived from registrations. | F-11 | Rule set must be entered and versioned; import flags unknown classes |
+| IR-10 | PDF-derived baseline has ≈ 1% uncertainty at the margins. | §1.1 | Baseline tests use tolerances, not exact equality |
+
+### 8.1 Acceptance baseline for the draw engine
+
+> **Superseded by ADR-0012 (2026-09-11).** Correctness is defined by the safety invariants in `docs/ACCEPTANCE_CRITERIA.md` §2. The committee values below are a historical quality benchmark: a worse metric is reported and explained, never a correctness failure. The "engine target" column below is retained for history only.
+
+On the same input as the 2026 committee (S1, dirty rows excluded), the Phase 0 proposal compared the automated semi prestasi draw with the committee on each row of F-34:
+
+| Metric | Committee | Engine target |
+|---|---|---|
+| Kyorugi pools within 5 kg | 91.9% | ≥ 92% |
+| Kyorugi pools within 5 cm | 45.3% | ≥ 45% |
+| Kyorugi pools within 10 cm | 76.6% | ≥ 77% |
+| Poomsae pools crossing movement band | 0 | 0 (hard) |
+| Round-1 same-contingent pairs | 4.9% / 5.8% | ≤ committee |
+| Single-contingent pools | 14 / 6 | ≤ committee where feasible |
+| Singleton pools | 25 | ≤ 25, each explained |
+| Entries placed exactly once | 100% | 100% of eligible entries |

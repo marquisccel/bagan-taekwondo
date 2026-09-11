@@ -1,0 +1,25 @@
+node_modules/
+dist/
+.next/
+coverage/
+*.tsbuildinfo
+.turbo/
+.env
+.env.*
+!.env.example
+
+# Private tournament data: personal data of minors (names, NIK, birth dates).
+# Never commit. See data/README.md.
+data/private/*
+!data/private/.gitkeep
+
+# Simulator output
+out/
+tools/draw-simulator/out/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

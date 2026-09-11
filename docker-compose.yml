@@ -1,0 +1,21 @@
+# Local / venue deployment dependencies. Phase 1 needs only PostgreSQL 16.
+# The API, worker and web services are added in Phases 4-5 (ADR-0001).
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: bagantkd
+      POSTGRES_PASSWORD: bagantkd_dev_only
+      POSTGRES_DB: bagantkd
+    ports:
+      - '127.0.0.1:5433:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U bagantkd -d bagantkd']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  pgdata:

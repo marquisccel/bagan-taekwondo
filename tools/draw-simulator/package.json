@@ -1,0 +1,24 @@
+{
+  "name": "@bagantkd/draw-simulator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "simulate": "tsx --conditions=source src/cli.ts simulate",
+    "synthetic": "tsx --conditions=source src/cli.ts synthetic"
+  },
+  "dependencies": {
+    "@bagantkd/domain": "workspace:*",
+    "@bagantkd/draw-engine": "workspace:*",
+    "@bagantkd/rules": "workspace:*",
+    "@bagantkd/shared": "workspace:*"
+  }
+}

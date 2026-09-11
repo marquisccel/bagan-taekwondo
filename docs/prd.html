@@ -1,0 +1,1131 @@
+<title>BaganTKD Draw Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --ground:#EDEFF2;
+  --surface:#FFFFFF;
+  --surface-2:#F5F7F9;
+  --line:#D3D9E0;
+  --line-soft:#E4E8ED;
+  --ink:#161B21;
+  --ink-2:#3D4854;
+  --ink-3:#697787;
+  --chung:#1F5FA8;
+  --chung-soft:#E3ECF7;
+  --hong:#B8352C;
+  --hong-soft:#F8E6E4;
+  --ok:#2C6E51;
+  --ok-soft:#E1EFE8;
+  --warn:#8E6209;
+  --warn-soft:#F7EDD9;
+  --shadow:0 1px 2px rgba(22,27,33,.05), 0 8px 24px -16px rgba(22,27,33,.35);
+
+  --fs-xs:.7rem; --fs-sm:.82rem; --fs-base:1.02rem; --fs-lg:1.18rem;
+  --fs-xl:1.42rem; --fs-2xl:1.9rem; --fs-3xl:2.6rem;
+  --sans:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1116;
+    --surface:#161B22;
+    --surface-2:#1C222B;
+    --line:#2C343F;
+    --line-soft:#232A33;
+    --ink:#E6EAF0;
+    --ink-2:#B4BECB;
+    --ink-3:#7E8B9B;
+    --chung:#6BA6E8;
+    --chung-soft:#17293F;
+    --hong:#E27A70;
+    --hong-soft:#3A1F1D;
+    --ok:#6FC49B;
+    --ok-soft:#152A22;
+    --warn:#DDAE55;
+    --warn-soft:#2E2415;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1116;
+  --surface:#161B22;
+  --surface-2:#1C222B;
+  --line:#2C343F;
+  --line-soft:#232A33;
+  --ink:#E6EAF0;
+  --ink-2:#B4BECB;
+  --ink-3:#7E8B9B;
+  --chung:#6BA6E8;
+  --chung-soft:#17293F;
+  --hong:#E27A70;
+  --hong-soft:#3A1F1D;
+  --ok:#6FC49B;
+  --ok-soft:#152A22;
+  --warn:#DDAE55;
+  --warn-soft:#2E2415;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--serif);
+  font-size:var(--fs-base);
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.shell{
+  display:grid;
+  grid-template-columns:250px minmax(0,1fr);
+  gap:0;
+  max-width:1240px;
+  margin:0 auto;
+  align-items:start;
+}
+
+/* ---------- sidebar ---------- */
+.toc{
+  position:sticky; top:0;
+  height:100vh;
+  overflow-y:auto;
+  padding:28px 18px 40px 24px;
+  border-right:1px solid var(--line);
+  font-family:var(--sans);
+  font-size:var(--fs-sm);
+}
+.toc-brand{
+  font-weight:700; letter-spacing:-.01em;
+  font-size:var(--fs-lg); color:var(--ink);
+  line-height:1.2; margin-bottom:2px;
+}
+.toc-sub{color:var(--ink-3); font-size:var(--fs-xs); letter-spacing:.06em; text-transform:uppercase; margin-bottom:22px}
+.toc ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:1px}
+.toc a{
+  display:grid; grid-template-columns:26px 1fr; gap:6px;
+  padding:5px 8px; border-radius:4px;
+  color:var(--ink-2); text-decoration:none;
+  line-height:1.35;
+}
+.toc a:hover{background:var(--surface-2); color:var(--ink)}
+.toc a:focus-visible{outline:2px solid var(--chung); outline-offset:1px}
+.toc .n{color:var(--ink-3); font-variant-numeric:tabular-nums; font-size:var(--fs-xs); padding-top:2px}
+
+/* ---------- main ---------- */
+main{padding:0 40px 96px; min-width:0}
+.masthead{padding:52px 0 0}
+.eyebrow{
+  font-family:var(--sans); font-size:var(--fs-xs);
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--chung); font-weight:600; margin-bottom:14px;
+}
+h1{
+  font-family:var(--sans); font-weight:700;
+  font-size:var(--fs-3xl); line-height:1.06; letter-spacing:-.025em;
+  margin:0 0 10px; text-wrap:balance; max-width:16ch;
+}
+.dek{
+  font-size:var(--fs-lg); color:var(--ink-2);
+  max-width:56ch; margin:0 0 30px;
+}
+
+/* document control block — PRD convention */
+.control{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:0; border:1px solid var(--line);
+  background:var(--surface); border-radius:3px; overflow:hidden;
+  font-family:var(--sans);
+}
+.control div{padding:11px 14px; border-right:1px solid var(--line-soft)}
+.control div:last-child{border-right:0}
+.control dt{font-size:var(--fs-xs); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin:0 0 3px}
+.control dd{margin:0; font-size:var(--fs-sm); font-weight:600; color:var(--ink)}
+.status-pill{
+  display:inline-block; padding:1px 7px; border-radius:2px;
+  background:var(--warn-soft); color:var(--warn);
+  font-size:var(--fs-xs); font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+}
+
+/* stat strip */
+.stats{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
+  gap:1px; background:var(--line); border:1px solid var(--line);
+  margin:34px 0 0; border-radius:3px; overflow:hidden;
+}
+.stat{background:var(--surface); padding:14px 16px}
+.stat b{
+  display:block; font-family:var(--sans); font-weight:700;
+  font-size:1.7rem; line-height:1; letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums; color:var(--ink);
+}
+.stat span{
+  display:block; margin-top:6px; font-family:var(--sans);
+  font-size:var(--fs-xs); line-height:1.35; color:var(--ink-3);
+}
+.stat.alarm b{color:var(--hong)}
+
+/* sections */
+section{padding-top:56px; scroll-margin-top:20px}
+h2{
+  font-family:var(--sans); font-weight:700; font-size:var(--fs-2xl);
+  letter-spacing:-.02em; line-height:1.15; margin:0 0 6px;
+  text-wrap:balance; display:grid; grid-template-columns:auto 1fr; gap:14px; align-items:baseline;
+}
+h2 .num{
+  font-size:var(--fs-sm); color:var(--chung); font-weight:600;
+  font-variant-numeric:tabular-nums; letter-spacing:0;
+}
+h2::after{content:""; grid-column:1/-1; height:1px; background:var(--line); margin-top:14px}
+h3{
+  font-family:var(--sans); font-weight:600; font-size:var(--fs-lg);
+  letter-spacing:-.01em; margin:32px 0 8px; color:var(--ink);
+}
+h4{
+  font-family:var(--sans); font-weight:600; font-size:var(--fs-sm);
+  letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3);
+  margin:26px 0 6px;
+}
+p{margin:0 0 14px; max-width:68ch}
+ul,ol{margin:0 0 16px; padding-left:1.25em; max-width:66ch}
+li{margin-bottom:5px}
+strong{font-weight:600}
+a{color:var(--chung)}
+code{
+  font-family:var(--mono); font-size:.86em;
+  background:var(--surface-2); border:1px solid var(--line-soft);
+  padding:.5px 4px; border-radius:3px; color:var(--ink-2);
+}
+
+/* tables */
+.tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line); border-radius:3px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-family:var(--sans); font-size:var(--fs-sm)}
+th,td{padding:8px 12px; text-align:left; border-bottom:1px solid var(--line-soft); vertical-align:top}
+thead th{
+  background:var(--surface-2); color:var(--ink-3);
+  font-size:var(--fs-xs); letter-spacing:.07em; text-transform:uppercase; font-weight:600;
+  white-space:nowrap; border-bottom:1px solid var(--line);
+}
+tbody tr:last-child td{border-bottom:0}
+td code{background:transparent; border:0; padding:0; color:var(--chung)}
+.num-col{font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap}
+.id-col{font-family:var(--mono); font-size:var(--fs-xs); white-space:nowrap; color:var(--ink-3); font-weight:500}
+
+/* code / pseudocode */
+pre{
+  font-family:var(--mono); font-size:var(--fs-sm); line-height:1.6;
+  background:var(--surface); border:1px solid var(--line);
+  border-left:3px solid var(--chung);
+  border-radius:3px; padding:14px 16px; overflow-x:auto;
+  margin:0 0 20px; color:var(--ink-2);
+}
+pre b{color:var(--ink); font-weight:600}
+
+/* callouts */
+.note{
+  border-left:3px solid var(--chung); background:var(--chung-soft);
+  padding:12px 16px; border-radius:0 3px 3px 0; margin:0 0 20px;
+  font-size:var(--fs-sm); max-width:70ch;
+}
+.note.hong{border-left-color:var(--hong); background:var(--hong-soft)}
+.note b{font-family:var(--sans); display:block; margin-bottom:3px; color:var(--ink)}
+
+/* priority badges */
+.pri{
+  display:inline-block; min-width:20px; text-align:center;
+  font-family:var(--sans); font-size:var(--fs-xs); font-weight:700;
+  padding:1px 6px; border-radius:2px; letter-spacing:.04em;
+}
+.pri.m{background:var(--hong-soft); color:var(--hong)}
+.pri.s{background:var(--warn-soft); color:var(--warn)}
+.pri.c{background:var(--surface-2); color:var(--ink-3); border:1px solid var(--line)}
+
+/* belt swatches */
+.belt{display:inline-flex; gap:3px; vertical-align:middle}
+.belt i{width:13px; height:13px; border-radius:2px; border:1px solid rgba(0,0,0,.18); display:block}
+:root[data-theme="dark"] .belt i{border-color:rgba(255,255,255,.22)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .belt i{border-color:rgba(255,255,255,.22)}}
+
+/* slot map */
+.slotmap{font-family:var(--mono); font-size:var(--fs-sm); letter-spacing:.14em; white-space:nowrap}
+.slotmap .f{color:var(--chung); font-weight:600}
+.slotmap .b{color:var(--ink-3)}
+
+/* bracket figure */
+figure{margin:0 0 22px; border:1px solid var(--line); background:var(--surface); border-radius:3px; padding:18px 18px 12px}
+figure svg{display:block; width:100%; height:auto; overflow:visible}
+figcaption{
+  font-family:var(--sans); font-size:var(--fs-xs); color:var(--ink-3);
+  margin-top:10px; padding-top:10px; border-top:1px solid var(--line-soft);
+}
+.bk-line{stroke:var(--line); stroke-width:1.25; fill:none}
+.bk-box{fill:var(--surface-2); stroke:var(--line)}
+.bk-box-bye{fill:none; stroke:var(--line); stroke-dasharray:3 3}
+.bk-t{font-family:"IBM Plex Mono",monospace; font-size:11px; fill:var(--ink-2)}
+.bk-t-mute{font-family:"IBM Plex Mono",monospace; font-size:11px; fill:var(--ink-3)}
+.bk-code{font-family:"IBM Plex Mono",monospace; font-size:10px; fill:var(--chung); font-weight:600}
+.bk-half{fill:var(--chung-soft); stroke:none}
+
+/* q list */
+.qgrid{display:flex; flex-direction:column; gap:0; border:1px solid var(--line); border-radius:3px; overflow:hidden; margin-bottom:20px}
+.q{display:grid; grid-template-columns:44px 1fr; background:var(--surface); border-bottom:1px solid var(--line-soft)}
+.q:last-child{border-bottom:0}
+.q .qn{
+  font-family:var(--mono); font-size:var(--fs-xs); font-weight:600; color:var(--hong);
+  padding:12px 0 12px 14px;
+}
+.q .qb{padding:12px 16px 12px 0}
+.q .qb p{margin:0; font-size:var(--fs-sm); font-family:var(--sans)}
+.q .qb .why{margin-top:4px; color:var(--ink-3); font-size:var(--fs-xs)}
+
+footer{
+  margin-top:64px; padding-top:20px; border-top:1px solid var(--line);
+  font-family:var(--sans); font-size:var(--fs-xs); color:var(--ink-3); max-width:70ch;
+}
+
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .toc{position:static; height:auto; border-right:0; border-bottom:1px solid var(--line); padding:22px 24px}
+  .toc ol{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:0}
+  main{padding:0 24px 72px}
+  h1{font-size:2rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<div class="shell">
+<nav class="toc">
+  <div class="toc-brand">BaganTKD</div>
+  <div class="toc-sub">PRD v1.0</div>
+  <ol>
+    <li><a href="#s1"><span class="n">1</span><span>Ringkasan Eksekutif</span></a></li>
+    <li><a href="#s2"><span class="n">2</span><span>Latar Belakang &amp; Masalah</span></a></li>
+    <li><a href="#s3"><span class="n">3</span><span>Tujuan &amp; Non-Tujuan</span></a></li>
+    <li><a href="#s4"><span class="n">4</span><span>Pengguna</span></a></li>
+    <li><a href="#s5"><span class="n">5</span><span>Model Domain</span></a></li>
+    <li><a href="#s6"><span class="n">6</span><span>Ruang Lingkup</span></a></li>
+    <li><a href="#s7"><span class="n">7</span><span>Aturan Bisnis</span></a></li>
+    <li><a href="#s8"><span class="n">8</span><span>Requirement Fungsional</span></a></li>
+    <li><a href="#s9"><span class="n">9</span><span>Spesifikasi Algoritma</span></a></li>
+    <li><a href="#s10"><span class="n">10</span><span>Pengalaman Pengguna</span></a></li>
+    <li><a href="#s11"><span class="n">11</span><span>Non-Fungsional</span></a></li>
+    <li><a href="#s12"><span class="n">12</span><span>Arsitektur Teknis</span></a></li>
+    <li><a href="#s13"><span class="n">13</span><span>Metrik Keberhasilan</span></a></li>
+    <li><a href="#s14"><span class="n">14</span><span>Rencana Rilis</span></a></li>
+    <li><a href="#s15"><span class="n">15</span><span>Risiko</span></a></li>
+    <li><a href="#s16"><span class="n">16</span><span>Pertanyaan Terbuka</span></a></li>
+    <li><a href="#s17"><span class="n">A</span><span>Analisis Data Aktual</span></a></li>
+    <li><a href="#s18"><span class="n">B</span><span>Analisis Bagan Existing</span></a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="masthead">
+  <div class="eyebrow">Product Requirements Document</div>
+  <h1>Sistem Pembuatan Bagan Pertandingan Taekwondo</h1>
+  <p class="dek">Mesin draw otomatis, deterministik, dan dapat dijelaskan — menggantikan pembagian bagan manual di spreadsheet untuk turnamen berskala ribuan peserta.</p>
+
+  <dl class="control">
+    <div><dt>Produk</dt><dd>BaganTKD</dd></div>
+    <div><dt>Versi</dt><dd>1.0</dd></div>
+    <div><dt>Tanggal</dt><dd>9 Sep 2026</dd></div>
+    <div><dt>Penulis</dt><dd>Ega Yurcel Satriaji</dd></div>
+    <div><dt>Status</dt><dd><span class="status-pill">Draft for approval</span></dd></div>
+  </dl>
+
+  <div class="stats">
+    <div class="stat"><b>3.153</b><span>atlet pada dataset referensi</span></div>
+    <div class="stat"><b>209</b><span>grup kelas terbentuk</span></div>
+    <div class="stat alarm"><b>86</b><span>atlet dalam satu grup terbesar</span></div>
+    <div class="stat alarm"><b>26,9%</b><span>peserta dari satu kontingen</span></div>
+    <div class="stat"><b>&lt;30 s</b><span>target draw untuk 5.000 peserta</span></div>
+  </div>
+</header>
+
+<section id="s1">
+  <h2><span class="num">01</span><span>Ringkasan Eksekutif</span></h2>
+  <p>Pembuatan bagan (draw) pertandingan taekwondo saat ini dikerjakan manual di spreadsheet. Untuk satu event skala provinsi dengan sekitar 3.000 peserta, proses ini memakan waktu berhari-hari, rawan salah, sulit diaudit, dan hampir mustahil diulang ketika ada perubahan data menit-menit terakhir — peserta batal, gagal timbang, atau protes kontingen.</p>
+  <p>BaganTKD mengubah proses tersebut menjadi lima langkah: <strong>import</strong> data peserta, <strong>konfigurasi</strong> aturan turnamen, <strong>generate</strong> pool dan bagan secara otomatis, <strong>koreksi</strong> lewat editor drag-and-drop dengan validasi real-time, lalu <strong>publikasi</strong> sebagai PDF bagan, daftar partai, dan scoresheet.</p>
+  <p>Target utama: waktu pembuatan draw untuk 5.000 peserta turun dari hitungan hari menjadi di bawah satu jam, dengan kualitas draw setara atau lebih baik daripada hasil manual — dan setiap keputusan penempatan dapat dipertanggungjawabkan ke kontingen.</p>
+</section>
+
+<section id="s2">
+  <h2><span class="num">02</span><span>Latar Belakang &amp; Pernyataan Masalah</span></h2>
+
+  <h3>2.1 Kondisi saat ini</h3>
+  <p>Berdasarkan artefak turnamen Piala Gubernur Jawa Timur Antar Pelajar 2026 — 23 berkas PDF, 4 hari lomba, arena A sampai G:</p>
+  <div class="tw"><table>
+    <thead><tr><th>Aspek</th><th>Kondisi sekarang</th></tr></thead>
+    <tbody>
+      <tr><td>Divisi prestasi (Kyorugi &amp; Poomsae)</td><td>Digenerate perangkat lunak pihak ketiga (TKD Tomato, lisensi 2015). Bracket standar, penomoran partai per arena (<code>A01</code>, <code>V01</code>), dua medali perunggu.</td></tr>
+      <tr><td><strong>Divisi semi prestasi</strong></td><td><strong>Dibuat manual di spreadsheet.</strong> Ini bottleneck utama.</td></tr>
+      <tr><td>Freestyle Poomsae</td><td>Hanya daftar urutan penampilan, bukan bagan.</td></tr>
+      <tr><td>Perubahan / komplain</td><td>Edit manual di spreadsheet, tanpa versioning, tanpa validasi ulang.</td></tr>
+      <tr><td>Distribusi</td><td>Ekspor PDF manual per arena per hari.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>2.2 Mengapa semi prestasi mahal secara manual</h3>
+  <p>Semi prestasi tidak cukup dibagi berdasarkan kelas berat saja. Satu kelas resmi masih harus dipecah lagi menjadi beberapa bagan berdasarkan kesetaraan sabuk, tinggi badan, dan berat badan — inilah pekerjaan yang dilakukan tangan. Bukti dari 1.863 atlet Kyorugi Semi Prestasi pada dataset:</p>
+  <ul>
+    <li>Terbentuk <strong>105 grup kelas</strong> (gender × divisi umur × kelas berat).</li>
+    <li>Ukuran grup: minimum 1, median 15, <strong>maksimum 86</strong>.</li>
+    <li>Grup terbesar — <code>Laki-laki / PRA CADET C / -30</code>, 86 atlet — punya rentang tinggi badan <strong>120–154 cm</strong> (span 34 cm, jauh melewati toleransi 5 cm) dan <strong>7 tingkat sabuk berbeda</strong>.</li>
+    <li>Poomsae Semi Prestasi lebih ekstrem: 12 grup, terbesar <strong>135 atlet</strong>.</li>
+  </ul>
+  <p>Operator manual harus, untuk setiap grup, menyortir multi-kriteria, memotong grup jadi pool yang setara, memastikan tidak ada bagan berisi satu kontingen saja, lalu menyusun bracket berikut bye — dan mengulanginya untuk ratusan grup.</p>
+
+  <h3>2.3 Kendala struktural yang harus diakui sistem</h3>
+  <p>Distribusi kontingen sangat timpang:</p>
+  <div class="tw"><table>
+    <thead><tr><th>Kontingen</th><th class="num-col">Atlet</th><th class="num-col">Porsi</th></tr></thead>
+    <tbody>
+      <tr><td>Kota Surabaya 2</td><td class="num-col">848</td><td class="num-col">26,9%</td></tr>
+      <tr><td>Kabupaten Sidoarjo 2</td><td class="num-col">331</td><td class="num-col">10,5%</td></tr>
+      <tr><td>Kota Malang 1</td><td class="num-col">175</td><td class="num-col">5,5%</td></tr>
+      <tr><td>86 kontingen lainnya</td><td class="num-col">1.799</td><td class="num-col">57,1%</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note hong">
+    <b>Konsekuensi desain</b>
+    Aturan “diusahakan setiap bagan ada kontingen lain” <strong>tidak dapat menjadi hard constraint</strong>. Pada 29 dari 105 grup semi prestasi, satu kontingen menguasai lebih dari 50% peserta grup. Sistem memperlakukannya sebagai soft constraint dengan fungsi penalti yang diminimalkan, lalu melaporkan secara terbuka pool mana yang tidak terpenuhi dan mengapa.
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="num">03</span><span>Tujuan &amp; Non-Tujuan</span></h2>
+  <div class="tw"><table>
+    <thead><tr><th>Kode</th><th>Tujuan</th><th>Ukuran keberhasilan</th></tr></thead>
+    <tbody>
+      <tr><td class="id-col">G1</td><td>Otomasi pembuatan bagan end-to-end</td><td>5.000 peserta ter-draw penuh &lt; 60 menit termasuk review</td></tr>
+      <tr><td class="id-col">G2</td><td>Kualitas draw setara atau lebih baik dari manual</td><td>≥95% pool memenuhi toleransi TB/BB; ≥90% pool berisi ≥2 kontingen bila feasible</td></tr>
+      <tr><td class="id-col">G3</td><td>Reproducible &amp; auditable</td><td>Input + parameter + benih yang sama menghasilkan output identik; setiap perubahan tercatat</td></tr>
+      <tr><td class="id-col">G4</td><td>Koreksi cepat saat komplain</td><td>Perubahan penempatan atlet &lt; 10 detik lewat drag-and-drop, dengan validasi otomatis</td></tr>
+      <tr><td class="id-col">G5</td><td>Dapat dipakai lintas turnamen</td><td>Seluruh aturan berupa konfigurasi, bukan hard-code</td></tr>
+      <tr><td class="id-col">G6</td><td>Siap dipakai di venue</td><td>Ekspor PDF/print, mode offline, tidak bergantung koneksi stabil</td></tr>
+    </tbody>
+  </table></div>
+  <h4>Non-Tujuan v1</h4>
+  <ul>
+    <li>Bukan sistem pendaftaran peserta — menerima data dari sistem lain via import.</li>
+    <li>Bukan sistem penilaian elektronik; tidak menggantikan Daedo/KPNP, tetapi menyediakan API untuk menerima hasil.</li>
+    <li>Bukan sistem pembayaran, akomodasi, atau akreditasi.</li>
+    <li>Tidak menghitung ranking/seeding points otomatis di v1 — seed manual diperbolehkan.</li>
+  </ul>
+</section>
+
+<section id="s4">
+  <h2><span class="num">04</span><span>Pengguna &amp; Persona</span></h2>
+  <div class="tw"><table>
+    <thead><tr><th>Persona</th><th>Peran</th><th>Kebutuhan utama</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Drawing Officer</strong></td><td>Menjalankan draw, mengoreksi hasil</td><td>Kontrol penuh, undo/redo, alasan tiap penempatan</td></tr>
+      <tr><td><strong>Technical Delegate</strong></td><td>Menyetujui &amp; mengunci bagan</td><td>Approval, lock, versi resmi, laporan kepatuhan aturan</td></tr>
+      <tr><td><strong>Admin Turnamen</strong></td><td>Setup event, kelas, arena, jadwal</td><td>Template turnamen, konfigurasi ulang cepat</td></tr>
+      <tr><td><strong>Manajer Kontingen</strong></td><td>Melihat bagan timnya, mengajukan komplain</td><td>Akses read-only terfilter, jadwal atlet, kanal komplain</td></tr>
+      <tr><td><strong>Operator Arena</strong></td><td>Menjalankan partai di lapangan</td><td>Daftar partai urut, scoresheet, update pemenang</td></tr>
+      <tr><td><strong>Peserta &amp; Penonton</strong></td><td>Melihat bagan publik</td><td>Halaman read-only, ringan, mobile</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s5">
+  <h2><span class="num">05</span><span>Model Domain &amp; Glosarium</span></h2>
+  <div class="tw"><table>
+    <thead><tr><th>Istilah</th><th>Definisi dalam sistem</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Tournament</strong></td><td>Satu penyelenggaraan. Memuat konfigurasi aturan, arena, dan hari lomba.</td></tr>
+      <tr><td><strong>Contingent</strong></td><td>Tim/kontingen pengirim atlet (<code>tim_kontingen</code>).</td></tr>
+      <tr><td><strong>Athlete</strong></td><td>Peserta individu: NIK, nama, gender, tanggal lahir, TB, BB, sabuk, kontingen.</td></tr>
+      <tr><td><strong>Entry</strong></td><td>Pendaftaran satu atlet (atau satu pair/team) ke satu Category. Satu atlet bisa punya banyak entry.</td></tr>
+      <tr><td><strong>Category</strong></td><td><code>event × klasifikasi × divisi umur × gender × class</code>. Contoh: Kyorugi Semi Prestasi / Cadet / Putra / -41.</td></tr>
+      <tr><td><strong>Class</strong></td><td>Kelas berat (<code>-41</code>, <code>+65</code>) untuk kyorugi, atau tipe penampilan (<code>INDIVIDUAL</code>, <code>PAIR</code>, <code>TEAM</code>) untuk poomsae.</td></tr>
+      <tr><td><strong>Pool (Bagan)</strong></td><td>Sub-himpunan atlet dalam satu Category yang benar-benar saling bertanding. Satu Category dapat menghasilkan banyak Pool.</td></tr>
+      <tr><td><strong>Bracket</strong></td><td>Struktur single-elimination untuk satu Pool, ukuran slot 2<sup>k</sup>.</td></tr>
+      <tr><td><strong>BYE</strong></td><td>Slot kosong; lawan otomatis lolos ke ronde berikutnya tanpa bertanding.</td></tr>
+      <tr><td><strong>Dummy</strong></td><td>Penanda untuk Pool berisi 1 atlet — menang tanpa lawan.</td></tr>
+      <tr><td><strong>Match</strong></td><td>Satu partai; nomor unik per arena (<code>A17</code>), ronde, dua slot sumber.</td></tr>
+      <tr><td><strong>Draw Run</strong></td><td>Satu eksekusi algoritma: snapshot input, parameter, benih acak, dan hasil. Immutable.</td></tr>
+      <tr><td><strong>Belt Band</strong></td><td>Pengelompokan tingkat sabuk yang dianggap setara.</td></tr>
+    </tbody>
+  </table></div>
+<pre>Tournament 1─n Category 1─n Pool 1─1 Bracket 1─n Match
+Tournament 1─n Contingent 1─n Athlete 1─n Entry n─1 Category
+DrawRun    1─n Pool           DrawRun n─1 Tournament
+Pool       1─n Slot n─0..1 Entry
+Arena      1─n Session 1─n Match</pre>
+</section>
+
+<section id="s6">
+  <h2><span class="num">06</span><span>Ruang Lingkup</span></h2>
+  <h4>In-scope v1 — MVP produksi</h4>
+  <ul>
+    <li>Import &amp; validasi peserta (CSV/XLSX), pemetaan kolom, deteksi duplikat.</li>
+    <li>Konfigurasi kelas umur, kelas berat, toleransi, belt band per turnamen.</li>
+    <li>Mesin pembentukan Pool untuk semi prestasi (kyorugi &amp; poomsae).</li>
+    <li>Mesin bracket, seeding, dan penempatan bye untuk seluruh divisi.</li>
+    <li>Contingent separation sebagai soft constraint, dengan laporan pelanggaran.</li>
+    <li>Editor drag-and-drop, validasi real-time, undo/redo, versioning, lock.</li>
+    <li>Ekspor PDF bagan per arena/hari, daftar partai, scoresheet, XLSX.</li>
+    <li>Role-based access dan audit log.</li>
+  </ul>
+  <h4>In-scope v2</h4>
+  <ul>
+    <li>Penjadwalan arena otomatis: alokasi mat, estimasi durasi, jeda istirahat atlet.</li>
+    <li>Live result entry dengan progresi pemenang otomatis di bracket.</li>
+    <li>Halaman publik dan tampilan layar venue.</li>
+    <li>Workflow komplain formal: pengajuan, review, keputusan, re-draw parsial.</li>
+  </ul>
+  <h4>Out of scope</h4>
+  <p>Registrasi, pembayaran, sertifikat, integrasi scoring board vendor, aplikasi mobile native.</p>
+</section>
+
+<section id="s7">
+  <h2><span class="num">07</span><span>Aturan Bisnis</span></h2>
+  <p>Bagian ini normatif. Semua nilai adalah default yang dapat dikonfigurasi per turnamen, kecuali dinyatakan tetap.</p>
+
+  <h3>BR-1 · Kriteria pembagian (hard partition)</h3>
+  <p>Dua atlet tidak boleh berada dalam Pool yang sama jika berbeda pada salah satu kriteria berikut:</p>
+  <div class="tw"><table>
+    <thead><tr><th>Divisi</th><th>Kriteria hard</th></tr></thead>
+    <tbody>
+      <tr><td>Kyorugi (prestasi &amp; semi)</td><td>event, gender, divisi umur, kelas berat</td></tr>
+      <tr><td>Poomsae (prestasi &amp; semi)</td><td>event, gender, divisi umur, tipe penampilan, kategori gerakan poomsae</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>BR-2 · Kriteria pemisah lanjutan untuk semi prestasi</h3>
+  <p>Dalam satu Category semi prestasi, Pool dibentuk lebih lanjut dengan prioritas berurutan: <strong>belt band</strong> (default hard), <strong>berat badan</strong> (selisih ≤ <code>tol_bb</code>), <strong>tinggi badan</strong> (selisih ≤ <code>tol_tb</code>), lalu <strong>keragaman kontingen</strong>.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Divisi umur</th><th class="num-col">tol_tb</th><th class="num-col">tol_bb</th></tr></thead>
+    <tbody>
+      <tr><td>Pra Cadet A / B / C</td><td class="num-col">5 cm</td><td class="num-col">3 kg</td></tr>
+      <tr><td>Cadet</td><td class="num-col">5 cm</td><td class="num-col">5 kg</td></tr>
+      <tr><td>Junior</td><td class="num-col">6 cm</td><td class="num-col">5 kg</td></tr>
+      <tr><td>Senior</td><td class="num-col">8 cm</td><td class="num-col">5 kg</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note">
+    <b>Dua tingkat toleransi</b>
+    <code>tol</code> adalah nilai ideal, <code>tol_max</code> adalah batas darurat saat pool tidak feasible. Pelanggaran di antara keduanya ditandai peringatan; di atas <code>tol_max</code> ditolak dan dieskalasi ke operator. Bagan tidak boleh dikunci selama masih ada pelanggaran <code>tol_max</code>.
+  </div>
+
+  <h3>BR-3 · Belt band default</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Band</th><th>Sabuk</th><th>Warna</th><th class="num-col">Atlet pada dataset</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Pemula</strong></td><td>GEUP 10, GEUP 9, GEUP 8</td>
+        <td><span class="belt"><i style="background:#F2C230"></i><i style="background:#F2C230"></i><i style="background:linear-gradient(90deg,#F2C230 50%,#2E8B57 50%)"></i></span></td><td class="num-col">1.239</td></tr>
+      <tr><td><strong>Madya</strong></td><td>GEUP 7, GEUP 6, GEUP 5</td>
+        <td><span class="belt"><i style="background:#2E8B57"></i><i style="background:linear-gradient(90deg,#2E8B57 50%,#2563A8 50%)"></i><i style="background:#2563A8"></i></span></td><td class="num-col">1.127</td></tr>
+      <tr><td><strong>Lanjut</strong></td><td>GEUP 4, GEUP 3, GEUP 2</td>
+        <td><span class="belt"><i style="background:linear-gradient(90deg,#2563A8 50%,#C4362F 50%)"></i><i style="background:#C4362F"></i><i style="background:#C4362F"></i></span></td><td class="num-col">576</td></tr>
+      <tr><td><strong>Mahir</strong></td><td>GEUP 1, HITAM DAN 1–3</td>
+        <td><span class="belt"><i style="background:#C4362F"></i><i style="background:#1A1D22"></i></span></td><td class="num-col">212</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>BR-4 · Ukuran Pool</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Parameter</th><th>Default</th><th>Keterangan</th></tr></thead>
+    <tbody>
+      <tr><td><code>pool_min</code></td><td class="num-col">3</td><td>Di bawah ini, coba gabung dengan Pool tetangga</td></tr>
+      <tr><td><code>pool_target</code></td><td class="num-col">8</td><td>Ukuran ideal — bracket penuh tiga ronde</td></tr>
+      <tr><td><code>pool_max</code></td><td class="num-col">16</td><td>Di atas ini, Pool dipecah</td></tr>
+      <tr><td>Prioritas ukuran</td><td>8 &gt; 4 &gt; 6 &gt; 16</td><td>Bracket penuh lebih disukai karena tanpa bye</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>BR-5 · Struktur bracket berdasarkan jumlah atlet</h3>
+  <p>Aturan yang dinyatakan pemangku kepentingan (1 orang dummy; 3 orang satu semifinal dan satu menunggu di final; 5 orang menjadi 3 dan 2; 7 menjadi 4 dan 3) digeneralisasi menjadi satu prosedur tunggal:</p>
+  <ol>
+    <li>Ukuran bracket <code>S = 2^ceil(log2(n))</code>, minimum <code>S = 2</code>.</li>
+    <li>Jumlah BYE = <code>S − n</code>.</li>
+    <li>BYE didistribusikan lewat <strong>pembelahan berimbang rekursif</strong>: bracket dibelah dua, atlet dibagi <code>ceil(n/2)</code> di paruh atas dan <code>floor(n/2)</code> di paruh bawah, diterapkan rekursif sampai slot tunggal.</li>
+    <li><code>n = 1</code> menjadi Pool Dummy: menang tanpa lawan, tetap dicetak dengan slot lawan bertanda DUMMY, dan dilaporkan ke Technical Delegate.</li>
+  </ol>
+
+  <figure>
+    <svg viewBox="0 0 660 330" role="img" aria-label="Diagram bracket single elimination untuk 7 atlet: paruh atas berisi 4 atlet, paruh bawah 3 atlet dan satu bye">
+      <rect class="bk-half" x="0" y="4" width="656" height="154" rx="3"></rect>
+      <g class="bk-t-mute">
+        <text x="8" y="20" font-size="10" letter-spacing="1.2">PARUH ATAS · 4 ATLET</text>
+        <text x="8" y="180" font-size="10" letter-spacing="1.2">PARUH BAWAH · 3 ATLET + 1 BYE</text>
+      </g>
+      <!-- round 1 boxes -->
+      <g>
+        <rect class="bk-box" x="8" y="28" width="132" height="22" rx="2"></rect><text class="bk-t" x="16" y="43">Atlet 1</text>
+        <rect class="bk-box" x="8" y="56" width="132" height="22" rx="2"></rect><text class="bk-t" x="16" y="71">Atlet 2</text>
+        <rect class="bk-box" x="8" y="96" width="132" height="22" rx="2"></rect><text class="bk-t" x="16" y="111">Atlet 3</text>
+        <rect class="bk-box" x="8" y="124" width="132" height="22" rx="2"></rect><text class="bk-t" x="16" y="139">Atlet 4</text>
+        <rect class="bk-box" x="8" y="188" width="132" height="22" rx="2"></rect><text class="bk-t" x="16" y="203">Atlet 5</text>
+        <rect class="bk-box" x="8" y="216" width="132" height="22" rx="2"></rect><text class="bk-t" x="16" y="231">Atlet 6</text>
+        <rect class="bk-box" x="8" y="256" width="132" height="22" rx="2"></rect><text class="bk-t" x="16" y="271">Atlet 7</text>
+        <rect class="bk-box-bye" x="8" y="284" width="132" height="22" rx="2"></rect><text class="bk-t-mute" x="16" y="299">BYE</text>
+      </g>
+      <!-- r1 connectors -->
+      <path class="bk-line" d="M140 39 H176 V67 H140 M176 53 H212"></path>
+      <path class="bk-line" d="M140 107 H176 V135 H140 M176 121 H212"></path>
+      <path class="bk-line" d="M140 199 H176 V227 H140 M176 213 H212"></path>
+      <path class="bk-line" d="M140 267 H176 V295 H140 M176 281 H212"></path>
+      <text class="bk-code" x="146" y="35">A01</text>
+      <text class="bk-code" x="146" y="103">A02</text>
+      <text class="bk-code" x="146" y="195">A03</text>
+      <text class="bk-code" x="146" y="263">lolos</text>
+      <!-- round 2 boxes -->
+      <g>
+        <rect class="bk-box" x="212" y="42" width="120" height="22" rx="2"></rect><text class="bk-t-mute" x="220" y="57">pemenang A01</text>
+        <rect class="bk-box" x="212" y="110" width="120" height="22" rx="2"></rect><text class="bk-t-mute" x="220" y="125">pemenang A02</text>
+        <rect class="bk-box" x="212" y="202" width="120" height="22" rx="2"></rect><text class="bk-t-mute" x="220" y="217">pemenang A03</text>
+        <rect class="bk-box" x="212" y="270" width="120" height="22" rx="2"></rect><text class="bk-t-mute" x="220" y="285">Atlet 7</text>
+      </g>
+      <path class="bk-line" d="M332 53 H368 V121 H332 M368 87 H404"></path>
+      <path class="bk-line" d="M332 213 H368 V281 H332 M368 247 H404"></path>
+      <text class="bk-code" x="338" y="49">A04</text>
+      <text class="bk-code" x="338" y="209">A05</text>
+      <!-- semis -->
+      <g>
+        <rect class="bk-box" x="404" y="76" width="120" height="22" rx="2"></rect><text class="bk-t-mute" x="412" y="91">semifinalis 1</text>
+        <rect class="bk-box" x="404" y="236" width="120" height="22" rx="2"></rect><text class="bk-t-mute" x="412" y="251">semifinalis 2</text>
+      </g>
+      <path class="bk-line" d="M524 87 H556 V247 H524 M556 167 H588"></path>
+      <text class="bk-code" x="530" y="83">A06 · FINAL</text>
+      <rect class="bk-box" x="588" y="156" width="64" height="22" rx="2"></rect>
+      <text class="bk-t" x="596" y="171">Juara</text>
+    </svg>
+    <figcaption>n = 7 → bracket 8 slot, 1 bye, pembelahan 4 + 3. BYE selalu jatuh di paruh yang lebih ringan sehingga tidak ada separuh bracket yang jauh lebih mudah daripada separuh lainnya.</figcaption>
+  </figure>
+
+  <p>Verifikasi prosedur terhadap seluruh contoh yang diminta — kolom peta slot menunjukkan posisi terisi (<span class="slotmap"><span class="f">■</span></span>) dan bye (<span class="slotmap"><span class="b">·</span></span>):</p>
+  <div class="tw"><table>
+    <thead><tr><th class="num-col">n</th><th class="num-col">S</th><th class="num-col">BYE</th><th>Pembelahan</th><th>Peta slot</th><th>Sesuai permintaan</th></tr></thead>
+    <tbody>
+      <tr><td class="num-col">1</td><td class="num-col">2</td><td class="num-col">1</td><td>1 + 0</td><td class="slotmap"><span class="f">■</span><span class="b">·</span></td><td>Dummy, langsung juara</td></tr>
+      <tr><td class="num-col">2</td><td class="num-col">2</td><td class="num-col">0</td><td>1 + 1</td><td class="slotmap"><span class="f">■■</span></td><td>1 partai final</td></tr>
+      <tr><td class="num-col">3</td><td class="num-col">4</td><td class="num-col">1</td><td>2 + 1</td><td class="slotmap"><span class="f">■■■</span><span class="b">·</span></td><td>1 semifinal, 1 menunggu di final</td></tr>
+      <tr><td class="num-col">4</td><td class="num-col">4</td><td class="num-col">0</td><td>2 + 2</td><td class="slotmap"><span class="f">■■■■</span></td><td>2 semifinal + 1 final</td></tr>
+      <tr><td class="num-col">5</td><td class="num-col">8</td><td class="num-col">3</td><td>3 + 2</td><td class="slotmap"><span class="f">■■■</span><span class="b">·</span><span class="f">■</span><span class="b">·</span><span class="f">■</span><span class="b">·</span></td><td>paruh 3 dan paruh 2</td></tr>
+      <tr><td class="num-col">6</td><td class="num-col">8</td><td class="num-col">2</td><td>3 + 3</td><td class="slotmap"><span class="f">■■■</span><span class="b">·</span><span class="f">■■■</span><span class="b">·</span></td><td>paruh 3 dan paruh 3</td></tr>
+      <tr><td class="num-col">7</td><td class="num-col">8</td><td class="num-col">1</td><td>4 + 3</td><td class="slotmap"><span class="f">■■■■■■■</span><span class="b">·</span></td><td>paruh 4 dan paruh 3</td></tr>
+      <tr><td class="num-col">8</td><td class="num-col">8</td><td class="num-col">0</td><td>4 + 4</td><td class="slotmap"><span class="f">■■■■■■■■</span></td><td>paruh 4 dan paruh 4</td></tr>
+      <tr><td class="num-col">12</td><td class="num-col">16</td><td class="num-col">4</td><td>6 + 6</td><td class="slotmap"><span class="f">■■■</span><span class="b">·</span><span class="f">■■■</span><span class="b">·</span><span class="f">■■■</span><span class="b">·</span><span class="f">■■■</span><span class="b">·</span></td><td>konsisten</td></tr>
+      <tr><td class="num-col">22</td><td class="num-col">32</td><td class="num-col">10</td><td>11 + 11</td><td>—</td><td>konsisten</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>BR-6 · Contingent separation</h3>
+  <ul>
+    <li><strong>Hard</strong> — dua atlet sekontingen tidak boleh bertemu di ronde pertama, sepanjang jumlah kontingen berbeda dalam Pool memungkinkan.</li>
+    <li><strong>Soft</strong> — maksimalkan ronde pertemuan pertama antar-atlet sekontingen. Penalti pertemuan di ronde <code>r</code> dari total <code>R</code> ronde: <code>P = 2^(R − r)</code>. Makin awal bertemu, makin mahal.</li>
+    <li><strong>Soft</strong> — setiap Pool diusahakan memuat minimal dua kontingen. Bila mustahil, Pool ditandai <code>SINGLE_CONTINGENT</code> dan operator ditawari opsi tukar atlet dengan Pool tetangga yang masih dalam toleransi.</li>
+    <li>Kontingen berjumlah besar disebar lebih dulu ke kuadran bracket berbeda — largest-first distribution.</li>
+  </ul>
+
+  <h3>BR-7 sampai BR-10</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Kode</th><th>Aturan</th></tr></thead>
+    <tbody>
+      <tr><td class="id-col">BR-7</td><td><strong>Medali.</strong> Default 1 emas, 1 perak, 2 perunggu — kedua yang kalah di semifinal, sesuai praktik pada artefak turnamen. Dapat diubah menjadi 1 perunggu dengan partai perebutan juara 3.</td></tr>
+      <tr><td class="id-col">BR-8</td><td><strong>Umur &amp; kelas.</strong> Divisi umur dihitung dari tanggal lahir terhadap tanggal cut-off turnamen, default 31 Desember tahun penyelenggaraan. Parser kelas wajib menerima varian <code>=+65</code>, <code>+65</code>, <code>65+</code>. Berat aktual di luar kelas terdaftar ditandai <code>WEIGHT_MISMATCH</code> dan tidak di-draw sebelum diselesaikan operator.</td></tr>
+      <tr><td class="id-col">BR-9</td><td><strong>Penomoran partai.</strong> Unik per arena per hari, format <code>&lt;KodeArena&gt;&lt;NomorUrut&gt;</code>. Urutan mengikuti pelaksanaan: seluruh ronde 1 lintas pool pada arena tersebut, lalu ronde 2, dan seterusnya.</td></tr>
+      <tr><td class="id-col">BR-10</td><td><strong>Status entry.</strong> <code>REGISTERED → VERIFIED → DRAWN</code>, dengan cabang <code>WITHDRAWN</code> / <code>DQ</code> / <code>NO_SHOW</code>. Hanya entry <code>VERIFIED</code> yang masuk draw, kecuali mode draw sementara diaktifkan.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s8">
+  <h2><span class="num">08</span><span>Requirement Fungsional</span></h2>
+  <p>Prioritas: <span class="pri m">M</span> Must di v1 · <span class="pri s">S</span> Should di v1 · <span class="pri c">C</span> Could di v2.</p>
+
+  <h3>FR-1 · Import &amp; Validasi Data <span class="pri m">M</span></h3>
+  <div class="tw"><table>
+    <tbody>
+      <tr><td class="id-col">FR-1.1</td><td>Import CSV/XLSX dengan wizard pemetaan kolom; simpan preset per sumber data.</td></tr>
+      <tr><td class="id-col">FR-1.2</td><td>Validasi wajib: NIK, nama, gender, tanggal lahir, TB, BB, sabuk, klasifikasi, divisi, class, kontingen.</td></tr>
+      <tr><td class="id-col">FR-1.3</td><td>Normalisasi otomatis: gender (<code>Laki-laki</code>/<code>L</code>/<code>M</code> → <code>M</code>), sabuk (<code>GEUP 5 - BIRU</code> → <code>GEUP_5</code>), kelas (<code>=+65</code> → <code>+65</code>), desimal TB/BB.</td></tr>
+      <tr><td class="id-col">FR-1.4</td><td>Deteksi duplikat berdasarkan NIK, dan berdasarkan nama + tanggal lahir sebagai kandidat lemah.</td></tr>
+      <tr><td class="id-col">FR-1.5</td><td>Laporan kualitas data: baris ditolak, nilai di luar rentang wajar (TB &lt; 90 cm atau &gt; 220 cm), umur tidak cocok divisi, kelas tidak dikenal.</td></tr>
+      <tr><td class="id-col">FR-1.6</td><td>Import transaksional: gagal sebagian tidak merusak data existing; tersedia dry-run.</td></tr>
+      <tr><td class="id-col">FR-1.7</td><td>Re-import melakukan upsert berdasarkan NIK dan menandai perubahan TB/BB/kelas yang berdampak pada draw yang sudah dibuat.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>FR-2 · Konfigurasi Turnamen <span class="pri m">M</span></h3>
+  <div class="tw"><table>
+    <tbody>
+      <tr><td class="id-col">FR-2.1</td><td>CRUD turnamen: nama, tanggal, cut-off umur, lokasi, jumlah &amp; kode arena, jumlah hari.</td></tr>
+      <tr><td class="id-col">FR-2.2</td><td>Editor tabel divisi umur.</td></tr>
+      <tr><td class="id-col">FR-2.3</td><td>Editor tabel kelas berat per divisi umur per gender.</td></tr>
+      <tr><td class="id-col">FR-2.4</td><td>Editor kategori poomsae: individual/pair/team, kelompok gerakan wajib per divisi.</td></tr>
+      <tr><td class="id-col">FR-2.5</td><td>Editor belt band.</td></tr>
+      <tr><td class="id-col">FR-2.6</td><td>Editor <code>tol_tb</code>, <code>tol_bb</code>, <code>tol_max_tb</code>, <code>tol_max_bb</code> per divisi umur, dengan override per kelas.</td></tr>
+      <tr><td class="id-col">FR-2.7</td><td>Editor parameter pool: <code>pool_min</code>, <code>pool_target</code>, <code>pool_max</code>, bobot penalti algoritma.</td></tr>
+      <tr><td class="id-col">FR-2.8</td><td>Template turnamen — simpan seluruh konfigurasi untuk dipakai ulang di event berikutnya.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>FR-3 · Klasifikasi Peserta <span class="pri m">M</span></h3>
+  <div class="tw"><table>
+    <tbody>
+      <tr><td class="id-col">FR-3.1</td><td>Hitung umur &amp; tetapkan divisi otomatis; tampilkan konflik terhadap data pendaftaran.</td></tr>
+      <tr><td class="id-col">FR-3.2</td><td>Tetapkan kelas berat otomatis dari BB aktual; tampilkan konflik terhadap kelas terdaftar.</td></tr>
+      <tr><td class="id-col">FR-3.3</td><td>Modul timbang ulang di venue: input BB &amp; TB aktual dengan jejak siapa dan kapan.</td></tr>
+      <tr><td class="id-col">FR-3.4</td><td>Perubahan hasil timbang menandai Category &amp; Pool terdampak <code>STALE</code> dan menawarkan re-draw parsial.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>FR-4 · Pembentukan Pool <span class="pri m">M</span></h3>
+  <div class="tw"><table>
+    <tbody>
+      <tr><td class="id-col">FR-4.1</td><td>Bentuk Pool otomatis sesuai algoritma Bab 9, per Category.</td></tr>
+      <tr><td class="id-col">FR-4.2</td><td>Setiap Pool menyimpan metrik kualitas: jumlah atlet, rentang TB, rentang BB, band sabuk, jumlah kontingen unik, porsi kontingen terbesar, jumlah pelanggaran soft constraint.</td></tr>
+      <tr><td class="id-col">FR-4.3</td><td>Setiap Pool menyimpan alasan pembentukan: batas potong yang dipakai dan constraint mana yang mengikat.</td></tr>
+      <tr><td class="id-col">FR-4.4</td><td>Pool &lt; <code>pool_min</code> dicoba digabung dengan tetangga terdekat dalam batas <code>tol_max</code>; bila gagal, ditandai untuk keputusan manual.</td></tr>
+      <tr><td class="id-col">FR-4.5</td><td>Operator dapat mengunci Pool (<code>PINNED</code>) agar tidak berubah pada re-draw berikutnya.</td></tr>
+      <tr><td class="id-col">FR-4.6</td><td>Mode what-if: jalankan draw dengan parameter berbeda dan bandingkan metrik berdampingan sebelum memilih.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>FR-5 · Generate Bracket &amp; Seeding <span class="pri m">M</span></h3>
+  <div class="tw"><table>
+    <tbody>
+      <tr><td class="id-col">FR-5.1</td><td>Bangun bracket single-elimination sesuai BR-5 untuk setiap Pool.</td></tr>
+      <tr><td class="id-col">FR-5.2</td><td>Tempatkan BYE sesuai pembelahan berimbang rekursif.</td></tr>
+      <tr><td class="id-col">FR-5.3</td><td>Terapkan contingent separation sesuai BR-6.</td></tr>
+      <tr><td class="id-col">FR-5.4</td><td>Dukung seed manual untuk divisi prestasi; seed 1 di slot teratas, seed 2 di slot terbawah, seed 3/4 di tengah paruh berlawanan.</td></tr>
+      <tr><td class="id-col">FR-5.5</td><td>Tanpa seed, urutan ditentukan RNG berbenih yang disimpan pada Draw Run agar dapat direproduksi.</td></tr>
+      <tr><td class="id-col">FR-5.6</td><td>Alokasikan nomor partai per arena sesuai BR-9.</td></tr>
+      <tr><td class="id-col">FR-5.7</td><td>Generate ulang selektif: satu Category, satu Pool, atau seluruh turnamen.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>FR-6 · Editor Bagan Drag &amp; Drop <span class="pri m">M</span></h3>
+  <div class="tw"><table>
+    <tbody>
+      <tr><td class="id-col">FR-6.1</td><td>Bracket interaktif; atlet dapat di-drag antar slot dalam satu Pool.</td></tr>
+      <tr><td class="id-col">FR-6.2</td><td>Atlet dapat di-drag antar Pool dalam satu Category.</td></tr>
+      <tr><td class="id-col">FR-6.3</td><td>Atlet dapat dipindah antar Category — misalnya naik kelas berat — dengan konfirmasi eksplisit.</td></tr>
+      <tr><td class="id-col">FR-6.4</td><td>Validasi real-time saat drag: hijau aman, kuning melanggar soft constraint dengan alasan, merah melanggar hard constraint sehingga drop ditolak.</td></tr>
+      <tr><td class="id-col">FR-6.5</td><td>Tukar posisi dua atlet dalam satu aksi.</td></tr>
+      <tr><td class="id-col">FR-6.6</td><td>Undo/redo minimal 50 langkah, bertahan selama sesi.</td></tr>
+      <tr><td class="id-col">FR-6.7</td><td>Setiap perubahan tercatat di audit log: siapa, kapan, dari mana ke mana, alasan — wajib bila melanggar soft constraint.</td></tr>
+      <tr><td class="id-col">FR-6.8</td><td>Auto-recalculate nomor partai, jumlah bye, dan metrik kualitas setelah perubahan.</td></tr>
+      <tr><td class="id-col">FR-6.9</td><td>Bagan dapat dikunci Technical Delegate; setelah terkunci hanya berubah lewat revisi baru bernomor.</td></tr>
+      <tr><td class="id-col">FR-6.10</td><td>Drag-drop responsif di bawah 100 ms pada Category berisi hingga 200 atlet dan 25 Pool.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>FR-7 · Perubahan &amp; Komplain <span class="pri s">S</span></h3>
+  <div class="tw"><table>
+    <tbody>
+      <tr><td class="id-col">FR-7.1</td><td>Catat komplain: pengaju, Pool/atlet terkait, alasan, lampiran.</td></tr>
+      <tr><td class="id-col">FR-7.2</td><td>Status <code>OPEN → UNDER_REVIEW → ACCEPTED/REJECTED</code> dengan keputusan tertulis.</td></tr>
+      <tr><td class="id-col">FR-7.3</td><td>Komplain yang diterima dapat memicu aksi editor yang tertaut ke nomor komplain.</td></tr>
+      <tr><td class="id-col">FR-7.4</td><td>Penanganan WO/DQ/withdraw: atlet ditandai, lawan otomatis lolos, bracket tidak dibangun ulang total.</td></tr>
+      <tr><td class="id-col">FR-7.5</td><td>Pendaftaran terlambat disisipkan ke Pool yang masih memenuhi toleransi atau membentuk Pool baru; nomor partai yang sudah dicetak dipertahankan lewat sub-nomor, misalnya <code>A17A</code>.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>FR-8 · Penjadwalan Arena <span class="pri c">C</span></h3>
+  <div class="tw"><table>
+    <tbody>
+      <tr><td class="id-col">FR-8.1</td><td>Assign Category/Pool ke arena dan hari — v1 manual dengan saran otomatis.</td></tr>
+      <tr><td class="id-col">FR-8.2</td><td>Estimasi durasi partai per divisi dan estimasi waktu selesai arena.</td></tr>
+      <tr><td class="id-col">FR-8.3</td><td>v2: penjadwalan otomatis dengan constraint satu atlet tidak di dua arena bersamaan, jeda minimum antar partai, beban arena seimbang.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>FR-9 · Ekspor &amp; Publikasi <span class="pri m">M</span></h3>
+  <div class="tw"><table>
+    <tbody>
+      <tr><td class="id-col">FR-9.1</td><td>PDF bagan per arena per hari dengan header turnamen, nama kategori, jumlah peserta, tanggal, dan blok medali.</td></tr>
+      <tr><td class="id-col">FR-9.2</td><td>PDF daftar partai urut nomor.</td></tr>
+      <tr><td class="id-col">FR-9.3</td><td>Scoresheet per partai.</td></tr>
+      <tr><td class="id-col">FR-9.4</td><td>XLSX: daftar peserta per Pool, rekap kategori, rekap kontingen.</td></tr>
+      <tr><td class="id-col">FR-9.5</td><td>Daftar urutan penampilan Freestyle Poomsae, tanpa bracket.</td></tr>
+      <tr><td class="id-col">FR-9.6</td><td>Semua ekspor mencantumkan nomor revisi dan timestamp agar versi usang tidak beredar.</td></tr>
+      <tr><td class="id-col">FR-9.7</td><td>v2: halaman publik read-only per turnamen dan per kontingen, ramah mobile.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>FR-10 · Akses, Audit, Keamanan <span class="pri m">M</span></h3>
+  <div class="tw"><table>
+    <tbody>
+      <tr><td class="id-col">FR-10.1</td><td>Peran: Super Admin, Admin Turnamen, Drawing Officer, Technical Delegate, Operator Arena, Manajer Kontingen, Publik.</td></tr>
+      <tr><td class="id-col">FR-10.2</td><td>Audit log immutable untuk semua aksi yang mengubah draw.</td></tr>
+      <tr><td class="id-col">FR-10.3</td><td>Draw Run immutable; perubahan menghasilkan revisi baru dengan diff terhadap revisi sebelumnya.</td></tr>
+      <tr><td class="id-col">FR-10.4</td><td>NIK dan tanggal lahir tidak tampil pada ekspor publik dan dibatasi berdasarkan peran.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s9">
+  <h2><span class="num">09</span><span>Spesifikasi Algoritma</span></h2>
+  <p>Ini inti teknis produk. Empat prinsip mengikat seluruh desain: <strong>deterministik</strong> — semua keacakan dari satu PRNG berbenih yang disimpan; <strong>bertingkat</strong> — dipecah jadi tahap yang masing-masing dapat diselesaikan optimal, bukan satu masalah optimasi raksasa yang tak bisa dijelaskan; <strong>dapat dijelaskan</strong> — setiap keputusan menyimpan alasan yang terbaca manusia; dan <strong>fail-loud</strong> — constraint yang tak terpenuhi dilaporkan, bukan disembunyikan.</p>
+
+  <h3>Tahap 0 · Normalisasi</h3>
+  <p>Hitung <code>age_division</code> dari tanggal lahir dan cut-off; petakan sabuk ke <code>belt_rank</code> (GEUP 10 = 1 sampai DAN 3 = 13) dan <code>belt_band</code>; normalisasi kelas; validasi TB/BB. Entry tidak valid dikeluarkan dari draw dan masuk laporan.</p>
+
+  <h3>Tahap 1 · Partisi keras</h3>
+  <pre>key = (event, klasifikasi, age_division, gender, class[, poomsae_group])</pre>
+  <p>Setiap kelompok menjadi satu Category. Untuk divisi prestasi, Category langsung menjadi satu Pool dan lanjut ke Tahap 3. Untuk semi prestasi, lanjut ke Tahap 2. Kompleksitas O(N).</p>
+
+  <h3>Tahap 2 · Pembentukan Pool semi prestasi</h3>
+  <p>Partisi dengan constraint diameter — setiap cluster punya rentang TB ≤ <code>tol_tb</code> dan BB ≤ <code>tol_bb</code> — adalah <em>constrained clustering</em> yang NP-hard secara umum. Karena atribut pengikat bersifat ordinal satu dimensi pada tiap sumbu, sistem memakai <strong>segmentasi kontigu bertingkat dengan pemrograman dinamis</strong>: optimal terhadap urutan yang diberikan, deterministik, dan berjalan dalam O(m²).</p>
+<pre><b>POOLS(C):</b>
+  1. Bagi C berdasarkan belt_band  → sub-grup B1..Bk       (hard by default)
+  2. Untuk setiap Bi:
+       a. Urutkan berdasarkan BERAT (tie-break: tinggi, lalu id stabil)
+       b. Segmentasi-DP pada sumbu BERAT          → segmen W1..Wp
+       c. Untuk setiap Wj:
+            - Urutkan berdasarkan TINGGI
+            - Segmentasi-DP pada sumbu TINGGI     → pool kandidat
+  3. Perbaikan:
+       a. Gabung pool &lt; pool_min dengan tetangga selama masih ≤ tol_max
+       b. Pecah pool &gt; pool_max
+       c. Injeksi keragaman kontingen
+  4. Kembalikan pool final + metrik + alasan</pre>
+
+  <h4>Fungsi biaya segmentasi</h4>
+<pre>cost(s) = W_range   * f_range(s)
+        + W_size    * f_size(|s|)
+        + W_conting * f_contingent(s)
+
+f_range(s)      = max(0, range_bb(s) − tol_bb)² + max(0, range_tb(s) − tol_tb)²
+                  jika range &gt; tol_max → cost = +INF, segmen tidak sah
+
+f_size(n)       = 0      jika n ∈ {4, 8}       bracket penuh, tanpa bye
+                = 0.5    jika n ∈ {5,6,7,9..16}
+                = 2.0    jika n = 3
+                = 8.0    jika n = 2
+                = 25.0   jika n = 1            butuh dummy
+                = +INF   jika n &gt; pool_max
+
+f_contingent(s) = (share_terbesar(s) − 1/|kontingen(s)|)² · |s|
+                  maksimum bila seluruh anggota satu kontingen</pre>
+  <p>Bobot default <code>W_range = 10</code>, <code>W_size = 3</code>, <code>W_conting = 2</code>. Semuanya dapat dikonfigurasi lewat FR-2.7, sehingga panitia bisa menggeser prioritas antara kesetaraan fisik dan keragaman kontingen.</p>
+
+  <h4>Rekurens DP</h4>
+<pre>D[0] = 0
+D[j] = min atas i &lt; j dari ( D[i] + cost(A[i+1..j]) )</pre>
+  <p>Backpointer menyimpan titik potong sehingga alasan pemotongan dapat direkonstruksi — inilah sumber kalimat penjelasan seperti “dipotong di berat 32,0 kg karena selisih ke atlet berikutnya 3,5 kg akan melampaui toleransi”. Kompleksitas O(m²) waktu, O(m) memori; dengan <code>m</code> maksimum 135 pada data aktual, biayanya dapat diabaikan.</p>
+
+  <h4>Injeksi keragaman kontingen</h4>
+  <ol>
+    <li>Untuk tiap Pool berisi satu kontingen, cari Pool tetangga yang punya kontingen berbeda.</li>
+    <li>Cari pasangan tukar sedemikian sehingga kedua Pool tetap memenuhi <code>tol_max</code> dan total biaya turun.</li>
+    <li>Lakukan tukar terbaik; ulangi sampai tidak ada perbaikan atau batas iterasi tercapai.</li>
+    <li>Bila tidak ada pertukaran sah, tandai <code>SINGLE_CONTINGENT</code> dan cantumkan di laporan kualitas.</li>
+  </ol>
+
+  <h3>Tahap 3 · Konstruksi bracket &amp; penempatan BYE</h3>
+<pre><b>BUILD_BRACKET(pool):</b>
+  n = |pool|
+  if n == 1: return DUMMY_BRACKET(pool)
+  S = 2^ceil(log2(n))
+  return ASSIGN(0, S, n)
+
+<b>ASSIGN(offset, size, n):</b>
+  if size == 1:
+      return [ATHLETE] if n == 1 else [BYE]
+  half  = size / 2
+  upper = ceil(n / 2)
+  lower = n - upper
+  return ASSIGN(offset, half, upper) ++ ASSIGN(offset + half, half, lower)</pre>
+
+  <h3>Tahap 4 · Seeding dengan contingent separation</h3>
+<pre>Penalty = Σ pasangan (a,b) sekontingen : 2^(R − ronde_pertemuan(a,b))
+        + Σ atlet unggulan salah posisi : W_seed</pre>
+  <ol>
+    <li><strong>Seed tetap.</strong> Seed manual ditempatkan lebih dulu pada posisi standar dan dikunci.</li>
+    <li><strong>Distribusi largest-first.</strong> Kontingen diurutkan menurun berdasarkan jumlah atlet dalam Pool, anggotanya disebar round-robin ke kuadran bracket berbeda. Deterministik, dan menyelesaikan mayoritas kasus.</li>
+    <li><strong>Perbaikan lokal.</strong> Hill-climbing berbasis pertukaran dua posisi, urutan kandidat dari PRNG berbenih, batas iterasi <code>50 × n</code>. Pertukaran diterima hanya bila <code>Penalty</code> turun.</li>
+    <li><strong>BYE.</strong> Ditempatkan pada paruh yang paling padat satu kontingen — memberi bye kepada atlet kontingen dominan justru menurunkan risiko bentrok internal dini. Untuk divisi prestasi bersistem seed, BYE ke seed tertinggi sesuai praktik standar.</li>
+  </ol>
+
+  <h3>Tahap 5 · Laporan kualitas draw</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Metrik</th><th>Target</th></tr></thead>
+    <tbody>
+      <tr><td>Pool memenuhi <code>tol_tb</code> dan <code>tol_bb</code></td><td>≥ 95%</td></tr>
+      <tr><td>Pool dengan ≥ 2 kontingen</td><td>≥ 90% dari Pool yang secara teoritis feasible</td></tr>
+      <tr><td>Pasangan sekontingen bertemu di ronde 1</td><td>≤ 3%</td></tr>
+      <tr><td>Pool berukuran 1 (dummy)</td><td>Dilaporkan eksplisit, harus disetujui Technical Delegate</td></tr>
+      <tr><td>Pool melanggar <code>tol_max</code></td><td>0 — bila lebih dari nol, draw tidak boleh dikunci</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Anggaran performa</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Tahap</th><th>Kompleksitas</th><th class="num-col">Estimasi 5.000 atlet</th></tr></thead>
+    <tbody>
+      <tr><td>Normalisasi + partisi</td><td>O(N)</td><td class="num-col">&lt; 1 s</td></tr>
+      <tr><td>Segmentasi DP</td><td>Σ O(m²)</td><td class="num-col">&lt; 3 s</td></tr>
+      <tr><td>Bracket + seeding</td><td>Σ O(n²), n ≤ 16</td><td class="num-col">&lt; 2 s</td></tr>
+      <tr><td>Penomoran + laporan</td><td>O(N)</td><td class="num-col">&lt; 1 s</td></tr>
+      <tr><td><strong>Total mesin draw</strong></td><td></td><td class="num-col"><strong>&lt; 10 s</strong></td></tr>
+      <tr><td>Render PDF seluruh turnamen</td><td>I/O bound, paralel</td><td class="num-col">&lt; 3 menit</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note">
+    <b>Determinisme sebagai syarat pertanggungjawaban</b>
+    Setiap Draw Run menyimpan hash snapshot peserta, versi konfigurasi, seluruh nilai parameter, benih PRNG, dan versi algoritma. Menjalankan ulang dengan tuple yang sama wajib menghasilkan hasil identik — ini yang membuat sistem bisa menjawab ketika kontingen mempertanyakan keadilan draw.
+  </div>
+</section>
+
+<section id="s10">
+  <h2><span class="num">10</span><span>Pengalaman Pengguna</span></h2>
+  <h3>Alur utama Drawing Officer</h3>
+<pre>1. Buat/pilih turnamen  →  pilih template konfigurasi
+2. Import peserta       →  review laporan kualitas data  →  perbaiki
+3. Review klasifikasi   →  selesaikan konflik umur/kelas
+4. Atur parameter draw  →  (opsional) bandingkan skenario what-if
+5. Generate draw        →  review Draw Quality Report
+6. Perbaiki manual      →  drag &amp; drop pada Pool bermasalah
+7. Ajukan approval      →  Technical Delegate mengunci
+8. Ekspor &amp; distribusi  →  PDF per arena/hari
+9. Selama turnamen      →  tangani komplain/WO/DQ  →  revisi terkontrol</pre>
+
+  <h3>Layar kunci</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Layar</th><th>Isi</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Dashboard turnamen</strong></td><td>Ringkasan peserta, status draw per divisi, temuan terbuka, progress approval</td></tr>
+      <tr><td><strong>Data peserta</strong></td><td>Tabel dengan filter kontingen/divisi/kelas/status, inline edit, indikator konflik</td></tr>
+      <tr><td><strong>Konfigurasi aturan</strong></td><td>Editor tabel kelas, toleransi, belt band, bobot algoritma, dengan preview dampak</td></tr>
+      <tr><td><strong>Draw workspace</strong></td><td>Kiri: daftar Category dengan badge kualitas. Tengah: bracket interaktif. Kanan: detail atlet, metrik Pool, alasan penempatan, daftar pelanggaran</td></tr>
+      <tr><td><strong>Compare scenarios</strong></td><td>Dua hasil draw berdampingan dengan diff metrik</td></tr>
+      <tr><td><strong>Audit &amp; revisi</strong></td><td>Timeline perubahan, diff antar revisi, restore</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Prinsip interaksi editor</h3>
+  <ul>
+    <li><strong>Tampilkan konsekuensi sebelum aksi.</strong> Saat atlet di-drag, sistem menampilkan rentang TB/BB Pool tujuan setelah perpindahan dan pelanggaran yang timbul.</li>
+    <li><strong>Tolak pelanggaran keras, izinkan pelanggaran lunak dengan alasan.</strong> Hard constraint tidak bisa dilanggar lewat UI biasa; soft constraint boleh, tetapi alasannya wajib diisi dan tersimpan di audit log.</li>
+    <li><strong>Perubahan bersifat lokal.</strong> Memindahkan satu atlet tidak boleh mengacak ulang seluruh bagan; nomor partai yang sudah dipublikasikan dipertahankan sedapat mungkin.</li>
+    <li><strong>Keyboard-first.</strong> Cari atlet <code>/</code>, pindah <code>M</code>, tukar <code>S</code>, undo <code>Ctrl+Z</code>.</li>
+  </ul>
+</section>
+
+<section id="s11">
+  <h2><span class="num">11</span><span>Requirement Non-Fungsional</span></h2>
+  <div class="tw"><table>
+    <thead><tr><th>Kategori</th><th>Requirement</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Performa</strong></td><td>Draw 5.000 peserta &lt; 30 s. Feedback drag-drop &lt; 100 ms. Load workspace Category &lt; 1 s.</td></tr>
+      <tr><td><strong>Skalabilitas</strong></td><td>10.000 entry per turnamen, 500 Pool, 20 arena, 7 hari. Multi-turnamen paralel.</td></tr>
+      <tr><td><strong>Availability</strong></td><td>99,5% pada masa turnamen. Mesin draw sebagai job terisolasi; kegagalan render PDF tidak menjatuhkan aplikasi.</td></tr>
+      <tr><td><strong>Ketahanan venue</strong></td><td>Mode offline/PWA — bagan yang sudah digenerate dapat dibuka dan dicetak tanpa internet, sinkronisasi saat koneksi kembali. PDF sebagai fallback wajib.</td></tr>
+      <tr><td><strong>Reliabilitas data</strong></td><td>Draw Run immutable. Backup harian otomatis dan snapshot sebelum tiap generate. Point-in-time recovery.</td></tr>
+      <tr><td><strong>Keamanan</strong></td><td>Autentikasi email + password, opsional SSO. RBAC per turnamen, enkripsi at-rest untuk NIK, TLS in-transit, rate limiting.</td></tr>
+      <tr><td><strong>Privasi</strong></td><td>NIK dan tanggal lahir hanya untuk peran berwenang; tidak muncul di ekspor publik. Retensi mengikuti kebijakan penyelenggara.</td></tr>
+      <tr><td><strong>Auditability</strong></td><td>Setiap perubahan draw tercatat dengan aktor, waktu, before/after, alasan. Log tidak dapat diedit.</td></tr>
+      <tr><td><strong>Observability</strong></td><td>Metrik durasi generate, jumlah pelanggaran per turnamen, error rate ekspor. Log terstruktur, alert bila generate gagal.</td></tr>
+      <tr><td><strong>Kompatibilitas</strong></td><td>Browser modern dua versi terakhir. Cetak A4 dan A3 landscape.</td></tr>
+      <tr><td><strong>Lokalisasi</strong></td><td>Bahasa Indonesia default, Inggris opsional. Format tanggal dan satuan metrik.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s12">
+  <h2><span class="num">12</span><span>Arsitektur Teknis</span></h2>
+  <p>Mesin draw diisolasi sebagai <strong>pustaka murni tanpa efek samping</strong>. Konsekuensinya: dapat diuji dengan property-based testing, dapat dijalankan di server untuk job besar maupun di browser untuk preview instan saat operator mengubah parameter, dan hasilnya dijamin sama di kedua tempat.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Lapis</th><th>Pilihan</th><th>Alasan</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend</td><td>React + TypeScript (Next.js), <code>dnd-kit</code>, bracket sebagai SVG</td><td>Ekosistem matang; SVG memudahkan ekspor dan zoom bracket besar</td></tr>
+      <tr><td>Mesin draw</td><td>Paket TypeScript murni <code>@bagantkd/engine</code></td><td>Satu sumber kebenaran algoritma, tanpa perbedaan hasil FE/BE</td></tr>
+      <tr><td>Backend</td><td>NestJS, REST/tRPC</td><td>Satu bahasa lintas lapis, mudah dirawat tim kecil</td></tr>
+      <tr><td>Database</td><td>PostgreSQL 16</td><td>Relasional dan transaksional, <code>jsonb</code> untuk konfigurasi dan snapshot</td></tr>
+      <tr><td>Job queue</td><td>Redis + BullMQ</td><td>Generate draw dan render PDF sebagai job async dengan progress</td></tr>
+      <tr><td>Render PDF</td><td>React-PDF atau Puppeteer</td><td>Konsistensi tampilan layar dan cetak</td></tr>
+      <tr><td>Deploy</td><td>Docker Compose on-prem venue &amp; container cloud</td><td>Turnamen sering butuh instalasi lokal di venue</td></tr>
+    </tbody>
+  </table></div>
+  <p>Alternatif Python dengan OR-Tools dipertimbangkan dan ditolak untuk v1: memaksa dua bahasa dan menghalangi preview instan di browser. Dapat ditinjau ulang bila kelak dibutuhkan solver ILP untuk penjadwalan arena di v2.</p>
+
+  <h3>Skema data inti</h3>
+<pre>tournaments(id, name, start_date, end_date, age_cutoff_date, config_jsonb, status)
+arenas(id, tournament_id, code, name, day)
+contingents(id, tournament_id, name, external_ref)
+athletes(id, tournament_id, contingent_id, nik_enc, full_name, gender, birth_date,
+         height_cm, weight_kg, belt_rank, belt_band, source_row, created_at)
+entries(id, tournament_id, athlete_id, team_members_jsonb, category_id, status,
+        seed_no, verified_height, verified_weight, verified_at, verified_by)
+categories(id, tournament_id, event, stream, age_division, gender, class_code,
+           poomsae_group, entry_count)
+draw_runs(id, tournament_id, params_jsonb, rng_seed, engine_version,
+          input_hash, created_by, created_at, status)
+pools(id, draw_run_id, category_id, index_no, size, bracket_size,
+      metrics_jsonb, reasons_jsonb, flags, pinned)
+slots(id, pool_id, position, entry_id NULL, is_bye)
+matches(id, pool_id, round_no, code, arena_id, order_no,
+        slot_a, slot_b, winner_entry_id, status)
+revisions(id, tournament_id, base_draw_run_id, revision_no, locked_by, locked_at)
+audit_log(id, tournament_id, actor_id, action, target, before_jsonb, after_jsonb,
+          reason, created_at)
+complaints(id, tournament_id, submitted_by, target_ref, reason, status,
+           decision, decided_by, decided_at)</pre>
+
+  <h3>API inti</h3>
+<pre>POST   /tournaments/{id}/imports              unggah &amp; dry-run
+POST   /tournaments/{id}/imports/{iid}/commit
+GET    /tournaments/{id}/categories
+POST   /tournaments/{id}/draw-runs            generate (async job)
+GET    /draw-runs/{id}/quality-report
+GET    /draw-runs/{id}/pools?category=...
+PATCH  /pools/{id}/slots                      drag &amp; drop
+POST   /pools/{id}/regenerate
+POST   /draw-runs/{id}/lock
+POST   /exports                               pdf|xlsx, filter arena/hari
+GET    /tournaments/{id}/audit</pre>
+  <p>Validasi drag-and-drop dijalankan di server juga, bukan hanya di klien, agar aturan tidak dapat dilewati.</p>
+
+  <h3>Strategi pengujian</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Jenis</th><th>Isi</th></tr></thead>
+    <tbody>
+      <tr><td>Unit</td><td>Fungsi biaya, DP segmentasi, <code>ASSIGN</code> bye, penalti separation</td></tr>
+      <tr><td>Property-based</td><td>Untuk sembarang n ∈ [1, 512]: bracket valid, slot = 2<sup>k</sup>, bye = S − n, tiap paruh berimbang</td></tr>
+      <tr><td>Golden test</td><td>Dataset 3.153 peserta sebagai baseline; perubahan hasil harus disengaja dan ditinjau</td></tr>
+      <tr><td>Determinisme</td><td>Jalankan 100× dengan benih sama, hash output wajib identik</td></tr>
+      <tr><td>Beban</td><td>5.000 dan 10.000 entry sintetis, ukur waktu dan memori</td></tr>
+      <tr><td>E2E</td><td>Alur import → generate → drag → lock → ekspor</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s13">
+  <h2><span class="num">13</span><span>Metrik Keberhasilan</span></h2>
+  <div class="tw"><table>
+    <thead><tr><th>KPI</th><th>Baseline manual</th><th>Target v1</th></tr></thead>
+    <tbody>
+      <tr><td>Waktu membuat draw penuh (~3.000 peserta)</td><td>Beberapa hari</td><td>&lt; 1 jam</td></tr>
+      <tr><td>Waktu memperbaiki satu komplain</td><td>5–15 menit</td><td>&lt; 1 menit</td></tr>
+      <tr><td>Pool melanggar toleransi TB/BB</td><td>Tidak terukur</td><td>&lt; 5%, dan 0 di atas <code>tol_max</code></td></tr>
+      <tr><td>Pool satu kontingen yang sebenarnya bisa dihindari</td><td>Tidak terukur</td><td>&lt; 10%</td></tr>
+      <tr><td>Pertemuan sekontingen di ronde 1</td><td>Tidak terukur</td><td>&lt; 3%</td></tr>
+      <tr><td>Versi cetak usang beredar</td><td>Sering</td><td>0 — setiap ekspor bernomor revisi</td></tr>
+      <tr><td>Adopsi</td><td>—</td><td>Dipakai penuh pada ≥ 3 turnamen dalam 6 bulan</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s14">
+  <h2><span class="num">14</span><span>Rencana Rilis</span></h2>
+  <div class="tw"><table>
+    <thead><tr><th>Tahap</th><th>Lingkup</th><th class="num-col">Durasi</th><th>Kriteria selesai</th></tr></thead>
+    <tbody>
+      <tr><td class="id-col">M0 · Fondasi</td><td>Skema data, auth, CRUD turnamen, import + validasi</td><td class="num-col">3 minggu</td><td>Data aktual 3.153 baris terimport bersih</td></tr>
+      <tr><td class="id-col">M1 · Mesin draw</td><td>Normalisasi, partisi, DP pooling, bracket, seeding, quality report, CLI</td><td class="num-col">4 minggu</td><td>Golden test lolos; 5.000 entry &lt; 30 s</td></tr>
+      <tr><td class="id-col">M2 · Editor</td><td>Render bracket, drag &amp; drop, validasi real-time, undo/redo, audit</td><td class="num-col">4 minggu</td><td>Operator dapat memperbaiki draw tanpa spreadsheet</td></tr>
+      <tr><td class="id-col">M3 · Ekspor &amp; lock</td><td>PDF bagan, match list, scoresheet, XLSX, revisi &amp; lock</td><td class="num-col">3 minggu</td><td>Output setara PDF turnamen existing</td></tr>
+      <tr><td class="id-col">M4 · Pilot</td><td>Uji paralel pada satu turnamen nyata: manual vs sistem</td><td class="num-col">2 minggu</td><td>Selisih kualitas draw dapat dijelaskan; panitia menerima</td></tr>
+      <tr><td class="id-col">M5 · v2</td><td>Penjadwalan arena, live result, halaman publik, workflow komplain</td><td class="num-col">6 minggu</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p>Total ke rilis produksi sekitar <strong>16 minggu</strong>. Strategi peluncuran: jalankan paralel dengan proses manual pada turnamen pertama. Sistem lulus bila panitia teknis menilai hasil otomatis setara atau lebih baik dan waktu kerja turun signifikan.</p>
+</section>
+
+<section id="s15">
+  <h2><span class="num">15</span><span>Risiko &amp; Mitigasi</span></h2>
+  <div class="tw"><table>
+    <thead><tr><th>Risiko</th><th>Dampak</th><th>Mitigasi</th></tr></thead>
+    <tbody>
+      <tr><td>Aturan draw berbeda antar penyelenggara</td><td>Sistem tidak terpakai di event lain</td><td>Semua aturan berupa konfigurasi + template; tidak ada logika turnamen yang di-hard-code</td></tr>
+      <tr><td>Kontingen dominan membuat separation mustahil</td><td>Panitia menganggap sistem salah</td><td>Perlakukan sebagai soft constraint, laporkan terbuka beserta alasan kuantitatifnya</td></tr>
+      <tr><td>Data pendaftaran kotor</td><td>Draw salah sejak awal</td><td>Laporan kualitas data wajib ditinjau sebelum generate; modul timbang ulang</td></tr>
+      <tr><td>Perubahan menit terakhir setelah bagan dicetak</td><td>Kekacauan di venue</td><td>Revisi bernomor, penomoran partai stabil, sub-nomor untuk sisipan, watermark versi di tiap cetakan</td></tr>
+      <tr><td>Penolakan pengguna terhadap otomasi</td><td>Adopsi rendah</td><td>Explainability di tiap keputusan + editor manual penuh; sistem membantu, tidak mendikte</td></tr>
+      <tr><td>Koneksi internet venue buruk</td><td>Bagan tidak bisa diakses</td><td>Mode offline/PWA + PDF cetak sebagai fallback wajib</td></tr>
+      <tr><td>Sengketa keadilan draw</td><td>Reputasi penyelenggara</td><td>Determinisme berbenih + audit log + laporan yang dapat dipublikasikan</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s16">
+  <h2><span class="num">16</span><span>Pertanyaan Terbuka</span></h2>
+  <p>Sepuluh keputusan berikut harus dijawab sebelum M1 dimulai — masing-masing berdampak langsung pada struktur mesin draw.</p>
+  <div class="qgrid">
+    <div class="q"><div class="qn">Q1</div><div class="qb"><p>Belt band resmi yang dipakai — apakah pembagian empat band pada BR-3 sesuai praktik? Apakah lintas band pernah dibolehkan?</p><p class="why">Menentukan hard/soft constraint utama pooling</p></div></div>
+    <div class="q"><div class="qn">Q2</div><div class="qb"><p>Untuk Poomsae Semi Prestasi, apakah benar memakai bracket head-to-head, atau sistem skor dengan babak penyisihan?</p><p class="why">Mengubah total struktur output untuk 533 peserta</p></div></div>
+    <div class="q"><div class="qn">Q3</div><div class="qb"><p>Atribut gerakan poomsae — kriteria pembagian bagan, atau hanya penentu jurus yang dimainkan?</p><p class="why">Menentukan apakah masuk kunci Category</p></div></div>
+    <div class="q"><div class="qn">Q4</div><div class="qb"><p>Tanggal cut-off umur resmi: 31 Desember tahun berjalan, atau tanggal event?</p><p class="why">Menggeser divisi umur sebagian peserta</p></div></div>
+    <div class="q"><div class="qn">Q5</div><div class="qb"><p>Apakah TB/BB diverifikasi ulang di venue, dan seberapa sering berubah dari data pendaftaran?</p><p class="why">Menentukan bobot fitur weigh-in dan frekuensi re-draw</p></div></div>
+    <div class="q"><div class="qn">Q6</div><div class="qb"><p>Jumlah medali perunggu: dua, atau satu dengan partai perebutan juara 3?</p><p class="why">Struktur bracket dan jumlah partai</p></div></div>
+    <div class="q"><div class="qn">Q7</div><div class="qb"><p>Jumlah arena, durasi rata-rata partai, dan jam operasional per hari.</p><p class="why">Prasyarat penjadwalan otomatis v2</p></div></div>
+    <div class="q"><div class="qn">Q8</div><div class="qb"><p>Apakah format PDF wajib mengikuti persis layout TKD Tomato, atau boleh format baru?</p><p class="why">Beban kerja modul ekspor</p></div></div>
+    <div class="q"><div class="qn">Q9</div><div class="qb"><p>Apakah sistem harus mendukung repechage atau double-elimination untuk kelas tertentu?</p><p class="why">Struktur bracket alternatif</p></div></div>
+    <div class="q"><div class="qn">Q10</div><div class="qb"><p>Deployment: cloud terpusat, on-prem di venue, atau keduanya?</p><p class="why">Arsitektur dan biaya operasional</p></div></div>
+  </div>
+</section>
+
+<section id="s17">
+  <h2><span class="num">A</span><span>Lampiran · Analisis Data Aktual</span></h2>
+  <p>Sumber: <code>DATA_KOLEKTIF_FESTIVAL_PRESTASI - query_kolektif.csv</code>, 3.153 baris data di luar header. Seluruh baris memiliki 13 kolom konsisten; struktur CSV tidak rusak dan nama atlet tidak mengandung koma.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Klasifikasi</th><th class="num-col">Atlet</th><th class="num-col">Grup kelas</th><th class="num-col">Min</th><th class="num-col">Median</th><th class="num-col">Maks</th></tr></thead>
+    <tbody>
+      <tr><td>Kyorugi Semi Prestasi</td><td class="num-col">1.863</td><td class="num-col">105</td><td class="num-col">1</td><td class="num-col">15</td><td class="num-col">86</td></tr>
+      <tr><td>Kyorugi Prestasi</td><td class="num-col">591</td><td class="num-col">71</td><td class="num-col">1</td><td class="num-col">6</td><td class="num-col">24</td></tr>
+      <tr><td>Poomsae Semi Prestasi</td><td class="num-col">533</td><td class="num-col">12</td><td class="num-col">4</td><td class="num-col">27</td><td class="num-col">135</td></tr>
+      <tr><td>Poomsae Prestasi</td><td class="num-col">146</td><td class="num-col">21</td><td class="num-col">1</td><td class="num-col">6</td><td class="num-col">22</td></tr>
+      <tr><td>Freestyle</td><td class="num-col">21</td><td class="num-col">—</td><td class="num-col" colspan="3">Urutan penampilan, bukan bagan</td></tr>
+    </tbody>
+  </table></div>
+  <p>Gender: 1.792 putra, 1.362 putri. Divisi umur: Cadet 1.030, Junior 883, Pra Cadet C 710, Pra Cadet B 245, Senior 152, Pra Cadet 87, Pra Cadet A 47.</p>
+
+  <h3>Distribusi sabuk</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Sabuk</th><th></th><th class="num-col">Atlet</th></tr></thead>
+    <tbody>
+      <tr><td>GEUP 9 · Kuning</td><td><span class="belt"><i style="background:#F2C230"></i></span></td><td class="num-col">794</td></tr>
+      <tr><td>GEUP 7 · Hijau</td><td><span class="belt"><i style="background:#2E8B57"></i></span></td><td class="num-col">531</td></tr>
+      <tr><td>GEUP 8 · Kuning strip hijau</td><td><span class="belt"><i style="background:linear-gradient(90deg,#F2C230 50%,#2E8B57 50%)"></i></span></td><td class="num-col">445</td></tr>
+      <tr><td>GEUP 6 · Hijau strip biru</td><td><span class="belt"><i style="background:linear-gradient(90deg,#2E8B57 50%,#2563A8 50%)"></i></span></td><td class="num-col">302</td></tr>
+      <tr><td>GEUP 5 · Biru</td><td><span class="belt"><i style="background:#2563A8"></i></span></td><td class="num-col">294</td></tr>
+      <tr><td>GEUP 3 · Merah</td><td><span class="belt"><i style="background:#C4362F"></i></span></td><td class="num-col">269</td></tr>
+      <tr><td>GEUP 4 · Biru strip merah</td><td><span class="belt"><i style="background:linear-gradient(90deg,#2563A8 50%,#C4362F 50%)"></i></span></td><td class="num-col">224</td></tr>
+      <tr><td>GEUP 1 · Merah strip 2</td><td><span class="belt"><i style="background:#C4362F"></i></span></td><td class="num-col">114</td></tr>
+      <tr><td>HITAM DAN 1</td><td><span class="belt"><i style="background:#1A1D22"></i></span></td><td class="num-col">90</td></tr>
+      <tr><td>GEUP 2 · Merah strip 1</td><td><span class="belt"><i style="background:#C4362F"></i></span></td><td class="num-col">83</td></tr>
+      <tr><td>HITAM DAN 2</td><td><span class="belt"><i style="background:#1A1D22"></i></span></td><td class="num-col">5</td></tr>
+      <tr><td>HITAM DAN 3</td><td><span class="belt"><i style="background:#1A1D22"></i></span></td><td class="num-col">3</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Temuan yang berdampak pada desain</h3>
+  <ol>
+    <li><strong>Konsentrasi kontingen ekstrem.</strong> Satu kontingen memegang 26,9% peserta; pada 29 dari 105 grup semi prestasi satu kontingen menguasai lebih dari separuh. Contingent separation wajib soft constraint (BR-6).</li>
+    <li><strong>Grup besar dengan sebaran fisik lebar.</strong> <code>Laki-laki / PRA CADET C / -30</code>: 86 atlet, TB 120–154 cm, BB 27–33 kg, 7 tingkat sabuk. Pooling multi-tahap adalah kebutuhan nyata, bukan fitur tambahan.</li>
+    <li><strong>Dua belas grup berukuran satu atlet</strong> pada Kyorugi Semi Prestasi. Penanganan Dummy harus menjadi alur kerja resmi, bukan kasus tepi.</li>
+    <li><strong>Format kelas tidak konsisten</strong> — <code>=+65</code>, <code>=+78</code>, <code>=+87</code>. Normalisasi parser wajib (FR-1.3).</li>
+    <li><strong>Poomsae Semi Prestasi hanya terbagi gender/umur/tipe</strong> pada data mentah, menghasilkan grup hingga 135 orang. Perlu keputusan Q2 sebelum implementasi.</li>
+  </ol>
+</section>
+
+<section id="s18">
+  <h2><span class="num">B</span><span>Lampiran · Analisis Bagan Existing</span></h2>
+  <div class="tw"><table>
+    <thead><tr><th>Temuan pada 23 PDF turnamen</th><th>Implikasi</th></tr></thead>
+    <tbody>
+      <tr><td>Bagan prestasi digenerate TKD Tomato — footer <em>Printed by Tomato, Copyright 2015</em></td><td>Sistem baru harus setidaknya menyamai kualitas dan keterbacaan output ini</td></tr>
+      <tr><td>Header memuat nama turnamen, arena, kategori (<code>Junior M-63</code>), jumlah peserta (<code>18 competitors</code>), tanggal</td><td>Wajib ada di ekspor — FR-9.1</td></tr>
+      <tr><td>Kode partai berawalan huruf arena: <code>A01</code>…<code>A53</code>, <code>V01</code>…<code>V10</code>, diurutkan per ronde lintas kategori</td><td>Mengonfirmasi aturan penomoran BR-9</td></tr>
+      <tr><td>Blok medali <code>1. / 2. / 3. / 3.</code></td><td>Mengonfirmasi default dua perunggu — BR-7</td></tr>
+      <tr><td>Bagan semi prestasi berupa daftar berpasangan dengan nomor partai, bukan bracket grafis</td><td>Sistem baru menyediakan kedua format; daftar berpasangan lebih ringkas untuk pool yang banyak</td></tr>
+      <tr><td>Poomsae Pair/Team menampilkan nama anggota dipisah <code>|</code> dan terpotong bila panjang</td><td>Ekspor harus menangani nama tim panjang dengan wrap atau ellipsis terkontrol</td></tr>
+      <tr><td>Freestyle Poomsae hanya tabel urutan tampil</td><td>FR-9.5</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>
+  Dokumen ini adalah spesifikasi produk, bukan desain teknis final. Pertanyaan pada Bab 16 harus dijawab sebelum M1 dimulai karena berdampak langsung pada struktur mesin draw. — BaganTKD PRD v1.0, 9 September 2026.
+</footer>
+</main>
+</div>

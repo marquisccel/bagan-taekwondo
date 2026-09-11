@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "datasets": {
+    "REAL_2026": {
+      "kind": "PRIVATE",
+      "path": "data/private/DATA_KOLEKTIF_FESTIVAL_PRESTASI - query_kolektif.csv",
+      "sha256": "5b7539410cd7663c568113ba3a67d8bbace12fe123bed4a13d7b647254015cce",
+      "rows": 3154,
+      "columns": 13
+    },
+    "SYNTHETIC_5K": {
+      "kind": "GENERATED",
+      "generator": "tools/draw-simulator synthetic",
+      "entries": 5000,
+      "seed": "5000",
+      "sha256": "03b5bb55d1309a6d7a0a1f237f817e0b3b292b90b38752269230ee7922b67642"
+    },
+    "SYNTHETIC_10K": {
+      "kind": "GENERATED",
+      "generator": "tools/draw-simulator synthetic",
+      "entries": 10000,
+      "seed": "10000",
+      "sha256": "26b86290a041a6e695e1a15914fa46337aefa169d55d214ff2bd968f485ed1ea"
+    }
+  },
+  "goldenSeed": "20260827",
+  "robustnessSeeds": [
+    "1",
+    "2",
+    "3",
+    "5",
+    "8",
+    "13",
+    "21",
+    "34",
+    "55",
+    "89",
+    "144",
+    "233",
+    "377",
+    "610",
+    "987",
+    "1597",
+    "2584",
+    "4181",
+    "6765",
+    "10946"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "bagan-tkd",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "typecheck": "tsc -b tsconfig.build.json && tsc -p tsconfig.lint.json && tsc -p apps/api/tsconfig.lint.json && pnpm --filter @bagantkd/web typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:property": "vitest run --project property",
+    "test:golden": "vitest run --project golden",
+    "test:db": "vitest run --project db",
+    "db:generate": "pnpm --filter @bagantkd/db generate",
+    "db:migrate": "pnpm --filter @bagantkd/db migrate",
+    "simulate": "pnpm --filter @bagantkd/draw-simulator simulate"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@types/node": "22.20.2",
+    "eslint": "9.39.5",
+    "fast-check": "3.23.2",
+    "globals": "16.4.0",
+    "prettier": "3.9.6",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.70.0",
+    "vitest": "3.2.7"
+  }
+}

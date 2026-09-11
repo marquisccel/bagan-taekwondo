@@ -1,0 +1,1775 @@
+{
+  "schemaVersion": 1,
+  "code": "PIALA_GUBERNUR_2026_PROVISIONAL",
+  "name": "Piala Gubernur Jawa Timur Antar Pelajar 2026 - provisional rule set",
+  "status": "DRAFT",
+  "tournament": {
+    "code": "PIALA_GUBERNUR_JATIM_2026",
+    "name": "Piala Gubernur Jawa Timur Antar Pelajar 2026",
+    "eventStart": "2026-08-27",
+    "eventEnd": "2026-08-30",
+    "timezone": "Asia/Jakarta"
+  },
+  "age": {
+    "policy": "BIRTH_YEAR",
+    "referenceYear": 2026,
+    "cutoffDate": null,
+    "provenance": {
+      "source": "EVIDENCE_2026",
+      "note": "F-26: divisions follow birth-year bands."
+    }
+  },
+  "ageDivisions": [
+    {
+      "code": "PRA_CADET_A",
+      "label": "Pra Cadet A",
+      "streams": ["SEMI_PRESTASI"],
+      "minBirthYear": 2020,
+      "maxBirthYear": 2021,
+      "order": 1,
+      "playUp": "ALLOW_ONE_DIVISION_WITH_WARNING",
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "F-26 birth-year band; play-up tolerated in 2026 (F-27)."
+      }
+    },
+    {
+      "code": "PRA_CADET_B",
+      "label": "Pra Cadet B",
+      "streams": ["SEMI_PRESTASI"],
+      "minBirthYear": 2018,
+      "maxBirthYear": 2019,
+      "order": 2,
+      "playUp": "ALLOW_ONE_DIVISION_WITH_WARNING",
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "F-26 birth-year band; play-up tolerated in 2026 (F-27)."
+      }
+    },
+    {
+      "code": "PRA_CADET_C",
+      "label": "Pra Cadet C",
+      "streams": ["SEMI_PRESTASI"],
+      "minBirthYear": 2015,
+      "maxBirthYear": 2017,
+      "order": 3,
+      "playUp": "ALLOW_ONE_DIVISION_WITH_WARNING",
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "F-26 birth-year band; play-up tolerated in 2026 (F-27)."
+      }
+    },
+    {
+      "code": "PRA_CADET",
+      "label": "Pra Cadet",
+      "streams": ["PRESTASI"],
+      "minBirthYear": 2015,
+      "maxBirthYear": 2017,
+      "order": 3,
+      "playUp": "ALLOW_ONE_DIVISION_WITH_WARNING",
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "F-26 birth-year band; play-up tolerated in 2026 (F-27)."
+      }
+    },
+    {
+      "code": "CADET",
+      "label": "Cadet",
+      "streams": ["PRESTASI", "SEMI_PRESTASI"],
+      "minBirthYear": 2012,
+      "maxBirthYear": 2014,
+      "order": 4,
+      "playUp": "ALLOW_ONE_DIVISION_WITH_WARNING",
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "F-26 birth-year band; play-up tolerated in 2026 (F-27)."
+      }
+    },
+    {
+      "code": "JUNIOR",
+      "label": "Junior",
+      "streams": ["PRESTASI", "SEMI_PRESTASI"],
+      "minBirthYear": 2009,
+      "maxBirthYear": 2011,
+      "order": 5,
+      "playUp": "ALLOW_ONE_DIVISION_WITH_WARNING",
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "F-26 birth-year band; play-up tolerated in 2026 (F-27)."
+      }
+    },
+    {
+      "code": "SENIOR",
+      "label": "Senior",
+      "streams": ["PRESTASI", "SEMI_PRESTASI"],
+      "minBirthYear": 1900,
+      "maxBirthYear": 2008,
+      "order": 6,
+      "playUp": "ALLOW_ONE_DIVISION_WITH_WARNING",
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "F-26/F-27. No upper age limit observed for Senior (oldest registrant born 1997); 1900 = no limit until the committee decides."
+      }
+    }
+  ],
+  "belts": [
+    {
+      "code": "GEUP_9",
+      "rank": 1,
+      "label": "Geup 9 (kuning)",
+      "sourceLabels": ["GEUP 9 - KUNING"]
+    },
+    {
+      "code": "GEUP_8",
+      "rank": 2,
+      "label": "Geup 8 (kuning strip hijau)",
+      "sourceLabels": ["GEUP 8 - KUNING STRIP HIJAU"]
+    },
+    {
+      "code": "GEUP_7",
+      "rank": 3,
+      "label": "Geup 7 (hijau)",
+      "sourceLabels": ["GEUP 7 - HIJAU"]
+    },
+    {
+      "code": "GEUP_6",
+      "rank": 4,
+      "label": "Geup 6 (hijau strip biru)",
+      "sourceLabels": ["GEUP 6 - HIJAU STRIP BIRU"]
+    },
+    {
+      "code": "GEUP_5",
+      "rank": 5,
+      "label": "Geup 5 (biru)",
+      "sourceLabels": ["GEUP 5 - BIRU"]
+    },
+    {
+      "code": "GEUP_4",
+      "rank": 6,
+      "label": "Geup 4 (biru strip merah)",
+      "sourceLabels": ["GEUP 4 - BIRU STRIP MERAH"]
+    },
+    {
+      "code": "GEUP_3",
+      "rank": 7,
+      "label": "Geup 3 (merah)",
+      "sourceLabels": ["GEUP 3 - MERAH"]
+    },
+    {
+      "code": "GEUP_2",
+      "rank": 8,
+      "label": "Geup 2 (merah strip 1)",
+      "sourceLabels": ["GEUP 2 - MERAH STRIP 1"]
+    },
+    {
+      "code": "GEUP_1",
+      "rank": 9,
+      "label": "Geup 1 (merah strip 2)",
+      "sourceLabels": ["GEUP 1 - MERAH STRIP 2"]
+    },
+    {
+      "code": "DAN_1",
+      "rank": 10,
+      "label": "Dan 1 (hitam)",
+      "sourceLabels": ["HITAM - DAN 1"]
+    },
+    {
+      "code": "DAN_2",
+      "rank": 11,
+      "label": "Dan 2 (hitam)",
+      "sourceLabels": ["HITAM - DAN 2"]
+    },
+    {
+      "code": "DAN_3",
+      "rank": 12,
+      "label": "Dan 3 (hitam)",
+      "sourceLabels": ["HITAM - DAN 3"]
+    }
+  ],
+  "beltBandSchemes": [
+    {
+      "code": "POOMSAE_MOVEMENT_BANDS",
+      "purpose": "MOVEMENT",
+      "bands": [
+        {
+          "code": "T1",
+          "label": "Geup 9-8",
+          "beltCodes": ["GEUP_9", "GEUP_8"]
+        },
+        {
+          "code": "T3",
+          "label": "Geup 7-6",
+          "beltCodes": ["GEUP_7", "GEUP_6"]
+        },
+        {
+          "code": "T5",
+          "label": "Geup 5-4",
+          "beltCodes": ["GEUP_5", "GEUP_4"]
+        },
+        {
+          "code": "T6",
+          "label": "Geup 3",
+          "beltCodes": ["GEUP_3"]
+        }
+      ],
+      "provenance": {
+        "source": "STAKEHOLDER",
+        "note": "Q5: configurable belt-to-movement map; values from F-33 (533 entries, zero exceptions)."
+      }
+    }
+  ],
+  "movementMaps": [
+    {
+      "code": "POOMSAE_SEMI_MOVEMENT",
+      "schemeCode": "POOMSAE_MOVEMENT_BANDS",
+      "entries": [
+        {
+          "bandCode": "T1",
+          "movement": "Taegeuk 1"
+        },
+        {
+          "bandCode": "T3",
+          "movement": "Taegeuk 3"
+        },
+        {
+          "bandCode": "T5",
+          "movement": "Taegeuk 5"
+        },
+        {
+          "bandCode": "T6",
+          "movement": "Taegeuk 6"
+        }
+      ],
+      "provenance": {
+        "source": "STAKEHOLDER",
+        "note": "Q5 / F-33."
+      }
+    }
+  ],
+  "weightClassTables": [
+    {
+      "stream": "PRESTASI",
+      "ageDivisionCode": "CADET",
+      "gender": "MALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-33",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 33000
+        },
+        {
+          "code": "-37",
+          "lowerExclusiveG": 33000,
+          "upperInclusiveG": 37000
+        },
+        {
+          "code": "-41",
+          "lowerExclusiveG": 37000,
+          "upperInclusiveG": 41000
+        },
+        {
+          "code": "-45",
+          "lowerExclusiveG": 41000,
+          "upperInclusiveG": 45000
+        },
+        {
+          "code": "-49",
+          "lowerExclusiveG": 45000,
+          "upperInclusiveG": 49000
+        },
+        {
+          "code": "-53",
+          "lowerExclusiveG": 49000,
+          "upperInclusiveG": 53000
+        },
+        {
+          "code": "-57",
+          "lowerExclusiveG": 53000,
+          "upperInclusiveG": 57000
+        },
+        {
+          "code": "-61",
+          "lowerExclusiveG": 57000,
+          "upperInclusiveG": 61000
+        },
+        {
+          "code": "-65",
+          "lowerExclusiveG": 61000,
+          "upperInclusiveG": 65000
+        },
+        {
+          "code": "+65",
+          "lowerExclusiveG": 65000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "PRESTASI",
+      "ageDivisionCode": "CADET",
+      "gender": "FEMALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-29",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 29000
+        },
+        {
+          "code": "-33",
+          "lowerExclusiveG": 29000,
+          "upperInclusiveG": 33000
+        },
+        {
+          "code": "-37",
+          "lowerExclusiveG": 33000,
+          "upperInclusiveG": 37000
+        },
+        {
+          "code": "-41",
+          "lowerExclusiveG": 37000,
+          "upperInclusiveG": 41000
+        },
+        {
+          "code": "-44",
+          "lowerExclusiveG": 41000,
+          "upperInclusiveG": 44000
+        },
+        {
+          "code": "-47",
+          "lowerExclusiveG": 44000,
+          "upperInclusiveG": 47000
+        },
+        {
+          "code": "-51",
+          "lowerExclusiveG": 47000,
+          "upperInclusiveG": 51000
+        },
+        {
+          "code": "-55",
+          "lowerExclusiveG": 51000,
+          "upperInclusiveG": 55000
+        },
+        {
+          "code": "-59",
+          "lowerExclusiveG": 55000,
+          "upperInclusiveG": 59000
+        },
+        {
+          "code": "+59",
+          "lowerExclusiveG": 59000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "PRESTASI",
+      "ageDivisionCode": "JUNIOR",
+      "gender": "MALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-45",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 45000
+        },
+        {
+          "code": "-48",
+          "lowerExclusiveG": 45000,
+          "upperInclusiveG": 48000
+        },
+        {
+          "code": "-51",
+          "lowerExclusiveG": 48000,
+          "upperInclusiveG": 51000
+        },
+        {
+          "code": "-55",
+          "lowerExclusiveG": 51000,
+          "upperInclusiveG": 55000
+        },
+        {
+          "code": "-59",
+          "lowerExclusiveG": 55000,
+          "upperInclusiveG": 59000
+        },
+        {
+          "code": "-63",
+          "lowerExclusiveG": 59000,
+          "upperInclusiveG": 63000
+        },
+        {
+          "code": "-68",
+          "lowerExclusiveG": 63000,
+          "upperInclusiveG": 68000
+        },
+        {
+          "code": "-73",
+          "lowerExclusiveG": 68000,
+          "upperInclusiveG": 73000
+        },
+        {
+          "code": "-78",
+          "lowerExclusiveG": 73000,
+          "upperInclusiveG": 78000
+        },
+        {
+          "code": "+78",
+          "lowerExclusiveG": 78000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "PRESTASI",
+      "ageDivisionCode": "JUNIOR",
+      "gender": "FEMALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-42",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 42000
+        },
+        {
+          "code": "-44",
+          "lowerExclusiveG": 42000,
+          "upperInclusiveG": 44000
+        },
+        {
+          "code": "-46",
+          "lowerExclusiveG": 44000,
+          "upperInclusiveG": 46000
+        },
+        {
+          "code": "-49",
+          "lowerExclusiveG": 46000,
+          "upperInclusiveG": 49000
+        },
+        {
+          "code": "-52",
+          "lowerExclusiveG": 49000,
+          "upperInclusiveG": 52000
+        },
+        {
+          "code": "-55",
+          "lowerExclusiveG": 52000,
+          "upperInclusiveG": 55000
+        },
+        {
+          "code": "-59",
+          "lowerExclusiveG": 55000,
+          "upperInclusiveG": 59000
+        },
+        {
+          "code": "-63",
+          "lowerExclusiveG": 59000,
+          "upperInclusiveG": 63000
+        },
+        {
+          "code": "-68",
+          "lowerExclusiveG": 63000,
+          "upperInclusiveG": 68000
+        },
+        {
+          "code": "+68",
+          "lowerExclusiveG": 68000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "PRESTASI",
+      "ageDivisionCode": "PRA_CADET",
+      "gender": "MALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-23",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 23000
+        },
+        {
+          "code": "-26",
+          "lowerExclusiveG": 23000,
+          "upperInclusiveG": 26000
+        },
+        {
+          "code": "-30",
+          "lowerExclusiveG": 26000,
+          "upperInclusiveG": 30000
+        },
+        {
+          "code": "-34",
+          "lowerExclusiveG": 30000,
+          "upperInclusiveG": 34000
+        },
+        {
+          "code": "-38",
+          "lowerExclusiveG": 34000,
+          "upperInclusiveG": 38000
+        },
+        {
+          "code": "-43",
+          "lowerExclusiveG": 38000,
+          "upperInclusiveG": 43000
+        },
+        {
+          "code": "-48",
+          "lowerExclusiveG": 43000,
+          "upperInclusiveG": 48000
+        },
+        {
+          "code": "-53",
+          "lowerExclusiveG": 48000,
+          "upperInclusiveG": 53000
+        },
+        {
+          "code": "+53",
+          "lowerExclusiveG": 53000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "PRESTASI",
+      "ageDivisionCode": "PRA_CADET",
+      "gender": "FEMALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-23",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 23000
+        },
+        {
+          "code": "-26",
+          "lowerExclusiveG": 23000,
+          "upperInclusiveG": 26000
+        },
+        {
+          "code": "-30",
+          "lowerExclusiveG": 26000,
+          "upperInclusiveG": 30000
+        },
+        {
+          "code": "-34",
+          "lowerExclusiveG": 30000,
+          "upperInclusiveG": 34000
+        },
+        {
+          "code": "-38",
+          "lowerExclusiveG": 34000,
+          "upperInclusiveG": 38000
+        },
+        {
+          "code": "-43",
+          "lowerExclusiveG": 38000,
+          "upperInclusiveG": 43000
+        },
+        {
+          "code": "-53",
+          "lowerExclusiveG": 43000,
+          "upperInclusiveG": 53000
+        },
+        {
+          "code": "+53",
+          "lowerExclusiveG": 53000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "PRESTASI",
+      "ageDivisionCode": "SENIOR",
+      "gender": "MALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-54",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 54000
+        },
+        {
+          "code": "-58",
+          "lowerExclusiveG": 54000,
+          "upperInclusiveG": 58000
+        },
+        {
+          "code": "-63",
+          "lowerExclusiveG": 58000,
+          "upperInclusiveG": 63000
+        },
+        {
+          "code": "-68",
+          "lowerExclusiveG": 63000,
+          "upperInclusiveG": 68000
+        },
+        {
+          "code": "-74",
+          "lowerExclusiveG": 68000,
+          "upperInclusiveG": 74000
+        },
+        {
+          "code": "-80",
+          "lowerExclusiveG": 74000,
+          "upperInclusiveG": 80000
+        },
+        {
+          "code": "-87",
+          "lowerExclusiveG": 80000,
+          "upperInclusiveG": 87000
+        },
+        {
+          "code": "+87",
+          "lowerExclusiveG": 87000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "PRESTASI",
+      "ageDivisionCode": "SENIOR",
+      "gender": "FEMALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-46",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 46000
+        },
+        {
+          "code": "-49",
+          "lowerExclusiveG": 46000,
+          "upperInclusiveG": 49000
+        },
+        {
+          "code": "-53",
+          "lowerExclusiveG": 49000,
+          "upperInclusiveG": 53000
+        },
+        {
+          "code": "-62",
+          "lowerExclusiveG": 53000,
+          "upperInclusiveG": 62000
+        },
+        {
+          "code": "-73",
+          "lowerExclusiveG": 62000,
+          "upperInclusiveG": 73000
+        },
+        {
+          "code": "+73",
+          "lowerExclusiveG": 73000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "SEMI_PRESTASI",
+      "ageDivisionCode": "CADET",
+      "gender": "MALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-33",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 33000
+        },
+        {
+          "code": "-37",
+          "lowerExclusiveG": 33000,
+          "upperInclusiveG": 37000
+        },
+        {
+          "code": "-41",
+          "lowerExclusiveG": 37000,
+          "upperInclusiveG": 41000
+        },
+        {
+          "code": "-45",
+          "lowerExclusiveG": 41000,
+          "upperInclusiveG": 45000
+        },
+        {
+          "code": "-49",
+          "lowerExclusiveG": 45000,
+          "upperInclusiveG": 49000
+        },
+        {
+          "code": "-53",
+          "lowerExclusiveG": 49000,
+          "upperInclusiveG": 53000
+        },
+        {
+          "code": "-57",
+          "lowerExclusiveG": 53000,
+          "upperInclusiveG": 57000
+        },
+        {
+          "code": "-61",
+          "lowerExclusiveG": 57000,
+          "upperInclusiveG": 61000
+        },
+        {
+          "code": "-65",
+          "lowerExclusiveG": 61000,
+          "upperInclusiveG": 65000
+        },
+        {
+          "code": "+65",
+          "lowerExclusiveG": 65000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "SEMI_PRESTASI",
+      "ageDivisionCode": "CADET",
+      "gender": "FEMALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-29",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 29000
+        },
+        {
+          "code": "-33",
+          "lowerExclusiveG": 29000,
+          "upperInclusiveG": 33000
+        },
+        {
+          "code": "-37",
+          "lowerExclusiveG": 33000,
+          "upperInclusiveG": 37000
+        },
+        {
+          "code": "-41",
+          "lowerExclusiveG": 37000,
+          "upperInclusiveG": 41000
+        },
+        {
+          "code": "-44",
+          "lowerExclusiveG": 41000,
+          "upperInclusiveG": 44000
+        },
+        {
+          "code": "-47",
+          "lowerExclusiveG": 44000,
+          "upperInclusiveG": 47000
+        },
+        {
+          "code": "-51",
+          "lowerExclusiveG": 47000,
+          "upperInclusiveG": 51000
+        },
+        {
+          "code": "-55",
+          "lowerExclusiveG": 51000,
+          "upperInclusiveG": 55000
+        },
+        {
+          "code": "-59",
+          "lowerExclusiveG": 55000,
+          "upperInclusiveG": 59000
+        },
+        {
+          "code": "+59",
+          "lowerExclusiveG": 59000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "SEMI_PRESTASI",
+      "ageDivisionCode": "JUNIOR",
+      "gender": "MALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-45",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 45000
+        },
+        {
+          "code": "-48",
+          "lowerExclusiveG": 45000,
+          "upperInclusiveG": 48000
+        },
+        {
+          "code": "-51",
+          "lowerExclusiveG": 48000,
+          "upperInclusiveG": 51000
+        },
+        {
+          "code": "-55",
+          "lowerExclusiveG": 51000,
+          "upperInclusiveG": 55000
+        },
+        {
+          "code": "-59",
+          "lowerExclusiveG": 55000,
+          "upperInclusiveG": 59000
+        },
+        {
+          "code": "-63",
+          "lowerExclusiveG": 59000,
+          "upperInclusiveG": 63000
+        },
+        {
+          "code": "-68",
+          "lowerExclusiveG": 63000,
+          "upperInclusiveG": 68000
+        },
+        {
+          "code": "-73",
+          "lowerExclusiveG": 68000,
+          "upperInclusiveG": 73000
+        },
+        {
+          "code": "-78",
+          "lowerExclusiveG": 73000,
+          "upperInclusiveG": 78000
+        },
+        {
+          "code": "+78",
+          "lowerExclusiveG": 78000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "SEMI_PRESTASI",
+      "ageDivisionCode": "JUNIOR",
+      "gender": "FEMALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-42",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 42000
+        },
+        {
+          "code": "-44",
+          "lowerExclusiveG": 42000,
+          "upperInclusiveG": 44000
+        },
+        {
+          "code": "-46",
+          "lowerExclusiveG": 44000,
+          "upperInclusiveG": 46000
+        },
+        {
+          "code": "-49",
+          "lowerExclusiveG": 46000,
+          "upperInclusiveG": 49000
+        },
+        {
+          "code": "-52",
+          "lowerExclusiveG": 49000,
+          "upperInclusiveG": 52000
+        },
+        {
+          "code": "-55",
+          "lowerExclusiveG": 52000,
+          "upperInclusiveG": 55000
+        },
+        {
+          "code": "-59",
+          "lowerExclusiveG": 55000,
+          "upperInclusiveG": 59000
+        },
+        {
+          "code": "-63",
+          "lowerExclusiveG": 59000,
+          "upperInclusiveG": 63000
+        },
+        {
+          "code": "-68",
+          "lowerExclusiveG": 63000,
+          "upperInclusiveG": 68000
+        },
+        {
+          "code": "+68",
+          "lowerExclusiveG": 68000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "SEMI_PRESTASI",
+      "ageDivisionCode": "PRA_CADET_A",
+      "gender": "MALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-18",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 18000
+        },
+        {
+          "code": "-20",
+          "lowerExclusiveG": 18000,
+          "upperInclusiveG": 20000
+        },
+        {
+          "code": "-22",
+          "lowerExclusiveG": 20000,
+          "upperInclusiveG": 22000
+        },
+        {
+          "code": "-24",
+          "lowerExclusiveG": 22000,
+          "upperInclusiveG": 24000
+        },
+        {
+          "code": "-26",
+          "lowerExclusiveG": 24000,
+          "upperInclusiveG": 26000
+        },
+        {
+          "code": "-30",
+          "lowerExclusiveG": 26000,
+          "upperInclusiveG": 30000
+        },
+        {
+          "code": "-33",
+          "lowerExclusiveG": 30000,
+          "upperInclusiveG": 33000
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "SEMI_PRESTASI",
+      "ageDivisionCode": "PRA_CADET_A",
+      "gender": "FEMALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-18",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 18000
+        },
+        {
+          "code": "-20",
+          "lowerExclusiveG": 18000,
+          "upperInclusiveG": 20000
+        },
+        {
+          "code": "-22",
+          "lowerExclusiveG": 20000,
+          "upperInclusiveG": 22000
+        },
+        {
+          "code": "-24",
+          "lowerExclusiveG": 22000,
+          "upperInclusiveG": 24000
+        },
+        {
+          "code": "-28",
+          "lowerExclusiveG": 24000,
+          "upperInclusiveG": 28000
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "SEMI_PRESTASI",
+      "ageDivisionCode": "PRA_CADET_B",
+      "gender": "MALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-20",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 20000
+        },
+        {
+          "code": "-22",
+          "lowerExclusiveG": 20000,
+          "upperInclusiveG": 22000
+        },
+        {
+          "code": "-24",
+          "lowerExclusiveG": 22000,
+          "upperInclusiveG": 24000
+        },
+        {
+          "code": "-26",
+          "lowerExclusiveG": 24000,
+          "upperInclusiveG": 26000
+        },
+        {
+          "code": "-28",
+          "lowerExclusiveG": 26000,
+          "upperInclusiveG": 28000
+        },
+        {
+          "code": "-30",
+          "lowerExclusiveG": 28000,
+          "upperInclusiveG": 30000
+        },
+        {
+          "code": "-33",
+          "lowerExclusiveG": 30000,
+          "upperInclusiveG": 33000
+        },
+        {
+          "code": "-36",
+          "lowerExclusiveG": 33000,
+          "upperInclusiveG": 36000
+        },
+        {
+          "code": "-39",
+          "lowerExclusiveG": 36000,
+          "upperInclusiveG": 39000
+        },
+        {
+          "code": "-42",
+          "lowerExclusiveG": 39000,
+          "upperInclusiveG": 42000
+        },
+        {
+          "code": "-45",
+          "lowerExclusiveG": 42000,
+          "upperInclusiveG": 45000
+        },
+        {
+          "code": "+45",
+          "lowerExclusiveG": 45000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "SEMI_PRESTASI",
+      "ageDivisionCode": "PRA_CADET_B",
+      "gender": "FEMALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-20",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 20000
+        },
+        {
+          "code": "-22",
+          "lowerExclusiveG": 20000,
+          "upperInclusiveG": 22000
+        },
+        {
+          "code": "-24",
+          "lowerExclusiveG": 22000,
+          "upperInclusiveG": 24000
+        },
+        {
+          "code": "-26",
+          "lowerExclusiveG": 24000,
+          "upperInclusiveG": 26000
+        },
+        {
+          "code": "-28",
+          "lowerExclusiveG": 26000,
+          "upperInclusiveG": 28000
+        },
+        {
+          "code": "-30",
+          "lowerExclusiveG": 28000,
+          "upperInclusiveG": 30000
+        },
+        {
+          "code": "-33",
+          "lowerExclusiveG": 30000,
+          "upperInclusiveG": 33000
+        },
+        {
+          "code": "-36",
+          "lowerExclusiveG": 33000,
+          "upperInclusiveG": 36000
+        },
+        {
+          "code": "-39",
+          "lowerExclusiveG": 36000,
+          "upperInclusiveG": 39000
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "SEMI_PRESTASI",
+      "ageDivisionCode": "PRA_CADET_C",
+      "gender": "MALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-20",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 20000
+        },
+        {
+          "code": "-23",
+          "lowerExclusiveG": 20000,
+          "upperInclusiveG": 23000
+        },
+        {
+          "code": "-26",
+          "lowerExclusiveG": 23000,
+          "upperInclusiveG": 26000
+        },
+        {
+          "code": "-30",
+          "lowerExclusiveG": 26000,
+          "upperInclusiveG": 30000
+        },
+        {
+          "code": "-34",
+          "lowerExclusiveG": 30000,
+          "upperInclusiveG": 34000
+        },
+        {
+          "code": "-38",
+          "lowerExclusiveG": 34000,
+          "upperInclusiveG": 38000
+        },
+        {
+          "code": "-43",
+          "lowerExclusiveG": 38000,
+          "upperInclusiveG": 43000
+        },
+        {
+          "code": "-48",
+          "lowerExclusiveG": 43000,
+          "upperInclusiveG": 48000
+        },
+        {
+          "code": "-53",
+          "lowerExclusiveG": 48000,
+          "upperInclusiveG": 53000
+        },
+        {
+          "code": "+53",
+          "lowerExclusiveG": 53000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "SEMI_PRESTASI",
+      "ageDivisionCode": "PRA_CADET_C",
+      "gender": "FEMALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-20",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 20000
+        },
+        {
+          "code": "-23",
+          "lowerExclusiveG": 20000,
+          "upperInclusiveG": 23000
+        },
+        {
+          "code": "-26",
+          "lowerExclusiveG": 23000,
+          "upperInclusiveG": 26000
+        },
+        {
+          "code": "-30",
+          "lowerExclusiveG": 26000,
+          "upperInclusiveG": 30000
+        },
+        {
+          "code": "-34",
+          "lowerExclusiveG": 30000,
+          "upperInclusiveG": 34000
+        },
+        {
+          "code": "-38",
+          "lowerExclusiveG": 34000,
+          "upperInclusiveG": 38000
+        },
+        {
+          "code": "-43",
+          "lowerExclusiveG": 38000,
+          "upperInclusiveG": 43000
+        },
+        {
+          "code": "-48",
+          "lowerExclusiveG": 43000,
+          "upperInclusiveG": 48000
+        },
+        {
+          "code": "-53",
+          "lowerExclusiveG": 48000,
+          "upperInclusiveG": 53000
+        },
+        {
+          "code": "+53",
+          "lowerExclusiveG": 53000,
+          "upperInclusiveG": null
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "SEMI_PRESTASI",
+      "ageDivisionCode": "SENIOR",
+      "gender": "MALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-54",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 54000
+        },
+        {
+          "code": "-58",
+          "lowerExclusiveG": 54000,
+          "upperInclusiveG": 58000
+        },
+        {
+          "code": "-63",
+          "lowerExclusiveG": 58000,
+          "upperInclusiveG": 63000
+        },
+        {
+          "code": "-68",
+          "lowerExclusiveG": 63000,
+          "upperInclusiveG": 68000
+        },
+        {
+          "code": "-74",
+          "lowerExclusiveG": 68000,
+          "upperInclusiveG": 74000
+        },
+        {
+          "code": "-80",
+          "lowerExclusiveG": 74000,
+          "upperInclusiveG": 80000
+        },
+        {
+          "code": "-87",
+          "lowerExclusiveG": 80000,
+          "upperInclusiveG": 87000
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    },
+    {
+      "stream": "SEMI_PRESTASI",
+      "ageDivisionCode": "SENIOR",
+      "gender": "FEMALE",
+      "completeness": "OBSERVED_SUBSET",
+      "classes": [
+        {
+          "code": "-46",
+          "lowerExclusiveG": null,
+          "upperInclusiveG": 46000
+        },
+        {
+          "code": "-49",
+          "lowerExclusiveG": 46000,
+          "upperInclusiveG": 49000
+        },
+        {
+          "code": "-53",
+          "lowerExclusiveG": 49000,
+          "upperInclusiveG": 53000
+        },
+        {
+          "code": "-57",
+          "lowerExclusiveG": 53000,
+          "upperInclusiveG": 57000
+        },
+        {
+          "code": "-73",
+          "lowerExclusiveG": 57000,
+          "upperInclusiveG": 73000
+        }
+      ],
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Only classes that received registrations in 2026; a lower bound may be wrong where an intermediate class had no registrants. Replace with the official table."
+      }
+    }
+  ],
+  "composition": [
+    {
+      "format": "INDIVIDUAL",
+      "size": 1,
+      "genders": null
+    },
+    {
+      "format": "PAIR",
+      "size": 2,
+      "genders": ["FEMALE", "MALE"]
+    },
+    {
+      "format": "TEAM",
+      "size": 3,
+      "genders": null
+    }
+  ],
+  "plausibility": {
+    "heightMm": {
+      "min": 900,
+      "max": 2100
+    },
+    "weightG": {
+      "min": 12000,
+      "max": 130000
+    },
+    "bmiTenths": {
+      "min": 110,
+      "max": 400
+    },
+    "provenance": {
+      "source": "ENGINEERING_DEFAULT",
+      "note": "Plausibility screens catch data-entry errors; they are not eligibility rules."
+    }
+  },
+  "poolPolicies": [
+    {
+      "code": "KYORUGI_SEMI_POOL",
+      "poolMin": 2,
+      "poolTarget": 4,
+      "poolMax": 4,
+      "sizePenaltyFp": {
+        "1": 40000,
+        "2": 10000,
+        "3": 2500,
+        "4": 0
+      },
+      "sizePenaltyProvenance": {
+        "source": "ENGINEERING_DEFAULT",
+        "note": "Pool-size penalties are placeholders; calibrated in Phase 3."
+      },
+      "tiers": {
+        "tier1SlackFp": 500,
+        "forbidIdealRegression": true,
+        "contingentWeightPermille": 1000,
+        "bracketWeightPermille": 1000,
+        "provenance": {
+          "source": "ENGINEERING_DEFAULT",
+          "note": "Tier weights and slack are placeholders; calibrated in Phase 3 with the draw simulator."
+        }
+      },
+      "singleton": {
+        "policy": "WALKOVER_WITH_SUGGESTIONS",
+        "provenance": {
+          "source": "STAKEHOLDER",
+          "note": "Q4 (2026-09-11): singleton = walkover plus merge suggestions; never an automatic merge."
+        }
+      },
+      "measurementSource": "REGISTERED_DATA",
+      "contingentKey": "EXACT",
+      "localSearchBudgetPerEntry": 200,
+      "belt": {
+        "policy": "SOFT",
+        "schemeCode": null,
+        "provenance": {
+          "source": "STAKEHOLDER",
+          "note": "Q3 (2026-09-11): Kyorugi semi prestasi belt = SOFT (2026 evidence)."
+        }
+      },
+      "tolerances": [
+        {
+          "dimension": "WEIGHT",
+          "ageDivisionCode": null,
+          "active": true,
+          "ideal": 5000,
+          "idealProvenance": {
+            "source": "STAKEHOLDER",
+            "note": "Q2: ideal weight range 5 kg."
+          },
+          "max": {
+            "status": "UNSET"
+          },
+          "linearWeightPermille": 1000,
+          "overflowWeightPermille": 4000
+        },
+        {
+          "dimension": "HEIGHT",
+          "ageDivisionCode": null,
+          "active": true,
+          "ideal": 50,
+          "idealProvenance": {
+            "source": "STAKEHOLDER",
+            "note": "Q2: ideal height range 5 cm."
+          },
+          "max": {
+            "status": "UNSET"
+          },
+          "linearWeightPermille": 1000,
+          "overflowWeightPermille": 4000
+        },
+        {
+          "dimension": "BELT",
+          "ageDivisionCode": null,
+          "active": true,
+          "ideal": 2,
+          "idealProvenance": {
+            "source": "ENGINEERING_DEFAULT",
+            "note": "Ideal belt-rank spread not specified by the committee; 2 ranks chosen for cost normalization (86% of 2026 committee pools). Calibrate."
+          },
+          "max": {
+            "status": "UNSET"
+          },
+          "linearWeightPermille": 1000,
+          "overflowWeightPermille": 4000
+        }
+      ]
+    },
+    {
+      "code": "POOMSAE_SEMI_POOL",
+      "poolMin": 2,
+      "poolTarget": 4,
+      "poolMax": 4,
+      "sizePenaltyFp": {
+        "1": 40000,
+        "2": 10000,
+        "3": 2500,
+        "4": 0
+      },
+      "sizePenaltyProvenance": {
+        "source": "ENGINEERING_DEFAULT",
+        "note": "Pool-size penalties are placeholders; calibrated in Phase 3."
+      },
+      "tiers": {
+        "tier1SlackFp": 500,
+        "forbidIdealRegression": true,
+        "contingentWeightPermille": 1000,
+        "bracketWeightPermille": 1000,
+        "provenance": {
+          "source": "ENGINEERING_DEFAULT",
+          "note": "Tier weights and slack are placeholders; calibrated in Phase 3 with the draw simulator."
+        }
+      },
+      "singleton": {
+        "policy": "WALKOVER_WITH_SUGGESTIONS",
+        "provenance": {
+          "source": "STAKEHOLDER",
+          "note": "Q4 (2026-09-11): singleton = walkover plus merge suggestions; never an automatic merge."
+        }
+      },
+      "measurementSource": "REGISTERED_DATA",
+      "contingentKey": "EXACT",
+      "localSearchBudgetPerEntry": 200,
+      "belt": {
+        "policy": "DISABLED",
+        "schemeCode": null,
+        "provenance": {
+          "source": "STAKEHOLDER",
+          "note": "Q5: belt separation is enforced by the MOVEMENT partition dimension."
+        }
+      },
+      "tolerances": [
+        {
+          "dimension": "WEIGHT",
+          "ageDivisionCode": null,
+          "active": false,
+          "ideal": 5000,
+          "idealProvenance": {
+            "source": "STAKEHOLDER",
+            "note": "Q5: weight disabled by default for poomsae semi prestasi (2026 evidence); configurable."
+          },
+          "max": {
+            "status": "UNSET"
+          },
+          "linearWeightPermille": 1000,
+          "overflowWeightPermille": 4000
+        },
+        {
+          "dimension": "HEIGHT",
+          "ageDivisionCode": null,
+          "active": true,
+          "ideal": 50,
+          "idealProvenance": {
+            "source": "STAKEHOLDER",
+            "note": "Q2: ideal height range 5 cm."
+          },
+          "max": {
+            "status": "UNSET"
+          },
+          "linearWeightPermille": 1000,
+          "overflowWeightPermille": 4000
+        },
+        {
+          "dimension": "BELT",
+          "ageDivisionCode": null,
+          "active": false,
+          "ideal": 1,
+          "idealProvenance": {
+            "source": "ENGINEERING_DEFAULT",
+            "note": "Inactive: the movement partition already limits belt spread."
+          },
+          "max": {
+            "status": "UNSET"
+          },
+          "linearWeightPermille": 1000,
+          "overflowWeightPermille": 4000
+        }
+      ]
+    }
+  ],
+  "categoryTemplates": [
+    {
+      "code": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "format": "INDIVIDUAL",
+      "genderMode": "BY_ENTRY",
+      "dimensions": ["STREAM", "DISCIPLINE", "AGE_DIVISION", "GENDER", "WEIGHT_CLASS"],
+      "drawFormat": "SINGLE_ELIMINATION",
+      "poolPolicyCode": null,
+      "movementMapCode": null,
+      "byePolicy": "SEED_PRIORITY",
+      "bronzeMedals": 2,
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Tomato brackets; medal block 1./2./3./3."
+      }
+    },
+    {
+      "code": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "format": "INDIVIDUAL",
+      "genderMode": "BY_ENTRY",
+      "dimensions": ["STREAM", "DISCIPLINE", "AGE_DIVISION", "GENDER", "WEIGHT_CLASS"],
+      "drawFormat": "POOLED_SINGLE_ELIMINATION",
+      "poolPolicyCode": "KYORUGI_SEMI_POOL",
+      "movementMapCode": null,
+      "byePolicy": "CONTINGENT_AWARE",
+      "bronzeMedals": 2,
+      "provenance": {
+        "source": "TBD",
+        "note": "Q1: each semi prestasi pool is an independent competition unit. The medal structure per pool (bronze count) is not decided."
+      }
+    },
+    {
+      "code": "POOMSAE_PRESTASI_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "format": "INDIVIDUAL",
+      "genderMode": "BY_ENTRY",
+      "dimensions": ["STREAM", "DISCIPLINE", "AGE_DIVISION", "GENDER", "FORMAT"],
+      "drawFormat": "SINGLE_ELIMINATION",
+      "poolPolicyCode": null,
+      "movementMapCode": null,
+      "byePolicy": "SEED_PRIORITY",
+      "bronzeMedals": 2,
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Tomato brackets."
+      }
+    },
+    {
+      "code": "POOMSAE_PRESTASI_PAIR",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "format": "PAIR",
+      "genderMode": "MIXED",
+      "dimensions": ["STREAM", "DISCIPLINE", "AGE_DIVISION", "GENDER", "FORMAT"],
+      "drawFormat": "SINGLE_ELIMINATION",
+      "poolPolicyCode": null,
+      "movementMapCode": null,
+      "byePolicy": "SEED_PRIORITY",
+      "bronzeMedals": 2,
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Pairs are one male + one female (F-04)."
+      }
+    },
+    {
+      "code": "POOMSAE_PRESTASI_TEAM",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "format": "TEAM",
+      "genderMode": "BY_ENTRY",
+      "dimensions": ["STREAM", "DISCIPLINE", "AGE_DIVISION", "GENDER", "FORMAT"],
+      "drawFormat": "SINGLE_ELIMINATION",
+      "poolPolicyCode": null,
+      "movementMapCode": null,
+      "byePolicy": "SEED_PRIORITY",
+      "bronzeMedals": 2,
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Teams are three members of one gender (R-11)."
+      }
+    },
+    {
+      "code": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "format": "INDIVIDUAL",
+      "genderMode": "BY_ENTRY",
+      "dimensions": ["STREAM", "DISCIPLINE", "AGE_DIVISION", "GENDER", "FORMAT", "MOVEMENT"],
+      "drawFormat": "POOLED_SINGLE_ELIMINATION",
+      "poolPolicyCode": "POOMSAE_SEMI_POOL",
+      "movementMapCode": "POOMSAE_SEMI_MOVEMENT",
+      "byePolicy": "CONTINGENT_AWARE",
+      "bronzeMedals": 2,
+      "provenance": {
+        "source": "TBD",
+        "note": "Q1: each semi prestasi pool is an independent competition unit. The medal structure per pool (bronze count) is not decided."
+      }
+    },
+    {
+      "code": "FREESTYLE_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "FREESTYLE_POOMSAE",
+      "format": "INDIVIDUAL",
+      "genderMode": "BY_ENTRY",
+      "dimensions": ["STREAM", "DISCIPLINE", "AGE_DIVISION", "GENDER", "FORMAT"],
+      "drawFormat": "PERFORMANCE_ORDER",
+      "poolPolicyCode": null,
+      "movementMapCode": null,
+      "byePolicy": null,
+      "bronzeMedals": null,
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Freestyle is a performance-order list. Mapping FREESTYLE to the PRESTASI stream is an assumption (the source has no stream)."
+      }
+    },
+    {
+      "code": "FREESTYLE_PAIR",
+      "stream": "PRESTASI",
+      "discipline": "FREESTYLE_POOMSAE",
+      "format": "PAIR",
+      "genderMode": "MIXED",
+      "dimensions": ["STREAM", "DISCIPLINE", "AGE_DIVISION", "GENDER", "FORMAT"],
+      "drawFormat": "PERFORMANCE_ORDER",
+      "poolPolicyCode": null,
+      "movementMapCode": null,
+      "byePolicy": null,
+      "bronzeMedals": null,
+      "provenance": {
+        "source": "EVIDENCE_2026",
+        "note": "Freestyle pair is mixed-gender in the 2026 data."
+      }
+    }
+  ],
+  "sourceVocabulary": {
+    "klasifikasi": {
+      "KYORUGI PRESTASI": {
+        "stream": "PRESTASI",
+        "discipline": "KYORUGI"
+      },
+      "KYORUGI SEMI PRESTASI": {
+        "stream": "SEMI_PRESTASI",
+        "discipline": "KYORUGI"
+      },
+      "POOMSAE PRESTASI": {
+        "stream": "PRESTASI",
+        "discipline": "POOMSAE"
+      },
+      "POOMSAE SEMI PRESTASI": {
+        "stream": "SEMI_PRESTASI",
+        "discipline": "POOMSAE"
+      },
+      "FREESTYLE": {
+        "stream": "PRESTASI",
+        "discipline": "FREESTYLE_POOMSAE"
+      }
+    },
+    "divisi": {
+      "PRA CADET A": "PRA_CADET_A",
+      "PRA CADET B": "PRA_CADET_B",
+      "PRA CADET C": "PRA_CADET_C",
+      "PRA CADET": "PRA_CADET",
+      "CADET": "CADET",
+      "JUNIOR": "JUNIOR",
+      "SENIOR": "SENIOR"
+    },
+    "gender": {
+      "Laki-laki": "MALE",
+      "Perempuan": "FEMALE"
+    },
+    "format": {
+      "INDIVIDUAL": "INDIVIDUAL",
+      "PAIR": "PAIR",
+      "TEAM": "TEAM"
+    }
+  },
+  "notes": [
+    "Provisional rule set derived from docs/SOURCE_ANALYSIS.md and the committee answers of 2026-09-11 (Q1-Q5).",
+    "Maximum tolerances are intentionally UNSET: simulations and candidate draws are allowed, LOCK is refused (ADR-0007).",
+    "Weight-class tables are observed subsets, not the official tables."
+  ]
+}
