@@ -1,7 +1,7 @@
 import type { RuleSet } from '@bagantkd/rules';
 import { parseDrawSeed, Prng, type DrawSeed } from '@bagantkd/shared';
 
-import { toCsv } from './csv.js';
+import { toCsv } from '@bagantkd/intake';
 
 /**
  * Deterministic synthetic registration exports for load and robustness testing (5k, 10k).
@@ -163,27 +163,33 @@ function contingentWeights(names: readonly string[]): Weighted<string> {
   );
 }
 
+/**
+ * The class that contains `weightG`. When the table is an observed subset that does not cover the
+ * weight, the weight is clamped into the table's range, so every clean row is internally
+ * consistent (a class that does not contain the athlete's weight would be dirty data).
+ */
 function weightClassFor(
   ruleSet: RuleSet,
   stream: string,
   divisionCode: string,
   gender: string,
   weightG: number,
-): string | null {
+): { code: string; weightG: number } | null {
   const table = ruleSet.weightClassTables.find(
     (t) => t.stream === stream && t.ageDivisionCode === divisionCode && t.gender === gender,
   );
-  if (!table) return null;
+  const first = table?.classes[0];
+  const last = table?.classes[table.classes.length - 1];
+  if (!table || !first || !last) return null;
+  let w = weightG;
+  if (last.upperInclusiveG !== null && w > last.upperInclusiveG) w = last.upperInclusiveG;
+  if (first.lowerExclusiveG !== null && w <= first.lowerExclusiveG) w = first.lowerExclusiveG + 10;
   for (const c of table.classes) {
-    const aboveLower = c.lowerExclusiveG === null || weightG > c.lowerExclusiveG;
-    const belowUpper = c.upperInclusiveG === null || weightG <= c.upperInclusiveG;
-    if (aboveLower && belowUpper) return c.code.startsWith('+') ? `=${c.code}` : c.code;
+    const aboveLower = c.lowerExclusiveG === null || w > c.lowerExclusiveG;
+    const belowUpper = c.upperInclusiveG === null || w <= c.upperInclusiveG;
+    if (aboveLower && belowUpper) return { code: c.code.startsWith('+') ? `=${c.code}` : c.code, weightG: w };
   }
-  const last = table.classes[table.classes.length - 1];
-  const first = table.classes[0];
-  if (!last || !first) return null;
-  const heaviest = last.upperInclusiveG === null ? `=${last.code}` : last.code;
-  return first.upperInclusiveG !== null && weightG <= first.upperInclusiveG ? first.code : heaviest;
+  return null;
 }
 
 export function generateSyntheticRows(ruleSet: RuleSet, options: SyntheticOptions): Row[] {
@@ -210,21 +216,29 @@ export function generateSyntheticRows(ruleSet: RuleSet, options: SyntheticOption
     const day = 1 + rng.nextBelow(28);
     const heightMm = around(rng, profile.heightMm + (gender === 'Laki-laki' ? 20 : 0), 90);
     const bmiTenths = around(rng, 180, 30);
-    const weightG = Math.floor((heightMm * heightMm * bmiTenths) / 10_000);
+    // Rounded to the 10 g the export prints, so the class is chosen from the written weight.
+    let weightG = Math.floor((heightMm * heightMm * bmiTenths) / 100_000) * 10;
     const belts = stream === 'SEMI_PRESTASI' ? SEMI_BELTS : PRESTASI_BELTS;
     const id = nextId;
     nextId += 1;
     const nikDay = gender === 'Perempuan' ? day + 40 : day;
     let cls = format;
     if (klasifikasi.startsWith('KYORUGI')) {
-      cls =
-        weightClassFor(ruleSet, stream, divisionCode, gender === 'Laki-laki' ? 'MALE' : 'FEMALE', weightG) ??
-        '-99';
+      const wc = weightClassFor(
+        ruleSet,
+        stream,
+        divisionCode,
+        gender === 'Laki-laki' ? 'MALE' : 'FEMALE',
+        weightG,
+      );
+      cls = wc?.code ?? '-99';
+      weightG = wc?.weightG ?? weightG;
     }
     return {
       id_athlete: String(id),
       nama_tim: contingent,
-      nik: `3500${pad(rng.nextBelow(100), 2)}${pad(nikDay, 2)}${pad(month, 2)}${pad(year % 100, 2)}${pad(rng.nextBelow(10_000), 4)}`,
+      // Region and sequence digits derive from the unique row id: synthetic NIKs never collide.
+      nik: `35${pad(Math.floor(id / 10_000) % 10_000, 4)}${pad(nikDay, 2)}${pad(month, 2)}${pad(year % 100, 2)}${pad(id % 10_000, 4)}`,
       namalengkap: `SINTETIS ${pad(id, 6)}`,
       jeniskelamin: gender,
       tanggallahir: `${year}-${pad(month, 2)}-${pad(day, 2)}`,

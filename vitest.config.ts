@@ -37,7 +37,12 @@ export default defineConfig({
       },
       {
         ...workspaceSource,
-        test: { name: 'golden', include: common.map((g) => `${g}/*.golden.test.ts`), testTimeout: 300_000 },
+        test: {
+          name: 'golden',
+          include: common.map((g) => `${g}/*.golden.test.ts`),
+          testTimeout: 300_000,
+          hookTimeout: 300_000,
+        },
       },
       {
         ...workspaceSource,
@@ -45,6 +50,8 @@ export default defineConfig({
           name: 'db',
           include: common.map((g) => `${g}/*.db.test.ts`),
           testTimeout: 120_000,
+          // Migrating a fresh database can take tens of seconds while golden tests load the CPU.
+          hookTimeout: 120_000,
         },
       },
     ],

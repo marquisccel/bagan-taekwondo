@@ -15,6 +15,20 @@
       "when": 1789132528695,
       "tag": "0001_invariant_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789150380836,
+      "tag": "0002_intake_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789150414662,
+      "tag": "0003_intake_triggers",
+      "breakpoints": true
     }
   ]
 }

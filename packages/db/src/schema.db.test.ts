@@ -12,6 +12,7 @@ import {
 import { sha256Hex } from '@bagantkd/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { newSnapshot } from './testing/seed.js';
 import { dbError, testBackends, type TestDb } from './testing/test-db.js';
 
 const fp = (s: string) => `sha256:${sha256Hex(s)}`;
@@ -72,11 +73,12 @@ async function seed(db: TestDb) {
     ).id;
   const entryA = await newEntry();
   const entryB = await newEntry();
+  const snapshot = await newSnapshot(db, tournament, ruleSet, officer);
   const drawRun = (
     await one<{ id: string }>(
-      `insert into draw_run (tournament_id, rule_set_id, kind, status, seed, engine_version, rules_snapshot, rules_fingerprint, input_fingerprint, params, scope, requested_by)
-       values ($1, $2, 'CANDIDATE', 'RUNNING', '20260827', '0.1.0', '{}', $3, $4, '{}', '[]', $5) returning id`,
-      [tournament, ruleSet, fp('rules'), fp('input'), officer],
+      `insert into draw_run (tournament_id, rule_set_id, intake_snapshot_id, kind, status, seed, engine_version, rules_snapshot, rules_fingerprint, input_fingerprint, params, scope, requested_by)
+       values ($1, $2, $6, 'CANDIDATE', 'RUNNING', '20260827', '0.1.0', '{}', $3, $4, '{}', '[]', $5) returning id`,
+      [tournament, ruleSet, fp('rules'), fp('input'), officer, snapshot],
     )
   ).id;
   const revision = (
@@ -95,6 +97,7 @@ async function seed(db: TestDb) {
     entryA,
     entryB,
     newEntry,
+    snapshot,
     drawRun,
     revision,
     one,
@@ -391,9 +394,9 @@ for (const backend of testBackends()) {
         const s = await seed(db);
         const err = await dbError(
           db.query(
-            `insert into draw_run (tournament_id, rule_set_id, kind, seed, engine_version, rules_snapshot, rules_fingerprint, input_fingerprint, params, assumptions, scope, requested_by)
-             values ($1, $2, 'CANDIDATE', '1', '0.1.0', '{}', $3, $3, '{}', '{"maxTolerances":[]}', '[]', $4)`,
-            [s.tournament, s.ruleSet, fp('a'), s.officer],
+            `insert into draw_run (tournament_id, rule_set_id, intake_snapshot_id, kind, seed, engine_version, rules_snapshot, rules_fingerprint, input_fingerprint, params, assumptions, scope, requested_by)
+             values ($1, $2, $5, 'CANDIDATE', '1', '0.1.0', '{}', $3, $3, '{}', '{"maxTolerances":[]}', '[]', $4)`,
+            [s.tournament, s.ruleSet, fp('a'), s.officer, s.snapshot],
           ),
         );
         expect(err).toContain('draw_run_candidate_no_assumptions_ck');

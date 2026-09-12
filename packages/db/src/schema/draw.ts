@@ -31,6 +31,7 @@ import {
   streamEnum,
 } from './enums.js';
 import { appUser, tournament } from './identity.js';
+import { intakeSnapshot } from './intake.js';
 import { entry } from './participants.js';
 import { ruleAgeDivision, ruleCategoryTemplate, ruleSet, ruleWeightClass } from './rules.js';
 
@@ -87,6 +88,8 @@ export const drawRun = pgTable(
     ruleSetId: uuid('rule_set_id')
       .notNull()
       .references(() => ruleSet.id),
+    /** The immutable intake snapshot this run draws from (instruction 5). */
+    intakeSnapshotId: uuid('intake_snapshot_id').notNull(),
     kind: drawRunKindEnum('kind').notNull(),
     status: drawRunStatusEnum('status').notNull().default('QUEUED'),
     seed: text('seed').notNull(),
@@ -111,6 +114,10 @@ export const drawRun = pgTable(
     finishedAt: tstz('finished_at'),
   },
   (t) => [
+    foreignKey({
+      columns: [t.intakeSnapshotId, t.tournamentId],
+      foreignColumns: [intakeSnapshot.id, intakeSnapshot.tournamentId],
+    }),
     check('draw_run_seed_ck', sql`${t.seed} ~ '^(0|[1-9][0-9]{0,19})$'`),
     check(
       'draw_run_fingerprints_ck',

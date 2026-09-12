@@ -51,6 +51,12 @@ export const TOLERANCE_DIMENSIONS = ['WEIGHT', 'HEIGHT', 'BELT'] as const;
 export type ToleranceDimension = (typeof TOLERANCE_DIMENSIONS)[number];
 export const BELT_POLICIES = ['HARD', 'SOFT', 'DISABLED'] as const;
 export const SINGLETON_POLICIES = ['WALKOVER_WITH_SUGGESTIONS', 'BLOCK_CATEGORY'] as const;
+/**
+ * Readiness of a category that has withheld (blocked) entries. BLOCK_CATEGORY: the category is not
+ * drawn until they are resolved or withdrawn. DRAW_ELIGIBLE_ONLY: the eligible entries are drawn
+ * and the withheld ones stay out. Singletons are not this policy's concern (poolPolicies.singleton).
+ */
+export const WITHHELD_ENTRY_POLICIES = ['BLOCK_CATEGORY', 'DRAW_ELIGIBLE_ONLY'] as const;
 export const BYE_POLICIES = ['SEED_PRIORITY', 'CONTINGENT_AWARE', 'RANDOM_SEEDED'] as const;
 export const CONTINGENT_KEYS = ['EXACT', 'GROUP'] as const;
 
@@ -182,6 +188,8 @@ const sourceVocabulary = z.object({
   divisi: z.record(z.string(), code),
   gender: z.record(z.string(), z.enum(GENDERS)),
   format: z.record(z.string(), z.enum(ENTRY_FORMATS)),
+  /** Who defined this mapping of source strings to canonical values. */
+  provenance,
 });
 
 export const ruleSetSchema = z.object({
@@ -224,6 +232,7 @@ export const ruleSetSchema = z.object({
     provenance,
   }),
   poolPolicies: z.array(poolPolicy),
+  categoryReadiness: z.object({ withheldEntries: z.enum(WITHHELD_ENTRY_POLICIES), provenance }),
   categoryTemplates: z.array(categoryTemplate).min(1),
   sourceVocabulary,
   notes: z.array(z.string()),

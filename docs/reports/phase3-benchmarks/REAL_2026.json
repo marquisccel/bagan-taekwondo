@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "REAL_2026",
+  "generatedAt": "2026-09-12T11:28:15.597Z",
+  "engineVersion": "0.2.0",
+  "simulatorVersion": "0.2.0",
+  "dataset": {
+    "name": "DATA_KOLEKTIF_FESTIVAL_PRESTASI - query_kolektif.csv",
+    "fingerprint": "sha256:5b7539410cd7663c568113ba3a67d8bbace12fe123bed4a13d7b647254015cce",
+    "rows": 3154,
+    "synthetic": null
+  },
+  "ruleSet": {
+    "code": "PIALA_GUBERNUR_2026_PROVISIONAL",
+    "readinessOverride": null
+  },
+  "seeds": ["20260827", "1", "2"],
+  "counts": {
+    "entries": 3115,
+    "eligible": 3066,
+    "withheld": 49,
+    "categories": 238,
+    "categoriesReady": 201,
+    "categoriesBlocked": 37,
+    "placed": 2654,
+    "pools": 660,
+    "walkovers": 24
+  },
+  "results": [
+    {
+      "seed": "20260827",
+      "status": "SAFE",
+      "outputFingerprint": "sha256:e9f8d118c336d1a7f9b1b97f70648043a1e6c52185a3a8975a1ba38bc8df45ed",
+      "ms": 1575
+    },
+    {
+      "seed": "1",
+      "status": "SAFE",
+      "outputFingerprint": "sha256:e217688f5415e40b4345eca30c21e21222066892a171ab8e982e74016281bf06",
+      "ms": 1559
+    },
+    {
+      "seed": "2",
+      "status": "SAFE",
+      "outputFingerprint": "sha256:37e76963d8c03e397bb62370649a7a55c243e12aa12af91aada438ec3b0af895",
+      "ms": 1518
+    }
+  ],
+  "allSafe": true,
+  "identicalAcrossRuns": true,
+  "durationsMs": {
+    "intake": 210,
+    "plan": 1573,
+    "perSeed": {
+      "p50": 1559,
+      "p95": 1575,
+      "max": 1575
+    }
+  },
+  "memory": {
+    "rssPeakMb": 278,
+    "heapUsedPeakMb": 108
+  },
+  "platform": {
+    "os": "win32 10.0.26200",
+    "arch": "x64",
+    "cpuModel": "Intel(R) Core(TM) i7-14700HX",
+    "cpus": 28,
+    "totalMemGb": 24,
+    "node": "v24.10.0"
+  }
+}

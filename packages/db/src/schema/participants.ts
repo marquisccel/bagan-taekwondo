@@ -31,6 +31,7 @@ import {
   importBatchStatusEnum,
   issueSeverityEnum,
   issueStatusEnum,
+  provenanceSourceEnum,
   registrationStatusEnum,
   streamEnum,
   subjectTypeEnum,
@@ -78,18 +79,35 @@ export const importBatch = pgTable(
     rowCount: integer('row_count').notNull(),
     columnMapping: jsonb('column_mapping').notNull(),
     status: importBatchStatusEnum('status').notNull().default('UPLOADED'),
+    /** Source adapter that parsed the file (e.g. kolektif-2026). */
+    adapter: text('adapter'),
+    /** Fingerprint of every raw row in order; fixed at COMMITTED (trigger import_batch_guard). */
+    contentFingerprint: text('content_fingerprint'),
+    committedAt: tstz('committed_at'),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => appUser.id),
     createdAt: createdAt(),
   },
   (t) => [
+    unique('import_batch_id_tournament_uq').on(t.id, t.tournamentId),
     check('import_batch_sha_ck', sql`${t.sourceSha256} ~ '^[0-9a-f]{64}$'`),
     check('import_batch_rows_ck', sql`${t.rowCount} >= 0`),
+    check(
+      'import_batch_content_fingerprint_ck',
+      sql`${t.contentFingerprint} is null or ${t.contentFingerprint} ~ '^sha256:[0-9a-f]{64}$'`,
+    ),
+    check(
+      'import_batch_committed_ck',
+      sql`(${t.status} = 'COMMITTED') = (${t.committedAt} is not null) and (${t.status} <> 'COMMITTED' or (${t.contentFingerprint} is not null and ${t.adapter} is not null))`,
+    ),
   ],
 );
 
-/** Raw rows are stored exactly as received and are immutable (trigger import_row_raw_immutable). */
+/**
+ * Raw rows are stored exactly as received and are immutable (trigger import_row_raw_immutable);
+ * `normalized` (the full RAW → NORMALIZED trace) is written once (trigger import_row_guard).
+ */
 export const importRow = pgTable(
   'import_row',
   {
@@ -98,11 +116,14 @@ export const importRow = pgTable(
       .notNull()
       .references(() => importBatch.id),
     rowNumber: integer('row_number').notNull(),
+    /** Stable reference of the row within the batch (source id, or ROWNUM:n / id@n). */
+    sourceRef: text('source_ref').notNull(),
     raw: jsonb('raw').notNull(),
     normalized: jsonb('normalized'),
   },
   (t) => [
     unique('import_row_number_uq').on(t.batchId, t.rowNumber),
+    unique('import_row_source_ref_uq').on(t.batchId, t.sourceRef),
     check('import_row_number_ck', sql`${t.rowNumber} >= 1`),
   ],
 );
@@ -124,8 +145,11 @@ export const athlete = pgTable(
     nikCiphertext: bytea('nik_ciphertext'),
     nikBlindIndex: text('nik_blind_index'),
     nikFormatValid: boolean('nik_format_valid'),
-    fullName: text('full_name').notNull(),
-    gender: genderEnum('gender').notNull(),
+    /** Pseudonymous person reference from intake (never derived from NIK or name). */
+    personRef: text('person_ref'),
+    /** Null when the registered value is missing or invalid; a validation_issue explains it. */
+    fullName: text('full_name'),
+    gender: genderEnum('gender'),
     birthDate: date('birth_date'),
     registeredHeightMm: integer('registered_height_mm'),
     registeredWeightG: integer('registered_weight_g'),
@@ -135,6 +159,9 @@ export const athlete = pgTable(
   },
   (t) => [
     unique('athlete_id_tournament_uq').on(t.id, t.tournamentId),
+    uniqueIndex('athlete_person_ref_uq')
+      .on(t.tournamentId, t.personRef)
+      .where(sql`${t.personRef} is not null`),
     uniqueIndex('athlete_nik_blind_index_uq')
       .on(t.tournamentId, t.nikBlindIndex)
       .where(sql`${t.nikBlindIndex} is not null`),
@@ -309,8 +336,15 @@ export const validationIssue = pgTable(
     code: text('code').notNull(),
     severity: issueSeverityEnum('severity').notNull(),
     field: text('field'),
+    /** Sub-classification, e.g. NIK_BIRTHDATE_MISMATCH → YEAR | DAY_MONTH. */
+    component: text('component'),
     rawValue: text('raw_value'),
     suggestedValue: text('suggested_value'),
+    /** Proposed correction alternatives; never applied automatically. */
+    suggestion: jsonb('suggestion'),
+    /** Rule that raised the issue and who decided that rule (instruction 8). */
+    ruleCode: text('rule_code'),
+    ruleProvenance: provenanceSourceEnum('rule_provenance'),
     params: jsonb('params')
       .notNull()
       .default(sql`'{}'::jsonb`),
@@ -324,6 +358,7 @@ export const validationIssue = pgTable(
     index('validation_issue_open_ix').on(t.tournamentId, t.status, t.severity),
     index('validation_issue_subject_ix').on(t.subjectType, t.subjectId),
     check('validation_issue_resolution_ck', sql`(${t.status} = 'OPEN') = (${t.resolvedAt} is null)`),
+    check('validation_issue_rule_ck', sql`(${t.ruleCode} is null) = (${t.ruleProvenance} is null)`),
     check(
       'validation_issue_override_only_errors_ck',
       sql`${t.status} <> 'OVERRIDDEN' or ${t.severity} = 'ERROR'`,

@@ -94,6 +94,9 @@ importers:
       '@bagantkd/domain':
         specifier: workspace:*
         version: link:../domain
+      '@bagantkd/intake':
+        specifier: workspace:*
+        version: link:../intake
       '@bagantkd/rules':
         specifier: workspace:*
         version: link:../rules
@@ -124,6 +127,21 @@ importers:
         version: link:../shared
 
   packages/draw-engine:
+    dependencies:
+      '@bagantkd/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@bagantkd/intake':
+        specifier: workspace:*
+        version: link:../intake
+      '@bagantkd/rules':
+        specifier: workspace:*
+        version: link:../rules
+      '@bagantkd/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/intake:
     dependencies:
       '@bagantkd/domain':
         specifier: workspace:*
@@ -161,6 +179,9 @@ importers:
       '@bagantkd/draw-engine':
         specifier: workspace:*
         version: link:../../packages/draw-engine
+      '@bagantkd/intake':
+        specifier: workspace:*
+        version: link:../../packages/intake
       '@bagantkd/rules':
         specifier: workspace:*
         version: link:../../packages/rules

@@ -1,8 +1,9 @@
 # BaganTKD — Taekwondo Tournament Draw System
 
 Deterministic, auditable, explainable draw system for Taekwondo tournaments (prestasi and
-semi-prestasi, Kyorugi and Poomsae). Current phase: **1 — foundations** (engine contract,
-schema, rule-set model, simulator skeleton). See `docs/PHASE1_REPORT.md`.
+semi-prestasi, Kyorugi and Poomsae). Current state: **Phase 3 — draw engine, production-ready**
+(intake, validation, pooling, brackets, byes, seeds, contingent separation, explainability). No UI
+yet. Start with `docs/PHASE3_RUNBOOK.md` and `docs/ENGINE_CONTRACT.md`.
 
 ## Documents
 
@@ -14,6 +15,11 @@ schema, rule-set model, simulator skeleton). See `docs/PHASE1_REPORT.md`.
 | `docs/DOMAIN_MODEL.md`        | Entity diagram, state machines, rule-set model                                        |
 | `docs/ACCEPTANCE_CRITERIA.md` | Safety invariants (correctness) vs quality benchmark; test matrix; phase gates        |
 | `docs/PHASE1_REPORT.md`       | What Phase 1 delivered and how it was verified                                        |
+| `docs/PHASE2_GATE_REPORT.md`  | Intake, validation, normalization, categories: gate evidence                          |
+| `docs/ENGINE_CONTRACT.md`     | Frozen draw-engine contract: input, output, failures, limits, determinism, versioning |
+| `docs/PHASE3_CALIBRATION.md`  | Algorithmic decisions and measured tradeoffs                                          |
+| `docs/PHASE3_GATE_REPORT.md`  | Draw-engine acceptance evidence                                                       |
+| `docs/PHASE3_RUNBOOK.md`      | Clean-checkout commands: install, test, simulate, replay, benchmarks                  |
 
 ## Requirements
 
@@ -33,18 +39,7 @@ DATABASE_URL=postgres://bagantkd:bagantkd_dev_only@127.0.0.1:5433/bagantkd pnpm 
 pnpm --filter @bagantkd/db migrate          # apply migrations to DATABASE_URL
 ```
 
-Draw simulator:
-
-```bash
-cd tools/draw-simulator
-npx tsx --conditions=source src/cli.ts simulate \
-  --dataset "../../data/private/DATA_KOLEKTIF_FESTIVAL_PRESTASI - query_kolektif.csv" \
-  --rules ../../fixtures/rulesets/piala-gubernur-2026.provisional.json \
-  --baseline ../../fixtures/baselines/committee-2026.json \
-  --seeds range:1..20 --golden-seed 20260827 --out ../../out/simulations
-npx tsx --conditions=source src/cli.ts synthetic --rows 5000 --seed 5000 \
-  --rules ../../fixtures/rulesets/piala-gubernur-2026.provisional.json --out synthetic-5k.csv
-```
+Draw engine demonstrations (simulate 2026, replay, 2026/5K/10K benchmarks): see `docs/PHASE3_RUNBOOK.md`.
 
 ## Private data
 

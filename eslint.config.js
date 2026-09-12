@@ -11,6 +11,7 @@ const PURE_PACKAGES = [
   'packages/domain/src/**/*.ts',
   'packages/rules/src/**/*.ts',
   'packages/draw-engine/src/**/*.ts',
+  'packages/intake/src/**/*.ts',
 ];
 
 export default tseslint.config(

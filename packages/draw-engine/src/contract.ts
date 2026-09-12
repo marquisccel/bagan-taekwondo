@@ -1,12 +1,7 @@
-import type {
-  CategoryGender,
-  CategoryReadiness,
-  Discipline,
-  EligibilityStatus,
-  EntryFormat,
-  PoolStrategy,
-  Stream,
-} from '@bagantkd/domain';
+import type { CategoryReadiness, PoolStrategy } from '@bagantkd/domain';
+import type { SnapshotEntry, SnapshotMember } from '@bagantkd/intake';
+import type { BracketSlot, Feeder, PlacementSearch } from './bracket.js';
+import type { EngineLimits } from './limits.js';
 import type { RuleSet, ToleranceDimension } from '@bagantkd/rules';
 import type { DrawSeed, Fingerprint } from '@bagantkd/shared';
 
@@ -15,7 +10,7 @@ import type { DrawSeed, Fingerprint } from '@bagantkd/shared';
  * data: no Dates, no class instances, integer units only (ADR-0006). The same contract is
  * used by the worker, the API (predictive validation) and the draw simulator.
  */
-export const ENGINE_VERSION = '0.1.0';
+export const ENGINE_VERSION = '0.2.0';
 
 export const ENGINE_STAGES = [
   'normalizeEntries',
@@ -39,31 +34,12 @@ export type StageStatus = 'IMPLEMENTED' | 'NOT_IMPLEMENTED';
 /** Purpose of a run. CANDIDATE runs may become revisions; SIMULATION runs never do. */
 export type EnginePurpose = 'SIMULATION' | 'CANDIDATE';
 
-export interface EngineEntryMember {
-  readonly athleteId: string;
-  readonly gender: 'MALE' | 'FEMALE';
-  readonly birthYear: number;
-  readonly beltCode: string | null;
-  readonly heightMm: number | null;
-  readonly weightG: number | null;
-}
-
-/** One competition entry after import, normalization and eligibility gating (Phase 2 output). */
-export interface EngineEntry {
-  readonly entryId: string;
-  /** Registration-system identifier printed on brackets (id_athlete in 2026). */
-  readonly externalRef: string;
-  readonly contingentKey: string;
-  readonly stream: Stream;
-  readonly discipline: Discipline;
-  readonly format: EntryFormat;
-  readonly ageDivisionCode: string;
-  readonly categoryGender: CategoryGender;
-  readonly weightClassCode: string | null;
-  readonly seedNo: number | null;
-  readonly eligibility: EligibilityStatus;
-  readonly members: readonly EngineEntryMember[];
-}
+/**
+ * One competition entry exactly as frozen in an intake snapshot (Phase 2). The engine takes the
+ * snapshot's shape but not its word: stages 1–4 re-verify every entry and every category key.
+ */
+export type EngineEntryMember = SnapshotMember;
+export type EngineEntry = SnapshotEntry;
 
 /**
  * What-if assumptions, allowed for SIMULATION only (ADR-0007). They are recorded in the run
@@ -87,6 +63,8 @@ export interface EngineInput {
   /** Category keys to draw; empty = every category present in `entries`. */
   readonly scope: readonly string[];
   readonly assumptions: SimulationAssumptions | null;
+  /** Resource limits for this run; omitted fields use DEFAULT_ENGINE_LIMITS. */
+  readonly limits?: Partial<EngineLimits>;
 }
 
 export interface Reason {
@@ -94,11 +72,36 @@ export interface Reason {
   readonly params: Readonly<Record<string, string | number | boolean | null>>;
 }
 
+export interface MatchResult {
+  /** Logical match identity, stable for the same category, pool ordinal, round and position. */
+  readonly matchUid: string;
+  readonly round: number;
+  readonly position: number;
+  readonly feederA: Feeder;
+  readonly feederB: Feeder;
+  /** False for a round-1 walkover against a bye. */
+  readonly real: boolean;
+}
+
+export interface BracketResult {
+  readonly size: number;
+  readonly rounds: number;
+  readonly entries: number;
+  readonly byes: number;
+  readonly slots: readonly BracketSlot[];
+  readonly matches: readonly MatchResult[];
+  readonly placement: PlacementSearch;
+}
+
 export interface PoolResult {
   readonly poolUid: string;
   readonly ordinal: number;
   readonly entryIds: readonly string[];
+  readonly isWalkover: boolean;
+  /** At least one structured reason per pool (Phase 3F). */
   readonly reasons: readonly Reason[];
+  readonly metrics: Readonly<Record<string, number>>;
+  readonly bracket: BracketResult;
 }
 
 /** Every strategy's result is kept, winning or not (ADR-0008): explainability and what-if. */
@@ -111,14 +114,25 @@ export interface StrategyCandidate {
   readonly tier2CostFp: number;
   readonly partition: readonly (readonly string[])[];
   readonly metrics: Readonly<Record<string, number>>;
+  /** Tier-0 (hard) violations of this partition; a selected candidate has none. */
+  readonly violations: readonly Reason[];
+  /** Why this candidate ranks where it does; rejected local-search changes by reason. */
+  readonly explanations: readonly Reason[];
 }
 
 export interface CategoryResult {
   readonly categoryKey: string;
+  readonly templateCode: string;
   readonly readiness: CategoryReadiness;
   readonly blockedReasons: readonly Reason[];
+  /** Eligible entries of the category (the set INV-03 requires placed exactly once). */
+  readonly entryIds: readonly string[];
+  /** Entries of the category that the gate withheld; they block readiness, never get placed. */
+  readonly withheldEntryIds: readonly string[];
   readonly candidates: readonly StrategyCandidate[];
   readonly pools: readonly PoolResult[];
+  /** Category-level explanation: selection, singleton suggestions, contingent structure. */
+  readonly reasons: readonly Reason[];
 }
 
 export interface QualityFinding {
@@ -128,12 +142,28 @@ export interface QualityFinding {
   readonly params: Readonly<Record<string, string | number | boolean | null>>;
 }
 
+/** An execution failure (status FAILED): a stable code, never a business-rule outcome. */
+export interface EngineFailure {
+  readonly code: string;
+  readonly message: string;
+}
+
+/** Whether this run could become a LOCKED revision, and every reason it cannot (ADR-0007). */
+export interface LockAssessment {
+  readonly lockable: boolean;
+  readonly requiresAcknowledgement: boolean;
+  readonly blockers: readonly Reason[];
+}
+
+export type EngineStatus = 'SAFE' | 'UNSAFE' | 'FAILED';
+
 export interface EngineOutput {
   readonly engineVersion: string;
   readonly purpose: EnginePurpose;
   readonly seed: DrawSeed;
-  readonly status: 'SAFE' | 'UNSAFE';
+  readonly status: EngineStatus;
   readonly unsafeReasons: readonly Reason[];
+  readonly failure: EngineFailure | null;
   readonly fingerprints: {
     readonly input: Fingerprint;
     readonly rules: Fingerprint;
@@ -145,4 +175,7 @@ export interface EngineOutput {
     readonly findings: readonly QualityFinding[];
     readonly metrics: Readonly<Record<string, number>>;
   };
+  readonly lock: LockAssessment;
+  /** The limits this run enforced. */
+  readonly limits: EngineLimits;
 }

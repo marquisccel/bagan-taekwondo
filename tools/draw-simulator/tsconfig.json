@@ -8,9 +8,20 @@
   "include": ["src"],
   "exclude": ["src/**/*.test.ts"],
   "references": [
-    { "path": "../../packages/shared" },
-    { "path": "../../packages/domain" },
-    { "path": "../../packages/rules" },
-    { "path": "../../packages/draw-engine" }
+    {
+      "path": "../../packages/shared"
+    },
+    {
+      "path": "../../packages/domain"
+    },
+    {
+      "path": "../../packages/rules"
+    },
+    {
+      "path": "../../packages/draw-engine"
+    },
+    {
+      "path": "../../packages/intake"
+    }
   ]
 }

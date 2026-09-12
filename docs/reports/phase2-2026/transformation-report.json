@@ -1,0 +1,2293 @@
+{
+  "source": {
+    "name": "DATA_KOLEKTIF_FESTIVAL_PRESTASI - query_kolektif.csv",
+    "fingerprint": "sha256:5b7539410cd7663c568113ba3a67d8bbace12fe123bed4a13d7b647254015cce",
+    "rows": 3154,
+    "columns": 13
+  },
+  "pipeline": {
+    "rows": 3154,
+    "persons": 3121,
+    "entries": 3115,
+    "entryGroups": 28,
+    "unresolvedRows": 0,
+    "categories": 238
+  },
+  "entryGroupsByProvenance": {
+    "HEURISTIC/PROPOSED/HIGH": 28
+  },
+  "heuristicGroupsByFormat": {
+    "PRESTASI:FREESTYLE_POOMSAE:PAIR": 3,
+    "PRESTASI:POOMSAE:PAIR": 14,
+    "PRESTASI:POOMSAE:TEAM": 11
+  },
+  "categoriesByStream": {
+    "PRESTASI:FREESTYLE_POOMSAE": 9,
+    "PRESTASI:KYORUGI": 71,
+    "PRESTASI:POOMSAE": 17,
+    "SEMI_PRESTASI:KYORUGI": 105,
+    "SEMI_PRESTASI:POOMSAE": 36
+  },
+  "blockedEntries": 49,
+  "blockedEntriesByStream": {
+    "PRESTASI:FREESTYLE_POOMSAE": 3,
+    "PRESTASI:POOMSAE": 25,
+    "SEMI_PRESTASI:KYORUGI": 17,
+    "SEMI_PRESTASI:POOMSAE": 4
+  },
+  "blockedEntriesByReason": {
+    "ENTRY_GROUP_UNCONFIRMED": 28,
+    "HEIGHT_MISSING": 8,
+    "HEIGHT_OUT_OF_RANGE": 1,
+    "HEIGHT_WEIGHT_LIKELY_SWAPPED": 11,
+    "WEIGHT_MISSING": 7
+  },
+  "issueCounts": {
+    "AGE_DIVISION_PLAY_UP": 64,
+    "ATHLETE_ATTRIBUTE_CONFLICT": 1,
+    "ATHLETE_MULTIPLE_CONTINGENTS": 11,
+    "BMI_IMPLAUSIBLE": 3,
+    "CLASS_FORMAT_NORMALIZED": 145,
+    "DOB_POSSIBLE_PLACEHOLDER": 14,
+    "ENTRY_GROUP_UNCONFIRMED": 28,
+    "HEIGHT_MISSING": 9,
+    "HEIGHT_OUT_OF_RANGE": 1,
+    "HEIGHT_WEIGHT_LIKELY_SWAPPED": 12,
+    "NIK_BIRTHDATE_MISMATCH": 214,
+    "NIK_BIRTHDATE_MISMATCH:DAY_MONTH": 155,
+    "NIK_BIRTHDATE_MISMATCH:YEAR": 59,
+    "NIK_GENDER_MISMATCH": 22,
+    "NIK_INVALID_FORMAT": 56,
+    "NIK_NORMALIZED": 6,
+    "WEIGHT_CLASS_MISMATCH": 252,
+    "WEIGHT_MISSING": 9,
+    "WEIGHT_OUT_OF_RANGE": 1
+  },
+  "issueSeverityCounts": {
+    "AGE_DIVISION_PLAY_UP:WARNING": 64,
+    "BMI_IMPLAUSIBLE:WARNING": 3,
+    "CLASS_FORMAT_NORMALIZED:INFO": 145,
+    "DOB_POSSIBLE_PLACEHOLDER:INFO": 14,
+    "HEIGHT_MISSING:ERROR": 8,
+    "HEIGHT_MISSING:INFO": 1,
+    "HEIGHT_OUT_OF_RANGE:ERROR": 1,
+    "HEIGHT_WEIGHT_LIKELY_SWAPPED:ERROR": 11,
+    "HEIGHT_WEIGHT_LIKELY_SWAPPED:INFO": 1,
+    "NIK_BIRTHDATE_MISMATCH:WARNING": 214,
+    "NIK_GENDER_MISMATCH:WARNING": 22,
+    "NIK_INVALID_FORMAT:WARNING": 56,
+    "NIK_NORMALIZED:INFO": 6,
+    "WEIGHT_CLASS_MISMATCH:WARNING": 252,
+    "WEIGHT_MISSING:ERROR": 7,
+    "WEIGHT_MISSING:INFO": 2,
+    "WEIGHT_OUT_OF_RANGE:INFO": 1
+  },
+  "openIssuesBySeverity": {
+    "ERROR": 56,
+    "INFO": 181,
+    "WARNING": 611
+  },
+  "fieldOutcomes": {
+    "belt:MAPPED": 3154,
+    "birthDate:UNCHANGED": 3154,
+    "class:MAPPED": 700,
+    "class:NORMALIZED": 145,
+    "class:UNCHANGED": 2309,
+    "classification:MAPPED": 3154,
+    "division:MAPPED": 3154,
+    "gender:MAPPED": 3154,
+    "height:INVALID": 9,
+    "height:UNCHANGED": 3145,
+    "name:NORMALIZED": 16,
+    "name:UNCHANGED": 3138,
+    "nik:NORMALIZED": 6,
+    "nik:UNCHANGED": 3148,
+    "weight:INVALID": 9,
+    "weight:UNCHANGED": 3145
+  },
+  "classNormalizations": {
+    "=+45": "+45",
+    "=+53": "+53",
+    "=+59": "+59",
+    "=+65": "+65",
+    "=+68": "+68",
+    "=+73": "+73",
+    "=+78": "+78",
+    "=+87": "+87"
+  },
+  "ruleProvenanceUsage": {
+    "ENGINEERING_DEFAULT:CONTINGENT_AS_GIVEN": 3154,
+    "ENGINEERING_DEFAULT:HEIGHT_CM_TO_MM": 3145,
+    "ENGINEERING_DEFAULT:HEIGHT_CM_TO_MM_MISSING": 18,
+    "ENGINEERING_DEFAULT:ISO_DATE": 3168,
+    "ENGINEERING_DEFAULT:NAME_AS_GIVEN": 3138,
+    "ENGINEERING_DEFAULT:NAME_WHITESPACE": 16,
+    "ENGINEERING_DEFAULT:NIK_16_DIGITS": 56,
+    "ENGINEERING_DEFAULT:NIK_AS_GIVEN": 3148,
+    "ENGINEERING_DEFAULT:NIK_ENCODED_DDMMYY": 236,
+    "ENGINEERING_DEFAULT:NIK_TRAILING_PUNCTUATION": 12,
+    "ENGINEERING_DEFAULT:PERSON_ATTRIBUTES_AGREE": 1,
+    "ENGINEERING_DEFAULT:PLAUSIBILITY": 17,
+    "ENGINEERING_DEFAULT:SOURCE_ID": 3154,
+    "ENGINEERING_DEFAULT:WEIGHT_CLASS_FORMAT": 2599,
+    "ENGINEERING_DEFAULT:WEIGHT_KG_TO_G": 3145,
+    "ENGINEERING_DEFAULT:WEIGHT_KG_TO_G_MISSING": 18,
+    "EVIDENCE_2026:AGE_BIRTH_YEAR_BAND": 64,
+    "EVIDENCE_2026:BELT_SOURCE_LABEL": 3154,
+    "EVIDENCE_2026:CONTINGENT_PER_ENTRY": 11,
+    "EVIDENCE_2026:SAME_CONTINGENT_CATEGORY_COMPOSITION": 28,
+    "EVIDENCE_2026:VOCAB_CLASSIFICATION": 3154,
+    "EVIDENCE_2026:VOCAB_DIVISION": 3154,
+    "EVIDENCE_2026:VOCAB_FORMAT": 700,
+    "EVIDENCE_2026:VOCAB_GENDER": 3154,
+    "EVIDENCE_2026:WEIGHT_CLASS_TABLE": 252
+  },
+  "suggestions": {
+    "SWAP_HEIGHT_WEIGHT": 12
+  },
+  "categories": [
+    {
+      "key": "FREESTYLE_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=FREESTYLE_POOMSAE|AGE_DIVISION=CADET|GENDER=FEMALE|FORMAT=INDIVIDUAL",
+      "templateCode": "FREESTYLE_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "FREESTYLE_POOMSAE",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "FREESTYLE_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=FREESTYLE_POOMSAE|AGE_DIVISION=CADET|GENDER=MALE|FORMAT=INDIVIDUAL",
+      "templateCode": "FREESTYLE_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "FREESTYLE_POOMSAE",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "FREESTYLE_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=FREESTYLE_POOMSAE|AGE_DIVISION=JUNIOR|GENDER=FEMALE|FORMAT=INDIVIDUAL",
+      "templateCode": "FREESTYLE_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "FREESTYLE_POOMSAE",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "FREESTYLE_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=FREESTYLE_POOMSAE|AGE_DIVISION=JUNIOR|GENDER=MALE|FORMAT=INDIVIDUAL",
+      "templateCode": "FREESTYLE_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "FREESTYLE_POOMSAE",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "FREESTYLE_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=FREESTYLE_POOMSAE|AGE_DIVISION=PRA_CADET|GENDER=FEMALE|FORMAT=INDIVIDUAL",
+      "templateCode": "FREESTYLE_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "FREESTYLE_POOMSAE",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "FREESTYLE_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=FREESTYLE_POOMSAE|AGE_DIVISION=PRA_CADET|GENDER=MALE|FORMAT=INDIVIDUAL",
+      "templateCode": "FREESTYLE_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "FREESTYLE_POOMSAE",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "FREESTYLE_PAIR|STREAM=PRESTASI|DISCIPLINE=FREESTYLE_POOMSAE|AGE_DIVISION=CADET|GENDER=MIXED|FORMAT=PAIR",
+      "templateCode": "FREESTYLE_PAIR",
+      "stream": "PRESTASI",
+      "discipline": "FREESTYLE_POOMSAE",
+      "entries": 1,
+      "eligible": 0,
+      "blocked": 1
+    },
+    {
+      "key": "FREESTYLE_PAIR|STREAM=PRESTASI|DISCIPLINE=FREESTYLE_POOMSAE|AGE_DIVISION=JUNIOR|GENDER=MIXED|FORMAT=PAIR",
+      "templateCode": "FREESTYLE_PAIR",
+      "stream": "PRESTASI",
+      "discipline": "FREESTYLE_POOMSAE",
+      "entries": 1,
+      "eligible": 0,
+      "blocked": 1
+    },
+    {
+      "key": "FREESTYLE_PAIR|STREAM=PRESTASI|DISCIPLINE=FREESTYLE_POOMSAE|AGE_DIVISION=SENIOR|GENDER=MIXED|FORMAT=PAIR",
+      "templateCode": "FREESTYLE_PAIR",
+      "stream": "PRESTASI",
+      "discipline": "FREESTYLE_POOMSAE",
+      "entries": 1,
+      "eligible": 0,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=+59",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 6,
+      "eligible": 6,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-29",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-33",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 6,
+      "eligible": 6,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-37",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 12,
+      "eligible": 12,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-41",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 18,
+      "eligible": 18,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-44",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 8,
+      "eligible": 8,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-47",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 9,
+      "eligible": 9,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-51",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 9,
+      "eligible": 9,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-55",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 5,
+      "eligible": 5,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-59",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=+65",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 5,
+      "eligible": 5,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-33",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 17,
+      "eligible": 17,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-37",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 17,
+      "eligible": 17,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-41",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 24,
+      "eligible": 24,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 18,
+      "eligible": 18,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-49",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 15,
+      "eligible": 15,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-53",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 15,
+      "eligible": 15,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-57",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-61",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 5,
+      "eligible": 5,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-65",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 6,
+      "eligible": 6,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=+68",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 7,
+      "eligible": 7,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-42",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 17,
+      "eligible": 17,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-44",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 10,
+      "eligible": 10,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-46",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 10,
+      "eligible": 10,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-49",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 15,
+      "eligible": 15,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-52",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 13,
+      "eligible": 13,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-55",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 10,
+      "eligible": 10,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-59",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 9,
+      "eligible": 9,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-63",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 5,
+      "eligible": 5,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-68",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 10,
+      "eligible": 10,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=+78",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 17,
+      "eligible": 17,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-45",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 24,
+      "eligible": 24,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-48",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 20,
+      "eligible": 20,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-51",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 18,
+      "eligible": 18,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-55",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 21,
+      "eligible": 21,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-59",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 21,
+      "eligible": 21,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-63",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 18,
+      "eligible": 18,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-68",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 9,
+      "eligible": 9,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-73",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 9,
+      "eligible": 9,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-78",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 5,
+      "eligible": 5,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=FEMALE|WEIGHT_CLASS=+53",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=FEMALE|WEIGHT_CLASS=-23",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=FEMALE|WEIGHT_CLASS=-26",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 5,
+      "eligible": 5,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=FEMALE|WEIGHT_CLASS=-30",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 8,
+      "eligible": 8,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=FEMALE|WEIGHT_CLASS=-34",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 5,
+      "eligible": 5,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=FEMALE|WEIGHT_CLASS=-38",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 3,
+      "eligible": 3,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=FEMALE|WEIGHT_CLASS=-43",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=FEMALE|WEIGHT_CLASS=-53",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=MALE|WEIGHT_CLASS=+53",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=MALE|WEIGHT_CLASS=-23",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=MALE|WEIGHT_CLASS=-26",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 12,
+      "eligible": 12,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=MALE|WEIGHT_CLASS=-30",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 7,
+      "eligible": 7,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=MALE|WEIGHT_CLASS=-34",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 6,
+      "eligible": 6,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=MALE|WEIGHT_CLASS=-38",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=MALE|WEIGHT_CLASS=-43",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=MALE|WEIGHT_CLASS=-48",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET|GENDER=MALE|WEIGHT_CLASS=-53",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=FEMALE|WEIGHT_CLASS=+73",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=FEMALE|WEIGHT_CLASS=-46",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=FEMALE|WEIGHT_CLASS=-49",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=FEMALE|WEIGHT_CLASS=-53",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 3,
+      "eligible": 3,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=FEMALE|WEIGHT_CLASS=-62",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=FEMALE|WEIGHT_CLASS=-73",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=+87",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-54",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 8,
+      "eligible": 8,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-58",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 10,
+      "eligible": 10,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-63",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 3,
+      "eligible": 3,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-68",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-74",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 6,
+      "eligible": 6,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-80",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 3,
+      "eligible": 3,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-87",
+      "templateCode": "KYORUGI_PRESTASI",
+      "stream": "PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=+59",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 15,
+      "eligible": 15,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-29",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 3,
+      "eligible": 2,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-33",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 15,
+      "eligible": 14,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-37",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 18,
+      "eligible": 17,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-41",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 43,
+      "eligible": 43,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-44",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 25,
+      "eligible": 25,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-47",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 31,
+      "eligible": 30,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-51",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 32,
+      "eligible": 32,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-55",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 27,
+      "eligible": 26,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-59",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 15,
+      "eligible": 15,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=+65",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 35,
+      "eligible": 35,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-33",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 41,
+      "eligible": 40,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-37",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 27,
+      "eligible": 27,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-41",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 46,
+      "eligible": 46,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 46,
+      "eligible": 46,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-49",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 44,
+      "eligible": 44,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-53",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 42,
+      "eligible": 42,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-57",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 29,
+      "eligible": 29,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-61",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 22,
+      "eligible": 22,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-65",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 15,
+      "eligible": 15,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=+68",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 14,
+      "eligible": 14,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-42",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 25,
+      "eligible": 25,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-44",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 24,
+      "eligible": 24,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-46",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 25,
+      "eligible": 25,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-49",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 25,
+      "eligible": 25,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-52",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 24,
+      "eligible": 24,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-55",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 17,
+      "eligible": 17,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-59",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 9,
+      "eligible": 9,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-63",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 10,
+      "eligible": 10,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=FEMALE|WEIGHT_CLASS=-68",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 3,
+      "eligible": 3,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=+78",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 19,
+      "eligible": 18,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-45",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 30,
+      "eligible": 29,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-48",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 21,
+      "eligible": 21,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-51",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 20,
+      "eligible": 20,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-55",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 46,
+      "eligible": 45,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-59",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 24,
+      "eligible": 24,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-63",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 24,
+      "eligible": 24,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-68",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 27,
+      "eligible": 27,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-73",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 15,
+      "eligible": 15,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-78",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 14,
+      "eligible": 13,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_A|GENDER=FEMALE|WEIGHT_CLASS=-18",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 6,
+      "eligible": 6,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_A|GENDER=FEMALE|WEIGHT_CLASS=-20",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_A|GENDER=FEMALE|WEIGHT_CLASS=-22",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_A|GENDER=FEMALE|WEIGHT_CLASS=-24",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_A|GENDER=FEMALE|WEIGHT_CLASS=-28",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_A|GENDER=MALE|WEIGHT_CLASS=-18",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 11,
+      "eligible": 11,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_A|GENDER=MALE|WEIGHT_CLASS=-20",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 7,
+      "eligible": 7,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_A|GENDER=MALE|WEIGHT_CLASS=-22",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 3,
+      "eligible": 3,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_A|GENDER=MALE|WEIGHT_CLASS=-24",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_A|GENDER=MALE|WEIGHT_CLASS=-26",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_A|GENDER=MALE|WEIGHT_CLASS=-30",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_A|GENDER=MALE|WEIGHT_CLASS=-33",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=FEMALE|WEIGHT_CLASS=-20",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 16,
+      "eligible": 16,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=FEMALE|WEIGHT_CLASS=-22",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 12,
+      "eligible": 12,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=FEMALE|WEIGHT_CLASS=-24",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 10,
+      "eligible": 8,
+      "blocked": 2
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=FEMALE|WEIGHT_CLASS=-26",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 9,
+      "eligible": 9,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=FEMALE|WEIGHT_CLASS=-28",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 3,
+      "eligible": 3,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=FEMALE|WEIGHT_CLASS=-30",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 3,
+      "eligible": 3,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=FEMALE|WEIGHT_CLASS=-33",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 5,
+      "eligible": 5,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=FEMALE|WEIGHT_CLASS=-36",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=FEMALE|WEIGHT_CLASS=-39",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 3,
+      "eligible": 3,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=MALE|WEIGHT_CLASS=+45",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=MALE|WEIGHT_CLASS=-20",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 38,
+      "eligible": 38,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=MALE|WEIGHT_CLASS=-22",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 28,
+      "eligible": 28,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=MALE|WEIGHT_CLASS=-24",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 16,
+      "eligible": 16,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=MALE|WEIGHT_CLASS=-26",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 15,
+      "eligible": 15,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=MALE|WEIGHT_CLASS=-28",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 14,
+      "eligible": 14,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=MALE|WEIGHT_CLASS=-30",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 5,
+      "eligible": 5,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=MALE|WEIGHT_CLASS=-33",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 8,
+      "eligible": 8,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=MALE|WEIGHT_CLASS=-36",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 7,
+      "eligible": 7,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=MALE|WEIGHT_CLASS=-39",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=MALE|WEIGHT_CLASS=-42",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=MALE|WEIGHT_CLASS=-45",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|WEIGHT_CLASS=+53",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 6,
+      "eligible": 5,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|WEIGHT_CLASS=-20",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|WEIGHT_CLASS=-23",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 20,
+      "eligible": 20,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|WEIGHT_CLASS=-26",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 29,
+      "eligible": 29,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|WEIGHT_CLASS=-30",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 36,
+      "eligible": 36,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|WEIGHT_CLASS=-34",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 21,
+      "eligible": 21,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|WEIGHT_CLASS=-38",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 27,
+      "eligible": 27,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|WEIGHT_CLASS=-43",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 22,
+      "eligible": 21,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|WEIGHT_CLASS=-48",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 13,
+      "eligible": 13,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|WEIGHT_CLASS=-53",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 3,
+      "eligible": 3,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|WEIGHT_CLASS=+53",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 15,
+      "eligible": 15,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|WEIGHT_CLASS=-20",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 14,
+      "eligible": 14,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|WEIGHT_CLASS=-23",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 36,
+      "eligible": 36,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|WEIGHT_CLASS=-26",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 59,
+      "eligible": 57,
+      "blocked": 2
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|WEIGHT_CLASS=-30",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 86,
+      "eligible": 86,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|WEIGHT_CLASS=-34",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 53,
+      "eligible": 53,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|WEIGHT_CLASS=-38",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 43,
+      "eligible": 43,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|WEIGHT_CLASS=-43",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 44,
+      "eligible": 44,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|WEIGHT_CLASS=-48",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 32,
+      "eligible": 32,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|WEIGHT_CLASS=-53",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 14,
+      "eligible": 14,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=FEMALE|WEIGHT_CLASS=-46",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 6,
+      "eligible": 6,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=FEMALE|WEIGHT_CLASS=-49",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=FEMALE|WEIGHT_CLASS=-53",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 5,
+      "eligible": 5,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=FEMALE|WEIGHT_CLASS=-57",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 6,
+      "eligible": 6,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=FEMALE|WEIGHT_CLASS=-73",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-54",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 8,
+      "eligible": 8,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-58",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-63",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 16,
+      "eligible": 16,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-68",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 10,
+      "eligible": 9,
+      "blocked": 1
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-74",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 3,
+      "eligible": 3,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-80",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=SENIOR|GENDER=MALE|WEIGHT_CLASS=-87",
+      "templateCode": "KYORUGI_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "KYORUGI",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_PRESTASI_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=FEMALE|FORMAT=INDIVIDUAL",
+      "templateCode": "POOMSAE_PRESTASI_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 19,
+      "eligible": 19,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_PRESTASI_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=MALE|FORMAT=INDIVIDUAL",
+      "templateCode": "POOMSAE_PRESTASI_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 7,
+      "eligible": 7,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_PRESTASI_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=FEMALE|FORMAT=INDIVIDUAL",
+      "templateCode": "POOMSAE_PRESTASI_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 22,
+      "eligible": 22,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_PRESTASI_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=MALE|FORMAT=INDIVIDUAL",
+      "templateCode": "POOMSAE_PRESTASI_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 11,
+      "eligible": 11,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_PRESTASI_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET|GENDER=FEMALE|FORMAT=INDIVIDUAL",
+      "templateCode": "POOMSAE_PRESTASI_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 8,
+      "eligible": 8,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_PRESTASI_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET|GENDER=MALE|FORMAT=INDIVIDUAL",
+      "templateCode": "POOMSAE_PRESTASI_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 7,
+      "eligible": 7,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_PRESTASI_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=SENIOR|GENDER=FEMALE|FORMAT=INDIVIDUAL",
+      "templateCode": "POOMSAE_PRESTASI_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 5,
+      "eligible": 5,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_PRESTASI_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=SENIOR|GENDER=MALE|FORMAT=INDIVIDUAL",
+      "templateCode": "POOMSAE_PRESTASI_INDIVIDUAL",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 6,
+      "eligible": 6,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_PRESTASI_PAIR|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=MIXED|FORMAT=PAIR",
+      "templateCode": "POOMSAE_PRESTASI_PAIR",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 4,
+      "eligible": 0,
+      "blocked": 4
+    },
+    {
+      "key": "POOMSAE_PRESTASI_PAIR|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=MIXED|FORMAT=PAIR",
+      "templateCode": "POOMSAE_PRESTASI_PAIR",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 7,
+      "eligible": 0,
+      "blocked": 7
+    },
+    {
+      "key": "POOMSAE_PRESTASI_PAIR|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET|GENDER=MIXED|FORMAT=PAIR",
+      "templateCode": "POOMSAE_PRESTASI_PAIR",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 1,
+      "eligible": 0,
+      "blocked": 1
+    },
+    {
+      "key": "POOMSAE_PRESTASI_PAIR|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=SENIOR|GENDER=MIXED|FORMAT=PAIR",
+      "templateCode": "POOMSAE_PRESTASI_PAIR",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 2,
+      "eligible": 0,
+      "blocked": 2
+    },
+    {
+      "key": "POOMSAE_PRESTASI_TEAM|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=FEMALE|FORMAT=TEAM",
+      "templateCode": "POOMSAE_PRESTASI_TEAM",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 3,
+      "eligible": 0,
+      "blocked": 3
+    },
+    {
+      "key": "POOMSAE_PRESTASI_TEAM|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=MALE|FORMAT=TEAM",
+      "templateCode": "POOMSAE_PRESTASI_TEAM",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 1,
+      "eligible": 0,
+      "blocked": 1
+    },
+    {
+      "key": "POOMSAE_PRESTASI_TEAM|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=FEMALE|FORMAT=TEAM",
+      "templateCode": "POOMSAE_PRESTASI_TEAM",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 3,
+      "eligible": 0,
+      "blocked": 3
+    },
+    {
+      "key": "POOMSAE_PRESTASI_TEAM|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=MALE|FORMAT=TEAM",
+      "templateCode": "POOMSAE_PRESTASI_TEAM",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 2,
+      "eligible": 0,
+      "blocked": 2
+    },
+    {
+      "key": "POOMSAE_PRESTASI_TEAM|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=SENIOR|GENDER=FEMALE|FORMAT=TEAM",
+      "templateCode": "POOMSAE_PRESTASI_TEAM",
+      "stream": "PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 2,
+      "eligible": 0,
+      "blocked": 2
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 1",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 54,
+      "eligible": 54,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 3",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 39,
+      "eligible": 39,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 5",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 28,
+      "eligible": 28,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 6",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 14,
+      "eligible": 14,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 1",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 24,
+      "eligible": 24,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 3",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 23,
+      "eligible": 23,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 5",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 14,
+      "eligible": 13,
+      "blocked": 1
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 6",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 6,
+      "eligible": 6,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 1",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 58,
+      "eligible": 58,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 3",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 22,
+      "eligible": 22,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 5",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 10,
+      "eligible": 10,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 6",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 10,
+      "eligible": 10,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 1",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 10,
+      "eligible": 10,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 3",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 11,
+      "eligible": 11,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 5",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 6",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET_A|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 1",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET_A|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 1",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 5,
+      "eligible": 5,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET_B|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 1",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 22,
+      "eligible": 21,
+      "blocked": 1
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET_B|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 3",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 3,
+      "eligible": 3,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET_B|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 1",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 22,
+      "eligible": 22,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 1",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 44,
+      "eligible": 44,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 3",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 21,
+      "eligible": 20,
+      "blocked": 1
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 5",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 15,
+      "eligible": 15,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 6",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 8,
+      "eligible": 8,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 1",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 25,
+      "eligible": 25,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 3",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 10,
+      "eligible": 9,
+      "blocked": 1
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 5",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 8,
+      "eligible": 8,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=PRA_CADET_C|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 6",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=SENIOR|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 1",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 4,
+      "eligible": 4,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=SENIOR|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 3",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 2,
+      "eligible": 2,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=SENIOR|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 5",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=SENIOR|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 6",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=SENIOR|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 1",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 3,
+      "eligible": 3,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=SENIOR|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 5",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    },
+    {
+      "key": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=SENIOR|GENDER=MALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 6",
+      "templateCode": "POOMSAE_SEMI_PRESTASI",
+      "stream": "SEMI_PRESTASI",
+      "discipline": "POOMSAE",
+      "entries": 1,
+      "eligible": 1,
+      "blocked": 0
+    }
+  ],
+  "snapshotFingerprint": "sha256:8a9569965fa506e8749a21b9a7e07b3a40db5f89a9246c4a1d918ff5e8318433"
+}

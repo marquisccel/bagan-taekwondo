@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "SYNTHETIC_5K",
+  "generatedAt": "2026-09-12T11:28:41.909Z",
+  "engineVersion": "0.2.0",
+  "simulatorVersion": "0.2.0",
+  "dataset": {
+    "name": "synthetic-5000",
+    "fingerprint": "sha256:a29d205545500ebffa9de0cd87302aa10ec3b3c20eccc44a2cdecc7af3b90d86",
+    "rows": 5000,
+    "synthetic": {
+      "rows": 5000,
+      "seed": "5000"
+    }
+  },
+  "ruleSet": {
+    "code": "PIALA_GUBERNUR_2026_PROVISIONAL",
+    "readinessOverride": "DRAW_ELIGIBLE_ONLY"
+  },
+  "seeds": ["20260827", "1", "2"],
+  "counts": {
+    "entries": 4876,
+    "eligible": 4803,
+    "withheld": 73,
+    "categories": 203,
+    "categoriesReady": 180,
+    "categoriesBlocked": 23,
+    "placed": 4777,
+    "pools": 1082,
+    "walkovers": 12
+  },
+  "results": [
+    {
+      "seed": "20260827",
+      "status": "SAFE",
+      "outputFingerprint": "sha256:37f1545475155c33f3d594c48dda02fe93ff4be44e84abfcb07937ae68cb221c",
+      "ms": 4508
+    },
+    {
+      "seed": "1",
+      "status": "SAFE",
+      "outputFingerprint": "sha256:f06c9572dbc023876cb803f7c9c6b562247fd333d303ae266afa040c5091ea0a",
+      "ms": 4490
+    },
+    {
+      "seed": "2",
+      "status": "SAFE",
+      "outputFingerprint": "sha256:08fe389ea5dd8fa5faff859fd57048713bb322b88547b3c90078339be4144173",
+      "ms": 4493
+    }
+  ],
+  "allSafe": true,
+  "identicalAcrossRuns": true,
+  "durationsMs": {
+    "intake": 276,
+    "plan": 4496,
+    "perSeed": {
+      "p50": 4493,
+      "p95": 4508,
+      "max": 4508
+    }
+  },
+  "memory": {
+    "rssPeakMb": 310,
+    "heapUsedPeakMb": 136
+  },
+  "platform": {
+    "os": "win32 10.0.26200",
+    "arch": "x64",
+    "cpuModel": "Intel(R) Core(TM) i7-14700HX",
+    "cpus": 28,
+    "totalMemGb": 24,
+    "node": "v24.10.0"
+  }
+}

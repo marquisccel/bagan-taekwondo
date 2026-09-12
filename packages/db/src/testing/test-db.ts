@@ -7,15 +7,16 @@ import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { migrate as migratePg } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 
-import { MIGRATIONS_FOLDER } from '../index.js';
+import { MIGRATIONS_FOLDER, type SqlExecutor } from '../index.js';
 
 /**
  * Minimal raw-SQL handle used by the database tests. Constraint and trigger tests use plain SQL
  * on purpose: they verify what the database itself refuses, independent of any ORM.
  */
-export interface TestDb {
+export interface TestDb extends SqlExecutor {
   readonly backend: string;
-  query<T = Record<string, unknown>>(text: string, params?: readonly unknown[]): Promise<T[]>;
+  /** Runs `fn` in one transaction: committed if it resolves, rolled back if it throws. */
+  transaction<T>(fn: (tx: SqlExecutor) => Promise<T>): Promise<T>;
   close(): Promise<void>;
 }
 
@@ -35,6 +36,14 @@ const pgliteBackend: Backend = {
       async query<T>(text: string, params: readonly unknown[] = []) {
         return (await client.query<T>(text, params as unknown[])).rows;
       },
+      transaction: <T>(fn: (tx: SqlExecutor) => Promise<T>) =>
+        client.transaction((tx) =>
+          fn({
+            async query<R>(text: string, params: readonly unknown[] = []) {
+              return (await tx.query<R>(text, params as unknown[])).rows;
+            },
+          }),
+        ),
       close: () => client.close(),
     };
   },
@@ -59,6 +68,24 @@ function postgresBackend(adminUrl: string): Backend {
         backend: `postgres (${version.split(' ').slice(0, 2).join(' ')})`,
         async query<T>(text: string, params: readonly unknown[] = []) {
           return (await pool.query(text, params as unknown[])).rows as T[];
+        },
+        async transaction<T>(fn: (tx: SqlExecutor) => Promise<T>) {
+          const client = await pool.connect();
+          try {
+            await client.query('begin');
+            const out = await fn({
+              async query<R>(text: string, params: readonly unknown[] = []) {
+                return (await client.query(text, params as unknown[])).rows as R[];
+              },
+            });
+            await client.query('commit');
+            return out;
+          } catch (e: unknown) {
+            await client.query('rollback');
+            throw e;
+          } finally {
+            client.release();
+          }
         },
         async close() {
           await pool.end();

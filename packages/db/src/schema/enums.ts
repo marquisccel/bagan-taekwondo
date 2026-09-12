@@ -35,6 +35,7 @@ import {
   CONTINGENT_KEYS,
   PARTITION_DIMENSIONS,
   PLAY_UP_POLICIES,
+  PROVENANCE_SOURCES,
   SINGLETON_POLICIES,
   TOLERANCE_DIMENSIONS,
 } from '@bagantkd/rules';
@@ -83,3 +84,19 @@ export const genderModeEnum = pgEnum('gender_mode', ['BY_ENTRY', 'MIXED']);
 export const bandPurposeEnum = pgEnum('band_purpose', ['MOVEMENT', 'COMPATIBILITY']);
 export const tableCompletenessEnum = pgEnum('table_completeness', ['OFFICIAL', 'OBSERVED_SUBSET']);
 export const actorKindEnum = pgEnum('actor_kind', ['USER', 'SYSTEM']);
+
+// Intake (Phase 2).
+export const provenanceSourceEnum = pgEnum('provenance_source', PROVENANCE_SOURCES);
+export const transformationOutcomeEnum = pgEnum('transformation_outcome', [
+  'UNCHANGED',
+  'MAPPED',
+  'NORMALIZED',
+  'INVALID',
+]);
+/** Decision on a field transformation: recorded once, by a person, with a reason. */
+export const resolutionStatusEnum = pgEnum('resolution_status', [
+  'UNRESOLVED',
+  'ACCEPTED',
+  'REJECTED',
+  'CORRECTED',
+]);

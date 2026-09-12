@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@bagantkd/domain": "workspace:*",
+    "@bagantkd/intake": "workspace:*",
     "@bagantkd/rules": "workspace:*",
     "@bagantkd/shared": "workspace:*"
   }

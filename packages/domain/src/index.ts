@@ -2,6 +2,7 @@ export * from './commands.js';
 export * from './complaint.js';
 export * from './entry-group.js';
 export * from './enums.js';
+export * from './import-batch.js';
 export * from './issues.js';
 export * from './override.js';
 export * from './participant-status.js';

@@ -13,11 +13,14 @@
   "scripts": {
     "build": "tsc -b",
     "simulate": "tsx --conditions=source src/cli.ts simulate",
-    "synthetic": "tsx --conditions=source src/cli.ts synthetic"
+    "synthetic": "tsx --conditions=source src/cli.ts synthetic",
+    "intake-report": "tsx --conditions=source src/cli.ts intake-report",
+    "benchmark": "tsx --conditions=source src/cli.ts benchmark"
   },
   "dependencies": {
     "@bagantkd/domain": "workspace:*",
     "@bagantkd/draw-engine": "workspace:*",
+    "@bagantkd/intake": "workspace:*",
     "@bagantkd/rules": "workspace:*",
     "@bagantkd/shared": "workspace:*"
   }

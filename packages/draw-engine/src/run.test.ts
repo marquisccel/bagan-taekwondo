@@ -30,11 +30,11 @@ const input = (overrides: Partial<EngineInput> = {}): EngineInput => ({
   ...overrides,
 });
 
-describe('runDraw (Phase 1 contract)', () => {
-  it('refuses with ENGINE_STAGE_NOT_IMPLEMENTED instead of producing placements', () => {
+describe('runDraw contract', () => {
+  it('every stage is implemented; an empty input is a SAFE draw with nothing to place', () => {
     const out = runDraw(input());
-    expect(out.status).toBe('UNSAFE');
-    expect(out.unsafeReasons.map((r) => r.code)).toContain('ENGINE_STAGE_NOT_IMPLEMENTED');
+    expect(out.stages.every((s) => s.status === 'IMPLEMENTED')).toBe(true);
+    expect(out.status).toBe('SAFE');
     expect(out.categories).toEqual([]);
   });
 

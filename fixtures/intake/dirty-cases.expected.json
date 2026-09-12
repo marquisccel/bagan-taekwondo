@@ -1,0 +1,236 @@
+{
+  "comment": "Hand-written from docs/PHASE2_PLAN.md §3-§8 (not generated from either implementation). Row keys are source ids; duplicated ids are disambiguated as <id>@<row number>. Issue strings are CODE[:COMPONENT]:SEVERITY, sorted.",
+  "counts": {
+    "rows": 44,
+    "persons": 42,
+    "entries": 37,
+    "entryGroups": 1,
+    "unresolvedRows": 6,
+    "categories": 17,
+    "blockedEntries": 17
+  },
+  "rows": {
+    "REG001": ["HEIGHT_OUT_OF_RANGE:ERROR"],
+    "REG002": ["WEIGHT_OUT_OF_RANGE:INFO"],
+    "REG003": ["HEIGHT_WEIGHT_LIKELY_SWAPPED:ERROR"],
+    "REG004": ["HEIGHT_WEIGHT_LIKELY_SWAPPED:ERROR"],
+    "REG005": ["HEIGHT_MISSING:INFO", "WEIGHT_MISSING:INFO"],
+    "REG006": ["HEIGHT_MISSING:ERROR"],
+    "REG007": ["NIK_NORMALIZED:INFO"],
+    "REG008": ["NIK_GENDER_MISMATCH:WARNING"],
+    "REG009": ["NIK_BIRTHDATE_MISMATCH:YEAR:WARNING"],
+    "REG010": ["NIK_BIRTHDATE_MISMATCH:DAY_MONTH:WARNING"],
+    "REG011": ["AGE_DIVISION_PLAY_UP:WARNING"],
+    "REG012": ["AGE_DIVISION_CONFLICT:ERROR"],
+    "REG013": ["CLASS_FORMAT_NORMALIZED:INFO"],
+    "REG014": ["AMBIGUOUS_WEIGHT_CLASS:ERROR"],
+    "REG015": ["CLASS_FORMAT_NORMALIZED:INFO"],
+    "REG016": [],
+    "REG017": [],
+    "REG018": [],
+    "REG019": [],
+    "REG020": [],
+    "REG021": [],
+    "REG022": ["ENTRY_GROUP_AMBIGUOUS:ERROR"],
+    "REG023": ["ENTRY_GROUP_AMBIGUOUS:ERROR"],
+    "REG024": ["ENTRY_GROUP_AMBIGUOUS:ERROR"],
+    "REG025": ["ENTRY_GROUP_AMBIGUOUS:ERROR"],
+    "REG026": ["ENTRY_GROUP_INCOMPLETE:ERROR"],
+    "REG027": ["ENTRY_GROUP_INCOMPLETE:ERROR"],
+    "REG028": [],
+    "REG029": ["INVALID_DATE:ERROR"],
+    "REG030": ["UNKNOWN_BELT:ERROR"],
+    "REG031": [],
+    "REG032": ["BMI_IMPLAUSIBLE:WARNING"],
+    "REG033": ["WEIGHT_CLASS_MISMATCH:WARNING"],
+    "REG034@35": ["DUPLICATE_SOURCE_ID:ERROR"],
+    "REG034@36": ["DUPLICATE_SOURCE_ID:ERROR"],
+    "REG036": ["UNKNOWN_CLASS:ERROR", "UNKNOWN_DIVISION:ERROR"],
+    "REG037": ["UNKNOWN_CLASS:ERROR", "UNKNOWN_CLASSIFICATION:ERROR"],
+    "REG038": ["UNKNOWN_CLASS:ERROR", "UNKNOWN_GENDER:ERROR"],
+    "REG039": ["INVALID_NUMBER:WEIGHT:ERROR"],
+    "REG040": [],
+    "REG041": ["CONTINGENT_FIELDS_DIFFER:WARNING"],
+    "REG042": ["DOB_POSSIBLE_PLACEHOLDER:INFO"],
+    "REG043": ["CLASS_FORMAT_NORMALIZED:INFO"],
+    "REG044": ["CLASS_FORMAT_NORMALIZED:INFO"]
+  },
+  "personIssues": {
+    "ATHLETE_MULTIPLE_CONTINGENTS": 1,
+    "ATHLETE_ATTRIBUTE_CONFLICT": 1,
+    "POSSIBLE_DUPLICATE_PERSON": 0
+  },
+  "entryIssues": {
+    "ENTRY_GROUP_UNCONFIRMED": 1,
+    "NO_CATEGORY_TEMPLATE": 1,
+    "MOVEMENT_UNRESOLVED": 1
+  },
+  "entries": {
+    "REG001": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-41",
+      "eligibility": "BLOCKED"
+    },
+    "REG002": {
+      "category": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 1",
+      "eligibility": "READY"
+    },
+    "REG003": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "BLOCKED"
+    },
+    "REG004": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_B|GENDER=FEMALE|WEIGHT_CLASS=-24",
+      "eligibility": "BLOCKED"
+    },
+    "REG005": {
+      "category": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "READY"
+    },
+    "REG006": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "BLOCKED"
+    },
+    "REG007": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-49",
+      "eligibility": "READY"
+    },
+    "REG008": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-44",
+      "eligibility": "READY"
+    },
+    "REG009": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-49",
+      "eligibility": "READY"
+    },
+    "REG010": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-49",
+      "eligibility": "READY"
+    },
+    "REG011": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-37",
+      "eligibility": "READY"
+    },
+    "REG012": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=JUNIOR|GENDER=MALE|WEIGHT_CLASS=-55",
+      "eligibility": "BLOCKED"
+    },
+    "REG013": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|WEIGHT_CLASS=+53",
+      "eligibility": "READY"
+    },
+    "REG014": { "category": null, "eligibility": "BLOCKED" },
+    "REG015": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=PRA_CADET_C|GENDER=FEMALE|WEIGHT_CLASS=+53",
+      "eligibility": "READY"
+    },
+    "REG016": {
+      "category": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-49",
+      "eligibility": "READY"
+    },
+    "REG017": {
+      "category": "POOMSAE_PRESTASI_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=MALE|FORMAT=INDIVIDUAL",
+      "eligibility": "READY"
+    },
+    "REG018": {
+      "category": "POOMSAE_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=FEMALE|FORMAT=INDIVIDUAL|MOVEMENT=Taegeuk 3",
+      "eligibility": "BLOCKED"
+    },
+    "REG019": {
+      "category": "POOMSAE_PRESTASI_INDIVIDUAL|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=CADET|GENDER=FEMALE|FORMAT=INDIVIDUAL",
+      "eligibility": "READY"
+    },
+    "G:REG020+REG021": {
+      "category": "POOMSAE_PRESTASI_PAIR|STREAM=PRESTASI|DISCIPLINE=POOMSAE|AGE_DIVISION=JUNIOR|GENDER=MIXED|FORMAT=PAIR",
+      "eligibility": "BLOCKED"
+    },
+    "REG028": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "READY"
+    },
+    "REG029": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "BLOCKED"
+    },
+    "REG030": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "BLOCKED"
+    },
+    "REG031": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "READY"
+    },
+    "REG032": {
+      "category": "KYORUGI_PRESTASI|STREAM=PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=FEMALE|WEIGHT_CLASS=-29",
+      "eligibility": "READY"
+    },
+    "REG033": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-41",
+      "eligibility": "READY"
+    },
+    "REG034@35": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "BLOCKED"
+    },
+    "REG034@36": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "BLOCKED"
+    },
+    "REG036": { "category": null, "eligibility": "BLOCKED" },
+    "REG037": { "category": null, "eligibility": "BLOCKED" },
+    "REG038": { "category": null, "eligibility": "BLOCKED" },
+    "REG039": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "BLOCKED"
+    },
+    "REG040": { "category": null, "eligibility": "BLOCKED" },
+    "REG041": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "READY"
+    },
+    "REG042": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "READY"
+    },
+    "REG043": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "READY"
+    },
+    "REG044": {
+      "category": "KYORUGI_SEMI_PRESTASI|STREAM=SEMI_PRESTASI|DISCIPLINE=KYORUGI|AGE_DIVISION=CADET|GENDER=MALE|WEIGHT_CLASS=-45",
+      "eligibility": "READY"
+    }
+  },
+  "blockingReasons": {
+    "REG018": ["ATHLETE_ATTRIBUTE_CONFLICT"],
+    "G:REG020+REG021": ["ENTRY_GROUP_UNCONFIRMED"],
+    "REG037": ["NO_CATEGORY_TEMPLATE", "UNKNOWN_CLASS", "UNKNOWN_CLASSIFICATION"],
+    "REG040": ["MOVEMENT_UNRESOLVED"]
+  },
+  "suggestions": {
+    "REG003": {
+      "rule": "SWAP_HEIGHT_WEIGHT",
+      "alternatives": [{ "tinggibadan": "160.00", "beratbadan": "45.00" }]
+    },
+    "REG004": {
+      "rule": "SWAP_HEIGHT_WEIGHT",
+      "alternatives": [{ "tinggibadan": "122.00", "beratbadan": "23.00" }]
+    },
+    "REG014": {
+      "rule": "FORMULA_CORRUPTED_CLASS_CANDIDATES",
+      "alternatives": [{ "class": "-53" }, { "class": "+53" }]
+    }
+  },
+  "normalized": {
+    "REG001": { "heightMm": { "raw": "734.00", "value": 7340, "outcome": "UNCHANGED" } },
+    "REG005": { "heightMm": { "raw": "0.00", "value": null, "outcome": "INVALID" } },
+    "REG007": { "nik": { "raw": "3578012001130007.", "value": "3578012001130007", "outcome": "NORMALIZED" } },
+    "REG013": { "classOrFormat": { "raw": "=+53", "value": "+53", "outcome": "NORMALIZED" } },
+    "REG015": { "classOrFormat": { "raw": "53+", "value": "+53", "outcome": "NORMALIZED" } },
+    "REG028": {
+      "name": { "raw": "  reg   case  lowercase ", "value": "reg case lowercase", "outcome": "NORMALIZED" }
+    },
+    "REG031": { "heightMm": { "raw": "150,5", "value": 1505, "outcome": "UNCHANGED" } },
+    "REG039": { "weightG": { "raw": "abc", "value": null, "outcome": "INVALID" } },
+    "REG044": { "classOrFormat": { "raw": "=-45", "value": "-45", "outcome": "NORMALIZED" } }
+  }
+}

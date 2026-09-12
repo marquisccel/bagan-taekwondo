@@ -13,14 +13,14 @@
       "generator": "tools/draw-simulator synthetic",
       "entries": 5000,
       "seed": "5000",
-      "sha256": "03b5bb55d1309a6d7a0a1f237f817e0b3b292b90b38752269230ee7922b67642"
+      "sha256": "a29d205545500ebffa9de0cd87302aa10ec3b3c20eccc44a2cdecc7af3b90d86"
     },
     "SYNTHETIC_10K": {
       "kind": "GENERATED",
       "generator": "tools/draw-simulator synthetic",
       "entries": 10000,
       "seed": "10000",
-      "sha256": "26b86290a041a6e695e1a15914fa46337aefa169d55d214ff2bd968f485ed1ea"
+      "sha256": "016c83711850262ff6ed980b415496f5ac997254a605e67fd33684a17c7b36e5"
     }
   },
   "goldenSeed": "20260827",
@@ -45,5 +45,10 @@
     "4181",
     "6765",
     "10946"
-  ]
+  ],
+  "engineFingerprints": {
+    "0.2.0": {
+      "REAL_2026": "sha256:e9f8d118c336d1a7f9b1b97f70648043a1e6c52185a3a8975a1ba38bc8df45ed"
+    }
+  }
 }

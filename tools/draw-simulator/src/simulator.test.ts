@@ -5,8 +5,10 @@ import type { RuleSet } from '@bagantkd/rules';
 import { parseDrawSeed, sha256Hex } from '@bagantkd/shared';
 import { describe, expect, it } from 'vitest';
 
+import { ENGINE_VERSION } from '@bagantkd/draw-engine';
+
 import { compareToBaseline, type Baseline } from './baseline.js';
-import { parseCsv } from './csv.js';
+import { parseCsv } from '@bagantkd/intake';
 import { simulate } from './simulate.js';
 import { defaultSyntheticOptions, generateSyntheticCsv, SOURCE_COLUMNS } from './synthetic.js';
 
@@ -66,7 +68,7 @@ describe('synthetic datasets', () => {
   );
 });
 
-describe('simulate (Phase 1 skeleton)', () => {
+describe('simulate (intake + full engine)', { timeout: 120_000 }, () => {
   const datasetBytes = new TextEncoder().encode(
     generateSyntheticCsv(ruleSet, defaultSyntheticOptions(300, '1')),
   );
@@ -74,7 +76,7 @@ describe('simulate (Phase 1 skeleton)', () => {
     datasetName: 'synthetic-300.csv',
     datasetBytes,
     ruleSet,
-    engineVersion: '0.1.0',
+    engineVersion: ENGINE_VERSION,
     purpose: 'SIMULATION' as const,
     goldenSeed: parseDrawSeed(manifest.goldenSeed),
     seeds: manifest.robustnessSeeds.slice(0, 5).map(parseDrawSeed),
@@ -82,13 +84,50 @@ describe('simulate (Phase 1 skeleton)', () => {
     baseline,
   };
 
-  it('runs every seed, reports the engine refusal honestly, and replays identically', () => {
+  it('runs every seed on the READY scope: SAFE, no invariant violation, identical replay', () => {
     const { report } = simulate(request);
     expect(report.seeds).toHaveLength(6);
-    expect(report.seeds.every((s) => s.status === 'UNSAFE')).toBe(true);
-    expect(report.seeds[0]?.unsafeReasons.map((r) => r.code)).toContain('ENGINE_STAGE_NOT_IMPLEMENTED');
-    expect(report.preEngine).toContainEqual({ stage: 'toEngineEntries', status: 'NOT_IMPLEMENTED' });
-    expect(report.safety).toEqual({ allSeedsSafe: false, invariantViolations: 0, replayIdentical: true });
+    expect(report.seeds.every((s) => s.status === 'SAFE')).toBe(true);
+    expect(report.stages.every((s) => s.status === 'IMPLEMENTED')).toBe(true);
+    expect(report.preEngine).toContainEqual({ stage: 'toEngineEntries', status: 'IMPLEMENTED' });
+    expect(report.safety).toEqual({
+      allSeedsSafe: true,
+      invariantViolations: 0,
+      replayIdentical: true,
+      reasons: [],
+    });
+    expect(report.plan.drawn).toBeGreaterThan(0);
+    expect(report.explainability).toMatchObject({
+      poolsWithoutReason: 0,
+      byesWithoutReason: 0,
+      selectedCandidatesWithTier0: 0,
+    });
+    expect(report.explainability.pooledCategoriesWithAllFiveCandidates).toBe(
+      report.explainability.pooledCategories,
+    );
+  });
+
+  it('feeds the engine the intake snapshot; the engine agrees with the intake', () => {
+    const { report } = simulate(request);
+    expect(report.intake.fatal).toBeNull();
+    expect(report.intake.entries).toBeGreaterThan(0);
+    expect(report.plan.categories).toBe(report.intake.categories);
+    const m = report.seeds[0]?.metrics ?? {};
+    expect(m['entries']).toBe(report.intake.entries - report.intake.excluded + report.intake.unresolvedRows);
+    expect(m['intakeDisagreements']).toBe(0);
+    expect(m['categoryKeyMismatches']).toBe(0);
+  });
+
+  it('reports a fatal intake instead of throwing on a non-UTF-8 dataset, and never calls it safe', () => {
+    const { report } = simulate({ ...request, datasetBytes: new Uint8Array([0xff, 0xfe, 0x00]) });
+    expect(report.intake.fatal).toBe('SOURCE_NOT_UTF8');
+    expect(report.safety.allSeedsSafe).toBe(false);
+  });
+
+  it('ALL scope makes blocked categories visible as an UNSAFE draw', () => {
+    const { report } = simulate({ ...request, scopeMode: 'ALL', seeds: [] });
+    expect(Object.keys(report.plan.blockedByReason).length).toBeGreaterThan(0);
+    expect(report.seeds[0]?.unsafeReasons.map((r) => r.code)).toContain('CATEGORY_BLOCKED');
   });
 
   it('produces the same report fingerprint for the same request', () => {
@@ -115,10 +154,10 @@ describe('simulate (Phase 1 skeleton)', () => {
     );
   });
 
-  it('marks every baseline metric NOT_AVAILABLE until the engine produces pools', () => {
+  it('compares every semi-prestasi benchmark metric once the engine produces pools', () => {
     const comparisons = simulate(request).report.baseline?.comparisons ?? [];
     expect(comparisons.length).toBeGreaterThan(20);
-    expect(comparisons.every((c) => c.status === 'NOT_AVAILABLE')).toBe(true);
+    expect(comparisons.filter((c) => c.status === 'NOT_AVAILABLE')).toEqual([]);
   });
 });
 

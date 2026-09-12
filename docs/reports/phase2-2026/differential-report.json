@@ -1,0 +1,13 @@
+{
+  "aggregate": {
+    "compared": true,
+    "differences": []
+  },
+  "detail": {
+    "compared": true,
+    "rowsCompared": 3154,
+    "entriesCompared": 3115,
+    "rowDifferences": 0,
+    "entryDifferences": 0
+  }
+}

@@ -8,7 +8,17 @@ import type { CorrectableField, IssueSeverity, Role } from './enums.js';
 export interface IssueDefinition {
   readonly code: IssueCode;
   readonly defaultSeverity: IssueSeverity;
-  readonly field: CorrectableField | 'CLASS' | 'DIVISION' | 'ENTRY_GROUP' | 'CONTINGENT' | 'DATE' | null;
+  readonly field:
+    | CorrectableField
+    | 'CLASS'
+    | 'CLASSIFICATION'
+    | 'DIVISION'
+    | 'ENTRY_GROUP'
+    | 'CONTINGENT'
+    | 'DATE'
+    | 'IDENTITY'
+    | 'CATEGORY'
+    | null;
   /** Technical Delegate may override an ERROR of this code with a reason (ADR-0011). */
   readonly overridable: boolean;
   /** True when the system can propose a concrete corrected value for operator acceptance. */
@@ -40,6 +50,18 @@ export const ISSUE_CODES = [
   'UNKNOWN_BELT',
   'UNKNOWN_DIVISION',
   'INVALID_DATE',
+  // Phase 2 (docs/PHASE2_PLAN.md §3-§7)
+  'INVALID_NUMBER',
+  'UNKNOWN_GENDER',
+  'UNKNOWN_CLASSIFICATION',
+  'AMBIGUOUS_WEIGHT_CLASS',
+  'DUPLICATE_SOURCE_ID',
+  'NAME_MISSING',
+  'NIK_MISSING',
+  'POSSIBLE_DUPLICATE_PERSON',
+  'CONTINGENT_FIELDS_DIFFER',
+  'NO_CATEGORY_TEMPLATE',
+  'MOVEMENT_UNRESOLVED',
 ] as const;
 export type IssueCode = (typeof ISSUE_CODES)[number];
 
@@ -81,6 +103,18 @@ export const ISSUE_CATALOG: Readonly<Record<IssueCode, IssueDefinition>> = {
   UNKNOWN_BELT: def('UNKNOWN_BELT', 'ERROR', 'BELT', false),
   UNKNOWN_DIVISION: def('UNKNOWN_DIVISION', 'ERROR', 'DIVISION', false),
   INVALID_DATE: def('INVALID_DATE', 'ERROR', 'DATE', false),
+  INVALID_NUMBER: def('INVALID_NUMBER', 'ERROR', 'HEIGHT', false),
+  UNKNOWN_GENDER: def('UNKNOWN_GENDER', 'ERROR', 'GENDER', false),
+  UNKNOWN_CLASSIFICATION: def('UNKNOWN_CLASSIFICATION', 'ERROR', 'CLASSIFICATION', false),
+  // A bare "53" is a spreadsheet formula corruption of "=+53" or "-53" (F-37): never guessed.
+  AMBIGUOUS_WEIGHT_CLASS: def('AMBIGUOUS_WEIGHT_CLASS', 'ERROR', 'CLASS', false, true),
+  DUPLICATE_SOURCE_ID: def('DUPLICATE_SOURCE_ID', 'ERROR', 'IDENTITY', false),
+  NAME_MISSING: def('NAME_MISSING', 'ERROR', 'FULL_NAME', false),
+  NIK_MISSING: def('NIK_MISSING', 'WARNING', 'NIK', false),
+  POSSIBLE_DUPLICATE_PERSON: def('POSSIBLE_DUPLICATE_PERSON', 'WARNING', 'IDENTITY', false),
+  CONTINGENT_FIELDS_DIFFER: def('CONTINGENT_FIELDS_DIFFER', 'WARNING', 'CONTINGENT', false),
+  NO_CATEGORY_TEMPLATE: def('NO_CATEGORY_TEMPLATE', 'ERROR', 'CATEGORY', false),
+  MOVEMENT_UNRESOLVED: def('MOVEMENT_UNRESOLVED', 'ERROR', 'CATEGORY', false),
 };
 
 /** Roles allowed to override a data-quality ERROR. Only the Technical Delegate (ADR-0011). */

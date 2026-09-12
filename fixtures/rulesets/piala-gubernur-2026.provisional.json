@@ -1410,23 +1410,23 @@
       "poolTarget": 4,
       "poolMax": 4,
       "sizePenaltyFp": {
-        "1": 40000,
-        "2": 10000,
-        "3": 2500,
+        "1": 400000,
+        "2": 50000,
+        "3": 10000,
         "4": 0
       },
       "sizePenaltyProvenance": {
         "source": "ENGINEERING_DEFAULT",
-        "note": "Pool-size penalties are placeholders; calibrated in Phase 3."
+        "note": "Calibrated in Phase 3 on the 2026 data (docs/PHASE3_CALIBRATION.md): 17 walkovers (16 forced) instead of 63 with the placeholders, at the cost of wider height ranges. Tradeoff, not a rule."
       },
       "tiers": {
-        "tier1SlackFp": 500,
+        "tier1SlackFp": 50000,
         "forbidIdealRegression": true,
         "contingentWeightPermille": 1000,
         "bracketWeightPermille": 1000,
         "provenance": {
           "source": "ENGINEERING_DEFAULT",
-          "note": "Tier weights and slack are placeholders; calibrated in Phase 3 with the draw simulator."
+          "note": "Tier weights 1.0 each; Tier-1 slack 5.0 per category, calibrated in Phase 3 (docs/PHASE3_CALIBRATION.md). Larger slack buys little contingent diversity on the 2026 data."
         }
       },
       "singleton": {
@@ -1501,23 +1501,23 @@
       "poolTarget": 4,
       "poolMax": 4,
       "sizePenaltyFp": {
-        "1": 40000,
-        "2": 10000,
-        "3": 2500,
+        "1": 400000,
+        "2": 50000,
+        "3": 10000,
         "4": 0
       },
       "sizePenaltyProvenance": {
         "source": "ENGINEERING_DEFAULT",
-        "note": "Pool-size penalties are placeholders; calibrated in Phase 3."
+        "note": "Calibrated in Phase 3 on the 2026 data (docs/PHASE3_CALIBRATION.md): 17 walkovers (16 forced) instead of 63 with the placeholders, at the cost of wider height ranges. Tradeoff, not a rule."
       },
       "tiers": {
-        "tier1SlackFp": 500,
+        "tier1SlackFp": 50000,
         "forbidIdealRegression": true,
         "contingentWeightPermille": 1000,
         "bracketWeightPermille": 1000,
         "provenance": {
           "source": "ENGINEERING_DEFAULT",
-          "note": "Tier weights and slack are placeholders; calibrated in Phase 3 with the draw simulator."
+          "note": "Tier weights 1.0 each; Tier-1 slack 5.0 per category, calibrated in Phase 3 (docs/PHASE3_CALIBRATION.md). Larger slack buys little contingent diversity on the 2026 data."
         }
       },
       "singleton": {
@@ -1587,6 +1587,13 @@
       ]
     }
   ],
+  "categoryReadiness": {
+    "withheldEntries": "BLOCK_CATEGORY",
+    "provenance": {
+      "source": "ENGINEERING_DEFAULT",
+      "note": "A category with withheld entries is not drawn partially until they are resolved or withdrawn. Engineering default pending committee confirmation; singletons are governed by poolPolicies.singleton."
+    }
+  },
   "categoryTemplates": [
     {
       "code": "KYORUGI_PRESTASI",
@@ -1765,6 +1772,10 @@
       "INDIVIDUAL": "INDIVIDUAL",
       "PAIR": "PAIR",
       "TEAM": "TEAM"
+    },
+    "provenance": {
+      "source": "EVIDENCE_2026",
+      "note": "Vocabulary of the 2026 registration export (S1); maps source strings, decides no rule."
     }
   },
   "notes": [

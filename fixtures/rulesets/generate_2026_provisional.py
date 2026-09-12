@@ -86,14 +86,20 @@ def pool_policies() -> list[dict]:
         "poolMin": 2,
         "poolTarget": 4,
         "poolMax": 4,
-        "sizePenaltyFp": {"1": 40000, "2": 10000, "3": 2500, "4": 0},
-        "sizePenaltyProvenance": eng("Pool-size penalties are placeholders; calibrated in Phase 3."),
+        "sizePenaltyFp": {"1": 400000, "2": 50000, "3": 10000, "4": 0},
+        "sizePenaltyProvenance": eng(
+            "Calibrated in Phase 3 on the 2026 data (docs/PHASE3_CALIBRATION.md): 17 walkovers (16 forced) "
+            "instead of 63 with the placeholders, at the cost of wider height ranges. Tradeoff, not a rule."
+        ),
         "tiers": {
-            "tier1SlackFp": 500,
+            "tier1SlackFp": 50000,
             "forbidIdealRegression": True,
             "contingentWeightPermille": 1000,
             "bracketWeightPermille": 1000,
-            "provenance": eng("Tier weights and slack are placeholders; calibrated in Phase 3 with the draw simulator."),
+            "provenance": eng(
+                "Tier weights 1.0 each; Tier-1 slack 5.0 per category, calibrated in Phase 3 (docs/PHASE3_CALIBRATION.md). "
+                "Larger slack buys little contingent diversity on the 2026 data."
+            ),
         },
         "singleton": {
             "policy": "WALKOVER_WITH_SUGGESTIONS",
@@ -245,6 +251,13 @@ def main() -> None:
             "provenance": eng("Plausibility screens catch data-entry errors; they are not eligibility rules."),
         },
         "poolPolicies": pool_policies(),
+        "categoryReadiness": {
+            "withheldEntries": "BLOCK_CATEGORY",
+            "provenance": eng(
+                "A category with withheld entries is not drawn partially until they are resolved or withdrawn. "
+                "Engineering default pending committee confirmation; singletons are governed by poolPolicies.singleton."
+            ),
+        },
         "categoryTemplates": templates(),
         "sourceVocabulary": {
             "klasifikasi": {
@@ -257,6 +270,7 @@ def main() -> None:
             "divisi": DIV,
             "gender": GEN,
             "format": {"INDIVIDUAL": "INDIVIDUAL", "PAIR": "PAIR", "TEAM": "TEAM"},
+            "provenance": ev("Vocabulary of the 2026 registration export (S1); maps source strings, decides no rule."),
         },
         "notes": [
             "Provisional rule set derived from docs/SOURCE_ANALYSIS.md and the committee answers of 2026-09-11 (Q1-Q5).",

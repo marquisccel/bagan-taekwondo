@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "SYNTHETIC_10K",
+  "generatedAt": "2026-09-12T11:29:23.833Z",
+  "engineVersion": "0.2.0",
+  "simulatorVersion": "0.2.0",
+  "dataset": {
+    "name": "synthetic-10000",
+    "fingerprint": "sha256:016c83711850262ff6ed980b415496f5ac997254a605e67fd33684a17c7b36e5",
+    "rows": 10000,
+    "synthetic": {
+      "rows": 10000,
+      "seed": "10000"
+    }
+  },
+  "ruleSet": {
+    "code": "PIALA_GUBERNUR_2026_PROVISIONAL",
+    "readinessOverride": "DRAW_ELIGIBLE_ONLY"
+  },
+  "seeds": ["20260827"],
+  "counts": {
+    "entries": 9686,
+    "eligible": 9570,
+    "withheld": 116,
+    "categories": 217,
+    "categoriesReady": 193,
+    "categoriesBlocked": 24,
+    "placed": 9519,
+    "pools": 2071,
+    "walkovers": 12
+  },
+  "results": [
+    {
+      "seed": "20260827",
+      "status": "SAFE",
+      "outputFingerprint": "sha256:2074c1ecc9ec11b0b59cab8eb9e0c2c91c037b8c528de77c1055b782a961921d",
+      "ms": 12666
+    }
+  ],
+  "allSafe": true,
+  "identicalAcrossRuns": true,
+  "durationsMs": {
+    "intake": 528,
+    "plan": 12615,
+    "perSeed": {
+      "p50": 12666,
+      "p95": 12666,
+      "max": 12666
+    }
+  },
+  "memory": {
+    "rssPeakMb": 383,
+    "heapUsedPeakMb": 229
+  },
+  "platform": {
+    "os": "win32 10.0.26200",
+    "arch": "x64",
+    "cpuModel": "Intel(R) Core(TM) i7-14700HX",
+    "cpus": 28,
+    "totalMemGb": 24,
+    "node": "v24.10.0"
+  }
+}

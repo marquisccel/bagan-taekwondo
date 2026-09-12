@@ -1,0 +1,56 @@
+{
+  "version": "0.1.0",
+  "status": "UNSAFE",
+  "unsafeReasons": ["CATEGORY_BLOCKED", "ENGINE_STAGE_NOT_IMPLEMENTED"],
+  "metrics": {
+    "entries": 3115,
+    "entriesMalformed": 0,
+    "entriesEligible": 3066,
+    "entriesWithheld": 49,
+    "intakeDisagreements": 0,
+    "categoryKeyMismatches": 0,
+    "categoryKeysUnverified": 0,
+    "categories": 238,
+    "categoriesReady": 207,
+    "categoriesBlocked": 31
+  },
+  "readinessPolicy": {
+    "withheldEntries": "BLOCK_CATEGORY",
+    "provenance": "ENGINEERING_DEFAULT"
+  },
+  "categoriesByTemplate": {
+    "FREESTYLE_INDIVIDUAL": {
+      "ready": 6,
+      "blocked": 0
+    },
+    "FREESTYLE_PAIR": {
+      "ready": 0,
+      "blocked": 3
+    },
+    "KYORUGI_PRESTASI": {
+      "ready": 71,
+      "blocked": 0
+    },
+    "KYORUGI_SEMI_PRESTASI": {
+      "ready": 90,
+      "blocked": 15
+    },
+    "POOMSAE_PRESTASI_INDIVIDUAL": {
+      "ready": 8,
+      "blocked": 0
+    },
+    "POOMSAE_PRESTASI_PAIR": {
+      "ready": 0,
+      "blocked": 4
+    },
+    "POOMSAE_PRESTASI_TEAM": {
+      "ready": 0,
+      "blocked": 5
+    },
+    "POOMSAE_SEMI_PRESTASI": {
+      "ready": 32,
+      "blocked": 4
+    }
+  },
+  "singletonCategories": 24
+}

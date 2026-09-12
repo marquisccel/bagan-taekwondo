@@ -1,13 +1,32 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/shared" },
-    { "path": "packages/domain" },
-    { "path": "packages/rules" },
-    { "path": "packages/draw-engine" },
-    { "path": "packages/db" },
-    { "path": "tools/draw-simulator" },
-    { "path": "apps/api" },
-    { "path": "apps/worker" }
+    {
+      "path": "packages/shared"
+    },
+    {
+      "path": "packages/domain"
+    },
+    {
+      "path": "packages/rules"
+    },
+    {
+      "path": "packages/intake"
+    },
+    {
+      "path": "packages/draw-engine"
+    },
+    {
+      "path": "packages/db"
+    },
+    {
+      "path": "tools/draw-simulator"
+    },
+    {
+      "path": "apps/api"
+    },
+    {
+      "path": "apps/worker"
+    }
   ]
 }

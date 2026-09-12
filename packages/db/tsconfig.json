@@ -7,5 +7,18 @@
   },
   "include": ["src"],
   "exclude": ["src/**/*.test.ts"],
-  "references": [{ "path": "../shared" }, { "path": "../domain" }, { "path": "../rules" }]
+  "references": [
+    {
+      "path": "../shared"
+    },
+    {
+      "path": "../domain"
+    },
+    {
+      "path": "../rules"
+    },
+    {
+      "path": "../intake"
+    }
+  ]
 }
