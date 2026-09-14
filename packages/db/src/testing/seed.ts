@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { sha256Hex } from '@bagantkd/shared';
 
-import type { TestDb } from './test-db.js';
+import type { Db } from '../db.js';
 
 const fp = (s: string) => `sha256:${sha256Hex(s)}`;
 
@@ -11,7 +11,7 @@ const fp = (s: string) => `sha256:${sha256Hex(s)}`;
  * Walks the batch lifecycle the only legal way: UPLOADED → PARSED → VALIDATED → COMMITTED.
  */
 export async function newSnapshot(
-  db: TestDb,
+  db: Db,
   tournament: string,
   ruleSet: string,
   actor: string,
@@ -48,7 +48,7 @@ export async function newSnapshot(
 
 /** An isolated tournament with a Technical Delegate, a Drawing Officer, a Viewer and a rule-set header row. */
 export async function newTournament(
-  db: TestDb,
+  db: Db,
 ): Promise<{ tournament: string; ruleSet: string; td: string; officer: string; viewer: string }> {
   const tag = randomUUID().slice(0, 8);
   const user = async (role: string) =>
@@ -88,3 +88,12 @@ export const TEST_NIK_KEYS = {
   encryptionKey: new Uint8Array(32).fill(1),
   blindIndexKey: new Uint8Array(32).fill(2),
 };
+
+/** A default arena ("A") for the tournament, for tests that allocate match codes or move pools. */
+export async function newArena(db: Db, tournament: string, code = 'A'): Promise<string> {
+  const [row] = await db.query<{ id: string }>(
+    `insert into arena (tournament_id, code, name) values ($1, $2, $2) returning id`,
+    [tournament, code],
+  );
+  return row?.id ?? '';
+}

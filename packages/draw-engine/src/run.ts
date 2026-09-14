@@ -80,8 +80,13 @@ const limitExceeded = (limit: keyof EngineLimits, value: number, actual: number,
   params: { limit, value, actual, scope },
 });
 
-/** The input is a set of entries: its fingerprint does not depend on array order. */
-function inputFingerprint(input: EngineInput): Fingerprint {
+/**
+ * The input is a set of entries: its fingerprint does not depend on array order. Exported so a
+ * caller (e.g. the backend, when creating a `DrawRun` row) can record the exact fingerprint the
+ * engine will produce for the same input, before running it. Pure passthrough of existing logic —
+ * not a change to what is fingerprinted.
+ */
+export function computeInputFingerprint(input: EngineInput): Fingerprint {
   return fingerprint({
     engineVersion: input.engineVersion,
     purpose: input.purpose,
@@ -124,7 +129,7 @@ export function runDraw(input: EngineInput): EngineOutput {
     };
     let inputFp: Fingerprint;
     try {
-      inputFp = inputFingerprint(input);
+      inputFp = computeInputFingerprint(input);
     } catch {
       inputFp = fingerprint({ unreadableInput: failure });
     }
@@ -330,7 +335,7 @@ function drawChecked(input: EngineInput): EngineOutput {
     categories = categories.map((c) => ({ ...c, candidates: [], pools: [], reasons: [] }));
   }
 
-  const inputFp = inputFingerprint(input);
+  const inputFp = computeInputFingerprint(input);
   const rulesFp = assessment.fingerprint ?? fingerprint(input.ruleSet);
   const body = {
     engineVersion: ENGINE_VERSION,

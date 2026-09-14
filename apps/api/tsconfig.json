@@ -10,5 +10,11 @@
     "isolatedModules": false
   },
   "include": ["src"],
-  "exclude": ["src/**/*.test.ts"]
+  "exclude": ["src/**/*.test.ts"],
+  "references": [
+    { "path": "../../packages/db" },
+    { "path": "../../packages/domain" },
+    { "path": "../../packages/draw-engine" },
+    { "path": "../../packages/shared" }
+  ]
 }

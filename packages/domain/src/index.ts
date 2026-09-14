@@ -6,5 +6,6 @@ export * from './import-batch.js';
 export * from './issues.js';
 export * from './override.js';
 export * from './participant-status.js';
+export * from './rbac.js';
 export * from './revision-lifecycle.js';
 export * from './units.js';

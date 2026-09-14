@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createPool } from './app.module';
+import { createPool } from './db/db.module';
 import { evaluateReadiness } from './health/readiness';
 
 describe('postgres pool', () => {

@@ -8,6 +8,11 @@
       "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./testing/seed": {
+      "source": "./src/testing/seed.ts",
+      "types": "./dist/testing/seed.d.ts",
+      "default": "./dist/testing/seed.js"
     }
   },
   "scripts": {
@@ -17,6 +22,7 @@
   },
   "dependencies": {
     "@bagantkd/domain": "workspace:*",
+    "@bagantkd/draw-engine": "workspace:*",
     "@bagantkd/intake": "workspace:*",
     "@bagantkd/rules": "workspace:*",
     "@bagantkd/shared": "workspace:*",

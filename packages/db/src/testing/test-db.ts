@@ -7,16 +7,16 @@ import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { migrate as migratePg } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 
+import type { Db } from '../db.js';
 import { MIGRATIONS_FOLDER, type SqlExecutor } from '../index.js';
 
 /**
  * Minimal raw-SQL handle used by the database tests. Constraint and trigger tests use plain SQL
- * on purpose: they verify what the database itself refuses, independent of any ORM.
+ * on purpose: they verify what the database itself refuses, independent of any ORM. Same shape as
+ * the production `Db` (db.ts), plus a backend label and `close()` for the test harness.
  */
-export interface TestDb extends SqlExecutor {
+export interface TestDb extends Db {
   readonly backend: string;
-  /** Runs `fn` in one transaction: committed if it resolves, rolled back if it throws. */
-  transaction<T>(fn: (tx: SqlExecutor) => Promise<T>): Promise<T>;
   close(): Promise<void>;
 }
 

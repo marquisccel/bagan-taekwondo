@@ -8,6 +8,16 @@
     "start": "node dist/main.js"
   },
   "dependencies": {
-    "@bagantkd/draw-engine": "workspace:*"
+    "@bagantkd/db": "workspace:*",
+    "@bagantkd/draw-engine": "workspace:*",
+    "pg": "8.23.0",
+    "pg-boss": "^12.31.1"
+  },
+  "devDependencies": {
+    "@bagantkd/intake": "workspace:*",
+    "@bagantkd/rules": "workspace:*",
+    "@bagantkd/shared": "workspace:*",
+    "@types/pg": "8.23.1",
+    "drizzle-orm": "0.45.2"
   }
 }
