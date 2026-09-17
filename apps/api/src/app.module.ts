@@ -8,9 +8,10 @@ import { HealthController, READINESS_PROBES } from './health/health.controller';
 import type { Probe } from './health/readiness';
 import { JobQueueModule } from './jobs/job-queue.module';
 import { RevisionModule } from './revision/revision.module';
+import { TournamentModule } from './tournament/tournament.module';
 
 @Module({
-  imports: [DbModule, JobQueueModule, DrawRunModule, RevisionModule, AuditModule],
+  imports: [DbModule, JobQueueModule, DrawRunModule, RevisionModule, AuditModule, TournamentModule],
   controllers: [HealthController],
   providers: [
     {

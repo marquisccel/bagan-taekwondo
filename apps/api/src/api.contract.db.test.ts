@@ -187,6 +187,77 @@ describe.skipIf(!adminUrl)('API contract — postgres', () => {
     expect(res.body).toHaveProperty('fingerprint');
   });
 
+  it('GET /tournaments/:id returns a dashboard summary of the latest draw run and revision', async () => {
+    const res = await request(server).get(`/tournaments/${tournament}`).set('x-actor-id', officer);
+    expect(res.status).toBe(200);
+    expect(res.body.latestDrawRun).toMatchObject({ id: drawRunId, status: 'SAFE' });
+    expect(res.body.latestRevision).toMatchObject({ id: revisionId, lifecycle: 'DRAFT' });
+    expect(res.body.categoryCounts.total).toBeGreaterThan(0);
+  });
+
+  it('GET /tournaments/:id/members lists the tournament roster for the dev persona switcher', async () => {
+    const res = await request(server).get(`/tournaments/${tournament}/members`).set('x-actor-id', officer);
+    expect(res.status).toBe(200);
+    const members = res.body as { user_id: string }[];
+    expect(members.map((m) => m.user_id)).toContain(officer);
+  });
+
+  it('GET /tournaments/:id/search finds an entry by contingent name without leaking NIK', async () => {
+    const [pool] = await db.query<{ id: string }>(`select id from pool where revision_id = $1 limit 1`, [
+      revisionId,
+    ]);
+    const [member] = await db.query<{ entry_id: string }>(
+      `select entry_id from pool_member where pool_id = $1 limit 1`,
+      [pool?.id],
+    );
+    const [entry] = await db.query<{ contingent_id: string }>(
+      `select contingent_id from entry where id = $1`,
+      [member?.entry_id],
+    );
+    const [contingent] = await db.query<{ name: string }>(`select name from contingent where id = $1`, [
+      entry?.contingent_id,
+    ]);
+    const res = await request(server)
+      .get(`/tournaments/${tournament}/search`)
+      .query({ q: (contingent?.name ?? '').slice(0, 4) })
+      .set('x-actor-id', officer);
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeGreaterThan(0);
+    expect(JSON.stringify(res.body)).not.toMatch(/nik/i);
+  });
+
+  it('GET /revisions/:id returns revision metadata', async () => {
+    const res = await request(server).get(`/revisions/${revisionId}`).set('x-actor-id', officer);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: revisionId, lifecycle: 'DRAFT', lock_version: 0 });
+  });
+
+  it('GET /revisions/:id/categories lists categories with GREEN/YELLOW/RED derived from readiness and pool explanations', async () => {
+    const res = await request(server).get(`/revisions/${revisionId}/categories`).set('x-actor-id', officer);
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeGreaterThan(0);
+    for (const c of res.body) {
+      expect(['GREEN', 'YELLOW', 'RED']).toContain(c.quality);
+    }
+  });
+
+  it('GET /revisions/:id/categories/:categoryId returns pools and brackets with safe entry display fields (no NIK)', async () => {
+    const [cat] = await db.query<{ category_id: string }>(
+      `select category_id from draw_run_category where draw_run_id = $1 limit 1`,
+      [drawRunId],
+    );
+    const res = await request(server)
+      .get(`/revisions/${revisionId}/categories/${cat?.category_id}`)
+      .set('x-actor-id', officer);
+    expect(res.status).toBe(200);
+    expect(res.body.pools.length).toBeGreaterThan(0);
+    const body = JSON.stringify(res.body);
+    expect(body).not.toMatch(/nik/i);
+    const member = res.body.pools[0].members[0];
+    expect(member).toHaveProperty('displayName');
+    expect(member).toHaveProperty('contingent');
+  });
+
   it('a nonexistent draw run is DRAW_RUN_NOT_FOUND (404), scoped through the guard by tournament', async () => {
     const res = await request(server)
       .get(`/draw-runs/00000000-0000-0000-0000-000000000000`)

@@ -26,7 +26,8 @@ export default tseslint.config(
       '**/*.js',
       '**/*.cjs',
       '**/next-env.d.ts',
-      'apps/web/**',
+      'apps/web/e2e/**',
+      'apps/web/playwright.config.ts',
     ],
   },
   js.configs.recommended,
@@ -48,6 +49,27 @@ export default tseslint.config(
       '@typescript-eslint/no-unnecessary-condition': 'off',
       '@typescript-eslint/no-extraneous-class': 'off',
       '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
+    },
+  },
+  {
+    files: ['apps/web/**/*.ts', 'apps/web/**/*.tsx'],
+    languageOptions: {
+      globals: { ...globals.browser },
+      parserOptions: {
+        project: ['./apps/web/tsconfig.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unnecessary-condition': 'off',
+      '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
+      // JSX event handlers commonly close over an inline object literal / arrow function; the
+      // repo-wide restriction exists for the pure-package determinism rules, not the UI.
+      '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false } }],
+      // `onClick={() => setFoo(x)}` is the idiomatic React callback shape everywhere in this app;
+      // requiring braces around every one-line state setter fights the framework, not a real bug.
+      '@typescript-eslint/no-confusing-void-expression': 'off',
     },
   },
   {
@@ -82,7 +104,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.test.ts'],
+    files: ['**/*.test.ts', '**/*.test.tsx'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',

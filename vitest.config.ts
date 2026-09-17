@@ -54,6 +54,15 @@ export default defineConfig({
           hookTimeout: 120_000,
         },
       },
+      {
+        ...workspaceSource,
+        test: {
+          name: 'web',
+          include: ['apps/web/{app,lib,components}/**/*.test.{ts,tsx}'],
+          environment: 'jsdom',
+          setupFiles: ['apps/web/vitest.setup.ts'],
+        },
+      },
     ],
   },
 });
