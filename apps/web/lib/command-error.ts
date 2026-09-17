@@ -35,3 +35,26 @@ export function friendlyMessage(code: string, fallback: string): string {
   if (code === 'RULE_SET_NOT_READY') return fallback;
   return fallback;
 }
+
+/** Indonesian operator-facing messages for the Phase 6 export UI specifically. */
+export function friendlyExportMessage(code: string, fallback: string): string {
+  switch (code) {
+    case 'EXPORT_UNAUTHORIZED':
+      return 'Anda tidak memiliki izin untuk membuat ekspor ini.';
+    case 'EXPORT_REVISION_NOT_ALLOWED':
+      return 'Status revisi saat ini tidak mengizinkan ekspor jenis ini.';
+    case 'EXPORT_SOURCE_NOT_FOUND':
+      return 'Data sumber untuk ekspor ini tidak ditemukan.';
+    case 'EXPORT_NOT_READY':
+      return 'Berkas belum siap diunduh.';
+    case 'EXPORT_GENERATION_FAILED':
+    case 'EXPORT_TEMPLATE_ERROR':
+      return 'Pembuatan berkas gagal. Coba lagi.';
+    case 'EXPORT_TOO_LARGE':
+      return 'Berkas ekspor terlalu besar.';
+    case 'VALIDATION_ERROR':
+      return fallback;
+    default:
+      return fallback;
+  }
+}

@@ -17,6 +17,7 @@
     "test:property": "vitest run --project property",
     "test:golden": "vitest run --project golden",
     "test:db": "vitest run --project db",
+    "test:render": "vitest run --project render",
     "db:generate": "pnpm --filter @bagantkd/db generate",
     "db:migrate": "pnpm --filter @bagantkd/db migrate",
     "simulate": "pnpm --filter @bagantkd/draw-simulator simulate",

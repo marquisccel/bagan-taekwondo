@@ -10,6 +10,7 @@
   "dependencies": {
     "@bagantkd/db": "workspace:*",
     "@bagantkd/draw-engine": "workspace:*",
+    "@bagantkd/export": "workspace:*",
     "pg": "8.23.0",
     "pg-boss": "^12.31.1"
   },

@@ -3,6 +3,7 @@ import { PgBoss } from 'pg-boss';
 
 export const JOB_QUEUE = Symbol('JOB_QUEUE');
 export const DRAW_RUN_QUEUE = 'draw-run';
+export const EXPORT_QUEUE = 'export';
 
 /**
  * Thin wrapper the API uses only to `send()` — execution lives in apps/worker. Per ADR-0002 the
@@ -26,6 +27,7 @@ export class JobQueue implements OnModuleInit, OnApplicationShutdown {
   async onModuleInit(): Promise<void> {
     await this.boss.start();
     await this.boss.createQueue(DRAW_RUN_QUEUE);
+    await this.boss.createQueue(EXPORT_QUEUE);
   }
 
   async onApplicationShutdown(): Promise<void> {
@@ -38,6 +40,16 @@ export class JobQueue implements OnModuleInit, OnApplicationShutdown {
     } catch (e: unknown) {
       this.logger.warn(
         `enqueue failed for draw_run ${drawRunId}, reconciliation sweep will pick it up: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  }
+
+  async enqueueExport(exportId: string): Promise<void> {
+    try {
+      await this.boss.send(EXPORT_QUEUE, { exportId });
+    } catch (e: unknown) {
+      this.logger.warn(
+        `enqueue failed for export ${exportId}, reconciliation sweep will pick it up: ${e instanceof Error ? e.message : String(e)}`,
       );
     }
   }

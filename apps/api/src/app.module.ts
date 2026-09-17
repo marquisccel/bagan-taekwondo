@@ -4,6 +4,7 @@ import type { Pool } from 'pg';
 import { AuditModule } from './audit/audit.module';
 import { DB, DbModule, PG_POOL } from './db/db.module';
 import { DrawRunModule } from './draw-run/draw-run.module';
+import { ExportModule } from './export/export.module';
 import { HealthController, READINESS_PROBES } from './health/health.controller';
 import type { Probe } from './health/readiness';
 import { JobQueueModule } from './jobs/job-queue.module';
@@ -11,7 +12,15 @@ import { RevisionModule } from './revision/revision.module';
 import { TournamentModule } from './tournament/tournament.module';
 
 @Module({
-  imports: [DbModule, JobQueueModule, DrawRunModule, RevisionModule, AuditModule, TournamentModule],
+  imports: [
+    DbModule,
+    JobQueueModule,
+    DrawRunModule,
+    RevisionModule,
+    ExportModule,
+    AuditModule,
+    TournamentModule,
+  ],
   controllers: [HealthController],
   providers: [
     {

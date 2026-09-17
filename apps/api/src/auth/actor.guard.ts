@@ -64,6 +64,13 @@ export class ActorGuard implements CanActivate {
       );
       return row?.tournament_id ?? null;
     }
+    if (kind === 'export') {
+      const [row] = await this.db.query<{ tournament_id: string }>(
+        `select tournament_id from export_artifact where id = $1`,
+        [routeValue],
+      );
+      return row?.tournament_id ?? null;
+    }
     const [row] = await this.db.query<{ tournament_id: string }>(
       `select tournament_id from draw_revision where id = $1`,
       [routeValue],

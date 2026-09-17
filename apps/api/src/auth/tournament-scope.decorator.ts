@@ -1,7 +1,7 @@
 import { SetMetadata } from '@nestjs/common';
 
 /** How to resolve the tournament a route is scoped to, from its own route params. */
-export type ScopeKind = 'tournament' | 'draw-run' | 'revision';
+export type ScopeKind = 'tournament' | 'draw-run' | 'revision' | 'export';
 
 export const TOURNAMENT_SCOPE_KEY = 'tournamentScope';
 

@@ -11,6 +11,7 @@
     "@bagantkd/db": "workspace:*",
     "@bagantkd/domain": "workspace:*",
     "@bagantkd/draw-engine": "workspace:*",
+    "@bagantkd/export": "workspace:*",
     "@bagantkd/shared": "workspace:*",
     "@nestjs/common": "11.2.3",
     "@nestjs/core": "11.2.3",

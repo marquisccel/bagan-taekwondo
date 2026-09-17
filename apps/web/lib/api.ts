@@ -232,6 +232,34 @@ export interface SearchResult {
   readonly category_key: string | null;
 }
 
+export type ExportType =
+  'TOURNAMENT_DRAW_BOOK' | 'CATEGORY_DRAW' | 'POOL_SHEET' | 'BRACKET_SHEET' | 'XLSX_WORKBOOK';
+export type ExportMode = 'PREVIEW' | 'OFFICIAL';
+export type ExportStatus = 'REQUESTED' | 'GENERATING' | 'READY' | 'FAILED';
+
+export interface ExportArtifact {
+  readonly id: string;
+  readonly tournamentId: string;
+  readonly revisionId: string;
+  readonly revisionNo: number;
+  readonly exportType: ExportType;
+  readonly format: 'PDF' | 'XLSX';
+  readonly mode: ExportMode;
+  readonly scopeType: 'REVISION' | 'CATEGORY' | 'POOL';
+  readonly categoryId: string | null;
+  readonly poolId: string | null;
+  readonly status: ExportStatus;
+  readonly sourceFingerprint: string;
+  readonly parametersFingerprint: string;
+  readonly outputFingerprint: string | null;
+  readonly fileSha256: string | null;
+  readonly filename: string | null;
+  readonly sizeBytes: number | null;
+  readonly errorCode: string | null;
+  readonly requestedAt: string;
+  readonly generatedAt: string | null;
+}
+
 export interface CommandOutcome {
   readonly outcome: 'APPLIED' | 'REJECTED';
   readonly rejectionCode: string | null;
@@ -343,4 +371,31 @@ export const api = {
       reason,
       complaintId: null,
     }),
+
+  requestExport: (
+    actorId: string,
+    revisionId: string,
+    body: { exportType: ExportType; mode: ExportMode; categoryId?: string; poolId?: string },
+  ) => post<ExportArtifact>(`/revisions/${revisionId}/exports`, actorId, body),
+  getExport: (actorId: string, exportId: string) => get<ExportArtifact>(`/exports/${exportId}`, actorId),
+  listExports: (actorId: string, revisionId: string) =>
+    get<ExportArtifact[]>(`/revisions/${revisionId}/exports`, actorId),
 };
+
+/** Downloads a READY export's file with the required x-actor-id header (a plain <a href> can't set headers). */
+export async function downloadExportFile(actorId: string, exp: ExportArtifact): Promise<void> {
+  const res = await fetch(`${API_BASE}/exports/${exp.id}/file`, { headers: { 'x-actor-id': actorId } });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as { code?: string; message?: string } | null;
+    throw new ApiClientError(res.status, body?.code ?? 'UNKNOWN_ERROR', body?.message ?? res.statusText);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = exp.filename ?? 'export';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}

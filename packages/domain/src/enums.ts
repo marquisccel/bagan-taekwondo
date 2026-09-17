@@ -127,5 +127,30 @@ export const SUBJECT_TYPES = values(
   'COMPLAINT',
   'VALIDATION_ISSUE',
   'TOURNAMENT',
+  'EXPORT_ARTIFACT',
 );
 export type SubjectType = (typeof SUBJECT_TYPES)[number];
+
+/** Phase 6: official tournament outputs rendered from one immutable revision — the layer renders, it never decides. */
+export const EXPORT_TYPES = values(
+  'TOURNAMENT_DRAW_BOOK',
+  'CATEGORY_DRAW',
+  'POOL_SHEET',
+  'BRACKET_SHEET',
+  'XLSX_WORKBOOK',
+);
+export type ExportType = (typeof EXPORT_TYPES)[number];
+
+export const EXPORT_FORMATS = values('PDF', 'XLSX');
+export type ExportFormat = (typeof EXPORT_FORMATS)[number];
+
+/** PREVIEW is watermarked and available from any state permitted below; OFFICIAL requires LOCKED/PUBLISHED/AMENDED. */
+export const EXPORT_MODES = values('PREVIEW', 'OFFICIAL');
+export type ExportMode = (typeof EXPORT_MODES)[number];
+
+export const EXPORT_STATUSES = values('REQUESTED', 'GENERATING', 'READY', 'FAILED');
+export type ExportStatus = (typeof EXPORT_STATUSES)[number];
+
+/** What an export is scoped to: the whole revision (draw book, workbook) or one category/pool within it. */
+export const EXPORT_SCOPE_TYPES = values('REVISION', 'CATEGORY', 'POOL');
+export type ExportScopeType = (typeof EXPORT_SCOPE_TYPES)[number];

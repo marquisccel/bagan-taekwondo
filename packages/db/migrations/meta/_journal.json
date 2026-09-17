@@ -36,6 +36,34 @@
       "when": 1789385306361,
       "tag": "0004_fix_revision_content_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789657285583,
+      "tag": "0005_export_artifact_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789657296186,
+      "tag": "0006_export_artifact_triggers",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789658098660,
+      "tag": "0007_export_artifact_fingerprints",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789658120008,
+      "tag": "0008_export_artifact_guard_fingerprints",
+      "breakpoints": true
     }
   ]
 }

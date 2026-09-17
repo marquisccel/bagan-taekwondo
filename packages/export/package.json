@@ -1,0 +1,37 @@
+{
+  "name": "@bagantkd/export",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./pdf": {
+      "source": "./src/pdf/index.ts",
+      "types": "./dist/pdf/index.d.ts",
+      "default": "./dist/pdf/index.js"
+    },
+    "./xlsx": {
+      "source": "./src/xlsx.ts",
+      "types": "./dist/xlsx.d.ts",
+      "default": "./dist/xlsx.js"
+    },
+    "./testing/fixtures": {
+      "source": "./src/testing/fixtures.ts",
+      "types": "./dist/testing/fixtures.d.ts",
+      "default": "./dist/testing/fixtures.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@bagantkd/domain": "workspace:*",
+    "@bagantkd/shared": "workspace:*",
+    "exceljs": "4.4.0",
+    "playwright": "1.55.1"
+  }
+}

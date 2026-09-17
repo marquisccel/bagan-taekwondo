@@ -1,8 +1,10 @@
 import { executeDrawRun, poolDb } from '@bagantkd/db';
 import { ENGINE_VERSION } from '@bagantkd/draw-engine';
+import { localArtifactStorage } from '@bagantkd/export';
 import pg from 'pg';
 import { PgBoss, type Job } from 'pg-boss';
 
+import { EXPORT_QUEUE, registerExportWorker } from './export-worker.js';
 import { reconcileOnce } from './reconcile.js';
 
 /**
@@ -22,11 +24,14 @@ export async function startWorker(options: {
   connectionString: string;
   reconcileIntervalMs?: number;
   staleMs?: number;
+  /** Local filesystem root for generated export artifacts (Phase 6). */
+  exportStorageDir?: string;
   log?: Pick<Console, 'log' | 'warn' | 'error'>;
 }): Promise<WorkerHandle> {
   const log = options.log ?? console;
   const reconcileIntervalMs = options.reconcileIntervalMs ?? 30_000;
   const staleMs = options.staleMs ?? 5 * 60_000;
+  const exportStorage = localArtifactStorage(options.exportStorageDir ?? 'var/exports');
 
   const pool = new pg.Pool({ connectionString: options.connectionString, max: 5 });
   pool.on('error', (err: Error) => {
@@ -40,6 +45,7 @@ export async function startWorker(options: {
   });
   await boss.start();
   await boss.createQueue(DRAW_RUN_QUEUE);
+  await boss.createQueue(EXPORT_QUEUE);
 
   await boss.work<{ drawRunId: string }>(
     DRAW_RUN_QUEUE,
@@ -55,15 +61,17 @@ export async function startWorker(options: {
     },
   );
 
+  await registerExportWorker(boss, db, exportStorage, log);
+
   const timer = setInterval(() => {
-    reconcileOnce(db, staleMs, log).catch((e: unknown) => {
+    reconcileOnce(db, exportStorage, staleMs, log).catch((e: unknown) => {
       log.error(`reconcile sweep failed: ${e instanceof Error ? e.message : String(e)}`);
     });
   }, reconcileIntervalMs);
   timer.unref();
 
   log.log(
-    `bagantkd worker started (engine ${ENGINE_VERSION}); queue "${DRAW_RUN_QUEUE}", reconcile every ${reconcileIntervalMs}ms, stale threshold ${staleMs}ms`,
+    `bagantkd worker started (engine ${ENGINE_VERSION}); queues "${DRAW_RUN_QUEUE}", "${EXPORT_QUEUE}", reconcile every ${reconcileIntervalMs}ms, stale threshold ${staleMs}ms`,
   );
 
   return {
@@ -82,7 +90,10 @@ if (process.env['BAGANTKD_WORKER_MAIN'] !== 'skip') {
     process.stderr.write('DATABASE_URL is required\n');
     process.exit(1);
   }
-  const handle = await startWorker({ connectionString });
+  const handle = await startWorker({
+    connectionString,
+    ...(process.env['EXPORT_STORAGE_DIR'] ? { exportStorageDir: process.env['EXPORT_STORAGE_DIR'] } : {}),
+  });
   const shutdown = (signal: string) => {
     process.stdout.write(`received ${signal}, shutting down\n`);
     handle

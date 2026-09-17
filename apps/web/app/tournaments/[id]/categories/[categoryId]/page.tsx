@@ -6,6 +6,7 @@ import { useApiSWR } from '../../../../../lib/use-api-swr';
 
 import { BracketView } from '../../../../../components/BracketView';
 import { EntryDrawer } from '../../../../../components/EntryDrawer';
+import { ExportPanel } from '../../../../../components/ExportPanel';
 import { MoveEntryDialog } from '../../../../../components/MoveEntryDialog';
 import { PoolCard } from '../../../../../components/PoolCard';
 import { RevisionConflictBanner } from '../../../../../components/RevisionConflictBanner';
@@ -87,6 +88,10 @@ export default function CategoryDetailPage() {
         {!editable ? <span className="badge badge-yellow">read-only</span> : null}
       </div>
 
+      {revisionId ? (
+        <ExportPanel revisionId={revisionId} availableTypes={['CATEGORY_DRAW']} categoryId={categoryId} />
+      ) : null}
+
       {conflict ? <RevisionConflictBanner onReload={reload} /> : null}
       {banner ? (
         <div className="banner banner-conflict" role="alert">
@@ -165,6 +170,13 @@ export default function CategoryDetailPage() {
                 <div key={p.id} className="panel">
                   <h3 style={{ marginTop: 0 }}>{p.poolUid}</h3>
                   <BracketView bracket={p.bracket} />
+                  {revisionId ? (
+                    <ExportPanel
+                      revisionId={revisionId}
+                      availableTypes={['POOL_SHEET', 'BRACKET_SHEET']}
+                      poolId={p.id}
+                    />
+                  ) : null}
                 </div>
               ) : null,
             )}

@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useApiSWR } from '../../../lib/use-api-swr';
 
+import { ExportPanel } from '../../../components/ExportPanel';
 import { api } from '../../../lib/api';
 import { useDevAuth } from '../../../lib/dev-auth';
 
@@ -89,6 +90,10 @@ export default function TournamentOverviewPage() {
           <div className="panel state-empty">No draw run yet for this tournament.</div>
         )}
       </div>
+
+      {rev ? (
+        <ExportPanel revisionId={rev.id} availableTypes={['TOURNAMENT_DRAW_BOOK', 'XLSX_WORKBOOK']} />
+      ) : null}
     </main>
   );
 }

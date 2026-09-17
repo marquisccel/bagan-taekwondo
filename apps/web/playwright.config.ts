@@ -4,6 +4,8 @@ const DATABASE_URL =
   process.env['DATABASE_URL'] ?? 'postgres://bagantkd:bagantkd_dev_only@127.0.0.1:5433/bagantkd';
 const API_PORT = 3010;
 const WEB_PORT = 3001;
+/** Shared between the API (reads, for download) and the worker (writes, after rendering). */
+const EXPORT_STORAGE_DIR = 'var/e2e-exports';
 
 export default defineConfig({
   testDir: './e2e',
@@ -21,7 +23,12 @@ export default defineConfig({
       cwd: import.meta.dirname,
       port: API_PORT,
       reuseExistingServer: !process.env['CI'],
-      env: { DATABASE_URL, PORT: String(API_PORT), CORS_ORIGIN: `http://127.0.0.1:${WEB_PORT}` },
+      env: {
+        DATABASE_URL,
+        PORT: String(API_PORT),
+        CORS_ORIGIN: `http://127.0.0.1:${WEB_PORT}`,
+        EXPORT_STORAGE_DIR,
+      },
       timeout: 30_000,
     },
     {

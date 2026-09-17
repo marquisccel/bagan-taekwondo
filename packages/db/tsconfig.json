@@ -22,6 +22,9 @@
     },
     {
       "path": "../draw-engine"
+    },
+    {
+      "path": "../export"
     }
   ]
 }

@@ -1,6 +1,6 @@
 import type { DrawCommandType } from './commands.js';
 import type { RevisionAction } from './revision-lifecycle.js';
-import type { Role } from './enums.js';
+import type { ExportMode, Role } from './enums.js';
 
 /**
  * Tournament-scoped RBAC (Phase 4). A role is never trusted from the client: the backend always
@@ -61,3 +61,17 @@ export const canOverrideDataQuality = (role: Role): boolean => atLeast(role, 'TE
 
 /** VIEWER (and anyone unresolved) can only read. */
 export const canRead = (role: Role | null): boolean => role !== null;
+
+/**
+ * Phase 6: requesting a PREVIEW export (watermarked, any exportable lifecycle) needs
+ * DRAWING_OFFICER+; requesting an OFFICIAL export (LOCKED/PUBLISHED/AMENDED only — see
+ * packages/domain/src/export-policy.ts for the lifecycle gate) needs TECHNICAL_DELEGATE+, the
+ * same rank that can LOCK/PUBLISH the revision in the first place.
+ */
+export function canRequestExport(role: Role, mode: ExportMode): boolean {
+  if (mode === 'OFFICIAL') return atLeast(role, 'TECHNICAL_DELEGATE');
+  return atLeast(role, 'DRAWING_OFFICER');
+}
+
+/** Any resolved tournament member may view/download an export they're authorized to see. */
+export const canViewExport = (role: Role | null): boolean => role !== null;

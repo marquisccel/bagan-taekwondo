@@ -13,6 +13,11 @@ import {
   ENTRY_FORMATS,
   ENTRY_GROUP_SOURCES,
   ENTRY_GROUP_STATUSES,
+  EXPORT_FORMATS,
+  EXPORT_MODES,
+  EXPORT_SCOPE_TYPES,
+  EXPORT_STATUSES,
+  EXPORT_TYPES,
   GENDERS,
   IMPORT_BATCH_STATUSES,
   ISSUE_SEVERITIES,
@@ -70,6 +75,13 @@ export const importBatchStatusEnum = pgEnum('import_batch_status', IMPORT_BATCH_
 export const tournamentStatusEnum = pgEnum('tournament_status', TOURNAMENT_STATUSES);
 export const ruleSetStatusEnum = pgEnum('rule_set_status', RULE_SET_STATUSES);
 export const subjectTypeEnum = pgEnum('subject_type', SUBJECT_TYPES);
+
+// Export artifacts (Phase 6).
+export const exportTypeEnum = pgEnum('export_type', EXPORT_TYPES);
+export const exportFormatEnum = pgEnum('export_format', EXPORT_FORMATS);
+export const exportModeEnum = pgEnum('export_mode', EXPORT_MODES);
+export const exportStatusEnum = pgEnum('export_status', EXPORT_STATUSES);
+export const exportScopeTypeEnum = pgEnum('export_scope_type', EXPORT_SCOPE_TYPES);
 
 export const agePolicyEnum = pgEnum('age_policy', AGE_POLICIES);
 export const playUpPolicyEnum = pgEnum('play_up_policy', PLAY_UP_POLICIES);

@@ -22,6 +22,10 @@ apps/web/test-results/
 apps/web/playwright-report/
 apps/web/blob-report/
 
+# Generated tournament export artifacts (Phase 6 — local filesystem ArtifactStorage)
+var/exports/
+apps/web/var/
+
 # OS / editor
 .DS_Store
 Thumbs.db

@@ -1,0 +1,5 @@
+ALTER TABLE "export_artifact" DROP CONSTRAINT "export_artifact_ready_ck";--> statement-breakpoint
+ALTER TABLE "export_artifact" ALTER COLUMN "source_fingerprint" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "export_artifact" ADD COLUMN "parameters_fingerprint" text NOT NULL;--> statement-breakpoint
+ALTER TABLE "export_artifact" ADD COLUMN "file_sha256" text;--> statement-breakpoint
+ALTER TABLE "export_artifact" ADD CONSTRAINT "export_artifact_ready_ck" CHECK ("export_artifact"."status" <> 'READY' or ("export_artifact"."storage_key" is not null and "export_artifact"."filename" is not null and "export_artifact"."size_bytes" is not null and "export_artifact"."output_fingerprint" is not null and "export_artifact"."file_sha256" is not null and "export_artifact"."generated_at" is not null));
