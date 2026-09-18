@@ -30,6 +30,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm format:check
@@ -37,5 +38,7 @@ jobs:
       - run: pnpm test:property
       # Runs on PGlite and PostgreSQL 16 (DATABASE_URL is set).
       - run: pnpm test:db
+      # Phase 6 PDF/XLSX rendering via headless Chromium.
+      - run: pnpm test:render
       # The private 2026 dataset is not available in CI; the golden tier reports SKIPPED explicitly.
       - run: pnpm test:golden
