@@ -110,7 +110,7 @@ export function makeFixtureModel(opts: FixtureOptions): ExportModel {
       errorCount: 0,
       warningCount: n > 32 ? 1 : 0,
       infoCount: 0,
-      findings: n > 32 ? [{ level: 'WARNING', code: 'LARGE_BRACKET', message: 'Bagan besar' }] : [],
+      findings: n > 32 ? [{ level: 'WARNING', code: 'LARGE_BRACKET', subject: 'c1' }] : [],
     },
     categories: [
       {
@@ -122,7 +122,8 @@ export function makeFixtureModel(opts: FixtureOptions): ExportModel {
         gender: 'MALE',
         movement: discipline === 'POOMSAE' ? 'TUNGGAL' : null,
         ageDivisionCode: 'DEWASA',
-        weightClassCode: discipline === 'KYORUGI' ? '-58KG' : null,
+        ageDivisionLabel: 'Dewasa',
+        weightClassCode: discipline === 'KYORUGI' ? '-58' : null,
         readiness: 'READY',
       },
     ],

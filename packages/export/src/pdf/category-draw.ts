@@ -1,5 +1,15 @@
 import type { ExportCategory, ExportModel, ExportPool } from '../model.js';
 import {
+  formatCategoryDisplayName,
+  formatLabel,
+  genderLabel,
+  humanizeCode,
+  readinessLabel,
+  streamLabel,
+  warningLabel,
+  weightClassLabel,
+} from '../presentation.js';
+import {
   esc,
   footerTemplate,
   headerTemplate,
@@ -9,27 +19,28 @@ import {
 } from './layout.js';
 import { renderHtmlToPdf } from './render.js';
 
-/** DIVISI_USIA=... / WEIGHT_CLASS=... style tokens embedded in categoryKey by the Phase 3 engine. */
-function keyPart(categoryKey: string, tag: string): string | null {
-  const m = new RegExp(`\\|${tag}=([^|]*)`).exec(categoryKey);
-  return m?.[1] ?? null;
-}
-
 function categoryInfoRows(c: ExportCategory): string {
   const rows: [string, string | null][] = [
-    ['Cabang', c.discipline],
-    ['Kelas usia', c.ageDivisionCode ?? keyPart(c.categoryKey, 'AGE_DIVISION')],
-    ['Jenis kelamin', c.gender],
-    ['Kelas berat', c.weightClassCode],
-    ['Movement', c.movement],
-    ['Format', c.format],
+    ['Kelompok', streamLabel(c.stream)],
+    ['Kelas usia', c.ageDivisionLabel ?? (c.ageDivisionCode ? humanizeCode(c.ageDivisionCode) : null)],
+    ['Jenis kelamin', genderLabel(c.gender)],
+    ['Kelas berat', c.weightClassCode ? weightClassLabel(c.weightClassCode) : null],
+    ['Movement', c.movement ? humanizeCode(c.movement) : null],
+    ['Format', formatLabel(c.format)],
     ['Jumlah peserta', String(c.participantCount)],
-    ['Status kesiapan', c.readiness],
+    ['Status kesiapan', readinessLabel(c.readiness)],
   ];
   return rows
     .filter(([, v]) => v !== null && v !== undefined)
     .map(([k, v]) => `<tr><th style="width:40mm">${esc(k)}</th><td>${esc(String(v))}</td></tr>`)
     .join('');
+}
+
+function warningsHtml(warnings: readonly string[]): string {
+  if (warnings.length === 0) return '';
+  return `<div class="warn">${warnings
+    .map((code) => `${esc(warningLabel(code))} <span class="code-tag">(${esc(code)})</span>`)
+    .join('<br>')}</div>`;
 }
 
 function poolSummaryHtml(p: ExportPool): string {
@@ -39,13 +50,10 @@ function poolSummaryHtml(p: ExportPool): string {
   const bracketNote = p.bracket
     ? `<div class="meta">Bagan: ${p.bracket.size} slot, ${p.bracket.rounds} babak, ${p.bracket.byes} BYE</div>`
     : '';
-  const warnings = p.warnings.length
-    ? `<div class="warn">Peringatan: ${p.warnings.map(esc).join('; ')}</div>`
-    : '';
   return `
     <div class="section">
       <h3>Pool ${p.ordinal}${p.isWalkover ? ' (Walkover)' : ''}</h3>
-      ${warnings}
+      ${warningsHtml(p.warnings)}
       ${bracketNote}
       <table>
         <thead><tr><th style="width:10mm">No</th><th>Peserta</th><th>Kontingen</th></tr></thead>
@@ -63,15 +71,17 @@ export async function renderCategoryDrawPdf(
   const category = model.categories.find((c) => c.id === categoryId);
   if (!category) throw new Error(`category ${categoryId} not found in export model`);
 
-  const title = `Bagan Kategori — ${category.categoryKey}`;
+  const displayName = formatCategoryDisplayName(category);
   const body = `
-    <h1>${esc(title)}</h1>
+    <div class="doc-kicker">Bagan Kategori</div>
+    <h1>${esc(displayName)}</h1>
     ${metaBlockHtml(model, opts)}
     <table>${categoryInfoRows(category)}</table>
     ${category.pools.map(poolSummaryHtml).join('')}
+    <div class="tech-meta">Kunci kategori (teknis): ${esc(category.categoryKey)}</div>
   `;
-  return renderHtmlToPdf(pageShell(title, body, opts), {
-    headerTemplate: headerTemplate(`${model.tournament.name} — ${category.categoryKey}`),
+  return renderHtmlToPdf(pageShell(displayName, body, opts), {
+    headerTemplate: headerTemplate(`${model.tournament.name} — ${displayName}`),
     footerTemplate: footerTemplate(),
   });
 }

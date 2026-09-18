@@ -27,7 +27,7 @@ export interface ExportEntry {
 
 export type ExportFeeder =
   | { readonly kind: 'slot'; readonly slot: number }
-  | { readonly kind: 'match'; readonly publicCode: string | null };
+  | { readonly kind: 'match'; readonly matchUid: string; readonly publicCode: string | null };
 
 export interface ExportMatch {
   readonly id: string;
@@ -80,6 +80,8 @@ export interface ExportCategory {
   readonly gender: string;
   readonly movement: string | null;
   readonly ageDivisionCode: string | null;
+  /** The rule set's own human label for this age division (e.g. "Pra Cadet A") — already curated domain data, not derived here. */
+  readonly ageDivisionLabel: string | null;
   readonly weightClassCode: string | null;
   readonly readiness: string;
   readonly participantCount: number;
@@ -87,10 +89,16 @@ export interface ExportCategory {
   readonly pools: readonly ExportPool[];
 }
 
+/**
+ * Mirrors the frozen engine's `QualityFinding` (packages/draw-engine/src/contract.ts) exactly —
+ * `code` is the only stable machine identifier; there has never been a free-text `message` field
+ * upstream. The human-facing explanation is derived at render time from `code` via
+ * `presentation.ts`'s `warningLabel`, never invented or stored here.
+ */
 export interface ExportQualityFinding {
   readonly level: 'ERROR' | 'WARNING' | 'INFO';
   readonly code: string;
-  readonly message: string;
+  readonly subject: string;
 }
 
 export interface ExportQuality {
@@ -141,6 +149,7 @@ export interface RawCategoryRow {
   readonly gender: string;
   readonly movement: string | null;
   readonly ageDivisionCode: string | null;
+  readonly ageDivisionLabel: string | null;
   readonly weightClassCode: string | null;
   readonly readiness: string;
 }
@@ -217,10 +226,15 @@ const feederFor = (
   slot: number | null,
   matchId: string | null,
   publicCodeByMatchId: ReadonlyMap<string, string | null>,
+  matchUidByMatchId: ReadonlyMap<string, string>,
 ): ExportFeeder =>
   slot !== null
     ? { kind: 'slot', slot }
-    : { kind: 'match', publicCode: publicCodeByMatchId.get(matchId ?? '') ?? null };
+    : {
+        kind: 'match',
+        matchUid: matchUidByMatchId.get(matchId ?? '') ?? '',
+        publicCode: publicCodeByMatchId.get(matchId ?? '') ?? null,
+      };
 
 /**
  * Pure assembly: raw rows in, canonical ExportModel out. No I/O, no wall clock, no randomness — the
@@ -255,6 +269,7 @@ export function buildExportModel(args: BuildExportModelArgs): ExportModel {
     matchesByBracket.set(m.bracketId, list);
   }
   const publicCodeByMatchId = new Map(args.matches.map((m) => [m.id, m.publicCode]));
+  const matchUidByMatchId = new Map(args.matches.map((m) => [m.id, m.matchUid]));
 
   const categories: ExportCategory[] = [...args.categories]
     .sort((a, b) => a.categoryKey.localeCompare(b.categoryKey))
@@ -294,8 +309,8 @@ export function buildExportModel(args: BuildExportModelArgs): ExportModel {
               round: m.round,
               position: m.position,
               status: m.status,
-              feederA: feederFor(m.feederASlot, m.feederAMatchId, publicCodeByMatchId),
-              feederB: feederFor(m.feederBSlot, m.feederBMatchId, publicCodeByMatchId),
+              feederA: feederFor(m.feederASlot, m.feederAMatchId, publicCodeByMatchId, matchUidByMatchId),
+              feederB: feederFor(m.feederBSlot, m.feederBMatchId, publicCodeByMatchId, matchUidByMatchId),
             })),
           };
           members = bracketSlots
@@ -328,6 +343,7 @@ export function buildExportModel(args: BuildExportModelArgs): ExportModel {
         gender: c.gender,
         movement: c.movement,
         ageDivisionCode: c.ageDivisionCode,
+        ageDivisionLabel: c.ageDivisionLabel,
         weightClassCode: c.weightClassCode,
         readiness: c.readiness,
         participantCount,

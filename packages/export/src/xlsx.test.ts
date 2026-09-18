@@ -64,6 +64,7 @@ describe('buildExportWorkbook', () => {
       'Berat (kg)',
       'Tinggi (mm)',
       'Sabuk',
+      'Kunci Kategori (Teknis)',
     ]);
     const weightCol = (sheet?.getRow(1).values as unknown[]).indexOf('Berat (kg)');
     const weightCell = sheet?.getRow(2).getCell(weightCol).value;

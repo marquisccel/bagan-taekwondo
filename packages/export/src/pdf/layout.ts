@@ -1,4 +1,5 @@
 import type { ExportModel } from '../model.js';
+import { EXPORT_MODE_LABEL, revisionLifecycleLabel } from '../presentation.js';
 
 export interface RenderOptions {
   readonly mode: 'PREVIEW' | 'OFFICIAL';
@@ -31,7 +32,10 @@ export const PDF_BASE_CSS = `
   th { background: #eee; font-weight: 600; }
   .meta { font-size: 8.5pt; color: #444; margin-bottom: 3mm; }
   .meta div { margin-bottom: 0.5mm; }
-  .warn { color: #7a4b00; }
+  .doc-kicker { font-size: 8.5pt; letter-spacing: 0.06em; text-transform: uppercase; color: #777; margin-bottom: 1mm; }
+  .tech-meta { font-size: 7.5pt; color: #999; margin-top: 4mm; }
+  .code-tag { font-size: 7.5pt; color: #999; font-family: 'Consolas', monospace; }
+  .warn { color: #7a4b00; margin-bottom: 1mm; }
   .bye { color: #888; font-style: italic; }
   .section { page-break-inside: avoid; }
   .page-break { page-break-before: always; }
@@ -44,11 +48,11 @@ export const PDF_BASE_CSS = `
 
 /** The two labels the spec requires verbatim, in Bahasa Indonesia, wherever a document's mode must be visible. */
 export function modeLabel(mode: RenderOptions['mode']): string {
-  return mode === 'PREVIEW' ? 'PREVIEW — BUKAN UNTUK PENGGUNAAN RESMI' : 'DOKUMEN RESMI';
+  return EXPORT_MODE_LABEL[mode];
 }
 
 export function watermarkHtml(mode: RenderOptions['mode']): string {
-  return mode === 'PREVIEW' ? `<div class="watermark">PREVIEW — BUKAN UNTUK PENGGUNAAN RESMI</div>` : '';
+  return mode === 'PREVIEW' ? `<div class="watermark">${esc(EXPORT_MODE_LABEL.PREVIEW)}</div>` : '';
 }
 
 /** The metadata block every document type must show: revision/version, tournament, timestamp, verification code. */
@@ -56,7 +60,7 @@ export function metaBlockHtml(model: ExportModel, opts: RenderOptions): string {
   return `
     <div class="meta">
       <div><strong>${esc(model.tournament.name)}</strong> (${esc(model.tournament.code)})</div>
-      <div>Revisi ${model.revision.revisionNo} &middot; Status: ${esc(model.revision.lifecycle)}</div>
+      <div>Revisi ${model.revision.revisionNo} &middot; Status: ${esc(revisionLifecycleLabel(model.revision.lifecycle))}</div>
       <div>${modeLabel(opts.mode)}</div>
       <div>Dibuat: ${esc(fmtDate(opts.generatedAt))}</div>
       <div>Kode verifikasi: ${esc(opts.verificationCode)}</div>

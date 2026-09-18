@@ -1,5 +1,12 @@
 import type { ExportEntry, ExportModel, ExportPool } from '../model.js';
 import {
+  formatCategoryDisplayName,
+  formatLabel,
+  genderLabel,
+  humanizeCode,
+  warningLabel,
+} from '../presentation.js';
+import {
   esc,
   footerTemplate,
   headerTemplate,
@@ -46,11 +53,18 @@ function poomsaeRow(
     <td>${positionOf(pool, e, index)}</td>
     <td>${esc(e.displayName)}</td>
     <td>${esc(e.contingent)}</td>
-    <td>${esc(category.movement ?? DASH)}</td>
-    <td>${esc(category.format)}</td>
-    <td>${esc(category.gender)}</td>
+    <td>${esc(category.movement ? humanizeCode(category.movement) : DASH)}</td>
+    <td>${esc(formatLabel(category.format))}</td>
+    <td>${esc(genderLabel(category.gender))}</td>
     <td>${esc(joinAthleteField(e, (a) => a.beltCode))}</td>
   </tr>`;
+}
+
+function warningsHtml(warnings: readonly string[]): string {
+  if (warnings.length === 0) return '';
+  return `<div class="warn">${warnings
+    .map((code) => `${esc(warningLabel(code))} <span class="code-tag">(${esc(code)})</span>`)
+    .join('<br>')}</div>`;
 }
 
 export async function renderPoolSheetPdf(
@@ -65,29 +79,27 @@ export async function renderPoolSheetPdf(
   const isKyorugi = category.discipline === 'KYORUGI';
   const headCols = isKyorugi
     ? ['Posisi', 'Peserta', 'Kontingen', 'Berat', 'Tinggi', 'Sabuk']
-    : ['Posisi', 'Peserta', 'Kontingen', 'Movement', 'Format', 'Gender', 'Sabuk'];
+    : ['Posisi', 'Peserta', 'Kontingen', 'Movement', 'Format', 'Jenis Kelamin', 'Sabuk'];
   const rows = pool.members
     .map((e, i) => (isKyorugi ? kyorugiRow(pool, e, i) : poomsaeRow(pool, category, e, i)))
     .join('');
-  const warnings = pool.warnings.length
-    ? `<div class="warn">Peringatan: ${pool.warnings.map(esc).join('; ')}</div>`
-    : '';
 
-  const title = `Lembar Pool — ${category.categoryKey} — Pool ${pool.ordinal}`;
+  const displayName = formatCategoryDisplayName(category);
+  const title = `Lembar Pool — ${displayName} — Pool ${pool.ordinal}`;
   const body = `
-    <h1>Lembar Pool</h1>
+    <div class="doc-kicker">Lembar Pool</div>
+    <h1>${esc(displayName)}</h1>
     ${metaBlockHtml(model, opts)}
-    <div class="meta"><strong>${esc(category.categoryKey)}</strong> &middot; Pool ${pool.ordinal}${pool.isWalkover ? ' (Walkover)' : ''}</div>
-    ${warnings}
+    <div class="meta">Pool ${pool.ordinal}${pool.isWalkover ? ' (Walkover)' : ''}</div>
+    ${warningsHtml(pool.warnings)}
     <table>
       <thead><tr>${headCols.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead>
       <tbody>${rows || `<tr><td colspan="${headCols.length}">Tidak ada peserta</td></tr>`}</tbody>
     </table>
+    <div class="tech-meta">Kunci kategori (teknis): ${esc(category.categoryKey)}</div>
   `;
   return renderHtmlToPdf(pageShell(title, body, opts), {
-    headerTemplate: headerTemplate(
-      `${model.tournament.name} — ${category.categoryKey} — Pool ${pool.ordinal}`,
-    ),
+    headerTemplate: headerTemplate(`${model.tournament.name} — ${displayName} — Pool ${pool.ordinal}`),
     footerTemplate: footerTemplate(),
   });
 }

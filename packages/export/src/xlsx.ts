@@ -2,6 +2,19 @@ import ExcelJS from 'exceljs';
 
 import type { ExportEntry, ExportModel } from './model.js';
 import type { RenderOptions } from './pdf/layout.js';
+import {
+  disciplineLabel,
+  EXPORT_MODE_LABEL,
+  formatCategoryDisplayName,
+  formatLabel,
+  genderLabel,
+  matchStatusLabel,
+  readinessLabel,
+  revisionLifecycleLabel,
+  streamLabel,
+  warningLabel,
+  weightClassLabel,
+} from './presentation.js';
 
 const joinAthleteField = (
   e: ExportEntry,
@@ -28,8 +41,11 @@ const feederText = (
 
 /**
  * A human-usable workbook, not a database dump (ACCEPTANCE §9): eight fixed Indonesian-labeled
- * sheets built entirely from the canonical ExportModel, in the model's own deterministic order. No
- * NIK anywhere, no formulas (nothing here needs one), stable headers.
+ * sheets built entirely from the canonical ExportModel, in the model's own deterministic order.
+ * Every sheet leads with human-readable columns (the same `presentation.ts` labels every PDF
+ * uses — one centralized mapping, never duplicated) and keeps the raw technical fields (category
+ * key, reason codes) as clearly-separate trailing "(Teknis)" columns for reconciliation, rather
+ * than letting them dominate the sheet. No NIK anywhere, no formulas (nothing here needs one).
  */
 export async function buildExportWorkbook(model: ExportModel, opts: RenderOptions): Promise<Uint8Array> {
   const wb = new ExcelJS.Workbook();
@@ -45,8 +61,8 @@ export async function buildExportWorkbook(model: ExportModel, opts: RenderOption
     { k: 'Turnamen', v: model.tournament.name },
     { k: 'Kode turnamen', v: model.tournament.code },
     { k: 'Revisi', v: model.revision.revisionNo },
-    { k: 'Status revisi', v: model.revision.lifecycle },
-    { k: 'Status dokumen', v: opts.mode === 'PREVIEW' ? 'PREVIEW — BUKAN UNTUK PENGGUNAAN RESMI' : 'RESMI' },
+    { k: 'Status revisi', v: revisionLifecycleLabel(model.revision.lifecycle) },
+    { k: 'Status dokumen', v: EXPORT_MODE_LABEL[opts.mode] },
     { k: 'Dibuat', v: opts.generatedAt },
     { k: 'Kode verifikasi', v: opts.verificationCode },
     { k: 'Jumlah kategori', v: model.categories.length },
@@ -55,42 +71,58 @@ export async function buildExportWorkbook(model: ExportModel, opts: RenderOption
 
   const kategori = wb.addWorksheet('Kategori');
   kategori.columns = [
-    { header: 'Kategori', key: 'categoryKey', width: 40 },
+    { header: 'Kategori', key: 'displayName', width: 44 },
     { header: 'Cabang', key: 'discipline', width: 12 },
-    { header: 'Format', key: 'format', width: 14 },
-    { header: 'Gender', key: 'gender', width: 10 },
-    { header: 'Movement', key: 'movement', width: 14 },
-    { header: 'Kelas Usia', key: 'ageDivisionCode', width: 14 },
-    { header: 'Kelas Berat', key: 'weightClassCode', width: 14 },
+    { header: 'Kelompok', key: 'stream', width: 14 },
+    { header: 'Kelas Usia', key: 'ageDivision', width: 16 },
+    { header: 'Jenis Kelamin', key: 'gender', width: 12 },
+    { header: 'Kelas Berat', key: 'weightClass', width: 12 },
+    { header: 'Format', key: 'format', width: 12 },
     { header: 'Status', key: 'readiness', width: 12 },
     { header: 'Peserta', key: 'participantCount', width: 10 },
     { header: 'Jumlah Pool', key: 'poolCount', width: 10 },
+    { header: 'Kunci Kategori (Teknis)', key: 'categoryKey', width: 40 },
   ];
   for (const c of model.categories) {
-    kategori.addRow({ ...c, poolCount: c.pools.length });
+    kategori.addRow({
+      displayName: formatCategoryDisplayName(c),
+      discipline: disciplineLabel(c.discipline),
+      stream: streamLabel(c.stream),
+      ageDivision: c.ageDivisionLabel ?? c.ageDivisionCode ?? '',
+      gender: genderLabel(c.gender),
+      weightClass: c.weightClassCode ? weightClassLabel(c.weightClassCode) : '',
+      format: formatLabel(c.format),
+      readiness: readinessLabel(c.readiness),
+      participantCount: c.participantCount,
+      poolCount: c.pools.length,
+      categoryKey: c.categoryKey,
+    });
   }
 
   const peserta = wb.addWorksheet('Peserta');
   peserta.columns = [
-    { header: 'Kategori', key: 'categoryKey', width: 40 },
+    { header: 'Kategori', key: 'displayName', width: 44 },
     { header: 'Pool', key: 'poolUid', width: 12 },
-    { header: 'Peserta', key: 'displayName', width: 30 },
+    { header: 'Peserta', key: 'displayNameEntry', width: 30 },
     { header: 'Kontingen', key: 'contingent', width: 24 },
     { header: 'Berat (kg)', key: 'weight', width: 12 },
     { header: 'Tinggi (mm)', key: 'height', width: 12 },
     { header: 'Sabuk', key: 'belt', width: 12 },
+    { header: 'Kunci Kategori (Teknis)', key: 'categoryKey', width: 40 },
   ];
   for (const c of model.categories) {
+    const displayName = formatCategoryDisplayName(c);
     for (const p of c.pools) {
       for (const e of p.members) {
         peserta.addRow({
-          categoryKey: c.categoryKey,
+          displayName,
           poolUid: p.poolUid,
-          displayName: e.displayName,
+          displayNameEntry: e.displayName,
           contingent: e.contingent,
           weight: athleteField(e, (a) => (a.weightG !== null ? a.weightG / 1000 : null)),
           height: athleteField(e, (a) => a.heightMm),
           belt: athleteField(e, (a) => a.beltCode),
+          categoryKey: c.categoryKey,
         });
       }
     }
@@ -98,7 +130,7 @@ export async function buildExportWorkbook(model: ExportModel, opts: RenderOption
 
   const pool = wb.addWorksheet('Pool');
   pool.columns = [
-    { header: 'Kategori', key: 'categoryKey', width: 40 },
+    { header: 'Kategori', key: 'displayName', width: 44 },
     { header: 'Pool', key: 'poolUid', width: 12 },
     { header: 'Urutan', key: 'ordinal', width: 8 },
     { header: 'Walkover', key: 'isWalkover', width: 10 },
@@ -106,12 +138,15 @@ export async function buildExportWorkbook(model: ExportModel, opts: RenderOption
     { header: 'Ukuran Bagan', key: 'bracketSize', width: 12 },
     { header: 'Babak', key: 'rounds', width: 8 },
     { header: 'BYE', key: 'byes', width: 8 },
-    { header: 'Peringatan', key: 'warnings', width: 40 },
+    { header: 'Peringatan', key: 'warnings', width: 50 },
+    { header: 'Kode Peringatan (Teknis)', key: 'warningCodes', width: 30 },
+    { header: 'Kunci Kategori (Teknis)', key: 'categoryKey', width: 40 },
   ];
   for (const c of model.categories) {
+    const displayName = formatCategoryDisplayName(c);
     for (const p of c.pools) {
       pool.addRow({
-        categoryKey: c.categoryKey,
+        displayName,
         poolUid: p.poolUid,
         ordinal: p.ordinal,
         isWalkover: p.isWalkover ? 'Ya' : 'Tidak',
@@ -119,30 +154,35 @@ export async function buildExportWorkbook(model: ExportModel, opts: RenderOption
         bracketSize: p.bracket?.size ?? '',
         rounds: p.bracket?.rounds ?? '',
         byes: p.bracket?.byes ?? '',
-        warnings: p.warnings.join('; '),
+        warnings: p.warnings.map(warningLabel).join('; '),
+        warningCodes: p.warnings.join('; '),
+        categoryKey: c.categoryKey,
       });
     }
   }
 
   const bagan = wb.addWorksheet('Bagan');
   bagan.columns = [
-    { header: 'Kategori', key: 'categoryKey', width: 40 },
+    { header: 'Kategori', key: 'displayName', width: 44 },
     { header: 'Pool', key: 'poolUid', width: 12 },
     { header: 'Slot', key: 'position', width: 8 },
     { header: 'Unggulan', key: 'seedNo', width: 10 },
     { header: 'Peserta', key: 'entry', width: 30 },
     { header: 'Kontingen', key: 'contingent', width: 24 },
+    { header: 'Kunci Kategori (Teknis)', key: 'categoryKey', width: 40 },
   ];
   for (const c of model.categories) {
+    const displayName = formatCategoryDisplayName(c);
     for (const p of c.pools) {
       for (const s of p.bracket?.slots ?? []) {
         bagan.addRow({
-          categoryKey: c.categoryKey,
+          displayName,
           poolUid: p.poolUid,
           position: s.position + 1,
           seedNo: s.seedNo ?? '',
           entry: s.isBye ? 'BYE' : (s.entry?.displayName ?? ''),
           contingent: s.isBye ? '' : (s.entry?.contingent ?? ''),
+          categoryKey: c.categoryKey,
         });
       }
     }
@@ -150,25 +190,28 @@ export async function buildExportWorkbook(model: ExportModel, opts: RenderOption
 
   const pertandingan = wb.addWorksheet('Pertandingan');
   pertandingan.columns = [
-    { header: 'Kategori', key: 'categoryKey', width: 40 },
+    { header: 'Kategori', key: 'displayName', width: 44 },
     { header: 'Pool', key: 'poolUid', width: 12 },
     { header: 'Kode', key: 'code', width: 14 },
     { header: 'Babak', key: 'round', width: 8 },
     { header: 'Sisi A', key: 'feederA', width: 18 },
     { header: 'Sisi B', key: 'feederB', width: 18 },
-    { header: 'Status', key: 'status', width: 12 },
+    { header: 'Status Pertandingan', key: 'status', width: 16 },
+    { header: 'Kunci Kategori (Teknis)', key: 'categoryKey', width: 40 },
   ];
   for (const c of model.categories) {
+    const displayName = formatCategoryDisplayName(c);
     for (const p of c.pools) {
       for (const m of p.bracket?.matches ?? []) {
         pertandingan.addRow({
-          categoryKey: c.categoryKey,
+          displayName,
           poolUid: p.poolUid,
           code: m.publicCode ?? m.matchUid,
           round: m.round,
           feederA: feederText(m.feederA),
           feederB: feederText(m.feederB),
-          status: m.status,
+          status: matchStatusLabel(m.status),
+          categoryKey: c.categoryKey,
         });
       }
     }
@@ -177,11 +220,12 @@ export async function buildExportWorkbook(model: ExportModel, opts: RenderOption
   const kualitas = wb.addWorksheet('Kualitas');
   kualitas.columns = [
     { header: 'Level', key: 'level', width: 10 },
-    { header: 'Kode', key: 'code', width: 30 },
-    { header: 'Pesan', key: 'message', width: 60 },
+    { header: 'Penjelasan', key: 'explanation', width: 60 },
+    { header: 'Subjek', key: 'subject', width: 30 },
+    { header: 'Kode (Teknis)', key: 'code', width: 30 },
   ];
   for (const f of model.quality.findings) {
-    kualitas.addRow(f);
+    kualitas.addRow({ level: f.level, explanation: warningLabel(f.code), subject: f.subject, code: f.code });
   }
 
   const metadata = wb.addWorksheet('Metadata Audit');

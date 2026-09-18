@@ -1,7 +1,6 @@
 import {
   buildExportModel,
   type ExportModel,
-  type ExportQualityFinding,
   type RawBracketRow,
   type RawBracketSlotRow,
   type RawCategoryRow,
@@ -58,7 +57,7 @@ export async function loadExportModel(db: Db, revisionId: string): Promise<Expor
     error_count: number;
     warning_count: number;
     info_count: number;
-    report: { findings?: ExportQualityFinding[] };
+    report: { findings?: readonly { level: 'ERROR' | 'WARNING' | 'INFO'; code: string; subject: string }[] };
   }>(`select error_count, warning_count, info_count, report from quality_report where draw_run_id = $1`, [
     revision.draw_run_id,
   ]);
@@ -72,11 +71,13 @@ export async function loadExportModel(db: Db, revisionId: string): Promise<Expor
     gender: string;
     movement: string | null;
     age_division_code: string | null;
+    age_division_label: string | null;
     weight_class_code: string | null;
     readiness: string;
   }>(
     `select rc.category_id, c.category_key, c.stream, c.discipline, c.format, c.gender, c.movement,
-            rad.code as age_division_code, rwc.code as weight_class_code, rc.readiness
+            rad.code as age_division_code, rad.label as age_division_label,
+            rwc.code as weight_class_code, rc.readiness
      from draw_run_category rc
      join category c on c.id = rc.category_id
      join rule_age_division rad on rad.id = c.age_division_id
@@ -94,6 +95,7 @@ export async function loadExportModel(db: Db, revisionId: string): Promise<Expor
     gender: c.gender,
     movement: c.movement,
     ageDivisionCode: c.age_division_code,
+    ageDivisionLabel: c.age_division_label,
     weightClassCode: c.weight_class_code,
     readiness: c.readiness,
   }));

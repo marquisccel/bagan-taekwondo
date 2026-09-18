@@ -106,6 +106,7 @@ describe('export fingerprints', () => {
           gender: 'MALE',
           movement: null,
           ageDivisionCode: null,
+          ageDivisionLabel: null,
           weightClassCode: null,
           readiness: 'READY',
         },

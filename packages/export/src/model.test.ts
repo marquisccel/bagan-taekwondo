@@ -47,6 +47,7 @@ describe('buildExportModel — determinism and exact mapping', () => {
             gender: 'MALE',
             movement: null,
             ageDivisionCode: null,
+            ageDivisionLabel: null,
             weightClassCode: null,
             readiness: 'READY',
           },
@@ -59,6 +60,7 @@ describe('buildExportModel — determinism and exact mapping', () => {
             gender: 'MALE',
             movement: null,
             ageDivisionCode: null,
+            ageDivisionLabel: null,
             weightClassCode: null,
             readiness: 'READY',
           },
@@ -81,6 +83,7 @@ describe('buildExportModel — determinism and exact mapping', () => {
             gender: 'MALE',
             movement: null,
             ageDivisionCode: null,
+            ageDivisionLabel: null,
             weightClassCode: null,
             readiness: 'READY',
           },
@@ -116,6 +119,7 @@ describe('buildExportModel — determinism and exact mapping', () => {
             gender: 'MALE',
             movement: null,
             ageDivisionCode: null,
+            ageDivisionLabel: null,
             weightClassCode: null,
             readiness: 'READY',
           },
@@ -146,6 +150,7 @@ describe('buildExportModel — determinism and exact mapping', () => {
             gender: 'MALE',
             movement: null,
             ageDivisionCode: null,
+            ageDivisionLabel: null,
             weightClassCode: null,
             readiness: 'READY',
           },
@@ -198,8 +203,8 @@ describe('buildExportModel — determinism and exact mapping', () => {
     const matches = model.categories[0]?.pools[0]?.bracket?.matches ?? [];
     expect(matches.map((m) => m.publicCode)).toEqual(['A-1-R1-1', 'A-1-R1-2', 'A-1-R2-1']);
     const final = matches.find((m) => m.matchUid === 'mF');
-    expect(final?.feederA).toEqual({ kind: 'match', publicCode: 'A-1-R1-1' });
-    expect(final?.feederB).toEqual({ kind: 'match', publicCode: 'A-1-R1-2' });
+    expect(final?.feederA).toEqual({ kind: 'match', matchUid: 'm1', publicCode: 'A-1-R1-1' });
+    expect(final?.feederB).toEqual({ kind: 'match', matchUid: 'm2', publicCode: 'A-1-R1-2' });
   });
 
   it('is a pure function: identical input always produces a deeply equal model', () => {
@@ -214,6 +219,7 @@ describe('buildExportModel — determinism and exact mapping', () => {
           gender: 'MALE',
           movement: null,
           ageDivisionCode: null,
+          ageDivisionLabel: null,
           weightClassCode: null,
           readiness: 'READY',
         },
@@ -238,6 +244,7 @@ describe('buildExportModel — determinism and exact mapping', () => {
             gender: 'MALE',
             movement: null,
             ageDivisionCode: null,
+            ageDivisionLabel: null,
             weightClassCode: null,
             readiness: 'READY',
           },

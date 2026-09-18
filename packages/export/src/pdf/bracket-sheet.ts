@@ -1,4 +1,7 @@
 import type { ExportBracket, ExportBracketSlot, ExportFeeder, ExportMatch, ExportModel } from '../model.js';
+import { formatCategoryDisplayName, matchStatusLabel } from '../presentation.js';
+import { renderBracketSvg } from './bracket-svg.js';
+import { tileBracketMatches } from './bracket-tiling.js';
 import {
   esc,
   footerTemplate,
@@ -39,7 +42,7 @@ function matchRowHtml(m: ExportMatch): string {
     <td>${esc(m.publicCode ?? m.matchUid)}</td>
     <td>${esc(feederLabel(m.feederA))}</td>
     <td>${esc(feederLabel(m.feederB))}</td>
-    <td>${esc(m.status)}</td>
+    <td>${esc(matchStatusLabel(m.status))}</td>
   </tr>`;
 }
 
@@ -55,13 +58,36 @@ function roundHtml(round: number, matches: readonly ExportMatch[]): string {
   `;
 }
 
-function bracketBodyHtml(bracket: ExportBracket): string {
+function daftarPertandinganHtml(bracket: ExportBracket): string {
   const rounds = [...new Set(bracket.matches.map((m) => m.round))].sort((a, b) => a - b);
   const byRound = (r: number) => bracket.matches.filter((m) => m.round === r);
   return `
+    <div class="page-break">
+      <h2>Daftar Pertandingan</h2>
+      ${roundOneHtml(bracket.slots)}
+      ${rounds.map((r) => roundHtml(r, byRound(r))).join('')}
+    </div>
+  `;
+}
+
+/**
+ * The visual bracket itself (ACCEPTANCE §4): one or more tiled diagrams (bracket-tiling.ts) so a
+ * 128-entry bracket never gets forced onto one unreadable page, each drawn purely from the
+ * persisted feeder graph (bracket-geometry.ts / bracket-svg.ts) — no recomputation of who plays
+ * whom. The round-by-round table remains afterward as the existing, already-tested "Daftar
+ * Pertandingan" reference list.
+ */
+function visualBracketHtml(bracket: ExportBracket): string {
+  const tiles = tileBracketMatches(bracket);
+  const sections = tiles.map((tile, i) => {
+    const svg = renderBracketSvg(tile, bracket.rounds);
+    const label = tile.label ? `<h3>${esc(tile.label)}</h3>` : '';
+    return `<div class="${i === 0 ? '' : 'page-break'} section">${label}${svg}</div>`;
+  });
+  return `
     <div class="meta">Ukuran bagan: ${bracket.size} slot &middot; ${bracket.rounds} babak &middot; ${bracket.entries} peserta &middot; ${bracket.byes} BYE</div>
-    ${roundOneHtml(bracket.slots)}
-    ${rounds.map((r) => roundHtml(r, byRound(r))).join('')}
+    ${tiles.length > 1 ? `<div class="meta">Bagan ditampilkan dalam ${tiles.length} bagian karena ukurannya besar. Setiap "Pemenang &lt;kode&gt;" merujuk pertandingan pada bagian lain.</div>` : ''}
+    ${sections.join('')}
   `;
 }
 
@@ -75,17 +101,19 @@ export async function renderBracketSheetPdf(
   if (!category || !pool) throw new Error(`pool ${poolId} not found in export model`);
   if (!pool.bracket) throw new Error(`pool ${poolId} has no bracket (walkover pools have none)`);
 
-  const title = `Bagan Pertandingan — ${category.categoryKey} — Pool ${pool.ordinal}`;
+  const displayName = formatCategoryDisplayName(category);
+  const title = `Bagan Pertandingan — ${displayName} — Pool ${pool.ordinal}`;
   const body = `
-    <h1>Bagan Pertandingan</h1>
+    <div class="doc-kicker">Bagan Pertandingan</div>
+    <h1>${esc(displayName)}</h1>
     ${metaBlockHtml(model, opts)}
-    <div class="meta"><strong>${esc(category.categoryKey)}</strong> &middot; Pool ${pool.ordinal}</div>
-    ${bracketBodyHtml(pool.bracket)}
+    <div class="meta">Pool ${pool.ordinal}</div>
+    ${visualBracketHtml(pool.bracket)}
+    ${daftarPertandinganHtml(pool.bracket)}
+    <div class="tech-meta">Kunci kategori (teknis): ${esc(category.categoryKey)}</div>
   `;
   return renderHtmlToPdf(pageShell(title, body, opts), {
-    headerTemplate: headerTemplate(
-      `${model.tournament.name} — ${category.categoryKey} — Pool ${pool.ordinal}`,
-    ),
+    headerTemplate: headerTemplate(`${model.tournament.name} — ${displayName} — Pool ${pool.ordinal}`),
     footerTemplate: footerTemplate(),
   });
 }

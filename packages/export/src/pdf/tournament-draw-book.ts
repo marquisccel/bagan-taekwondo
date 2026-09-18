@@ -1,4 +1,5 @@
 import type { ExportCategory, ExportModel, ExportPool } from '../model.js';
+import { disciplineLabel, formatCategoryDisplayName, readinessLabel, warningLabel } from '../presentation.js';
 import {
   esc,
   footerTemplate,
@@ -9,20 +10,24 @@ import {
 } from './layout.js';
 import { renderHtmlToPdf } from './render.js';
 
+function warningsHtml(warnings: readonly string[]): string {
+  if (warnings.length === 0) return '';
+  return `<div class="warn">${warnings
+    .map((code) => `${esc(warningLabel(code))} <span class="code-tag">(${esc(code)})</span>`)
+    .join('<br>')}</div>`;
+}
+
 function poolBlockHtml(p: ExportPool): string {
   const roster = p.members
     .map((e, i) => `<tr><td>${i + 1}</td><td>${esc(e.displayName)}</td><td>${esc(e.contingent)}</td></tr>`)
     .join('');
-  const warnings = p.warnings.length
-    ? `<div class="warn">Peringatan: ${p.warnings.map(esc).join('; ')}</div>`
-    : '';
   const bracketNote = p.bracket
     ? `<div class="meta">Bagan: ${p.bracket.size} slot, ${p.bracket.rounds} babak, ${p.bracket.byes} BYE</div>`
     : '';
   return `
     <div class="section">
       <h3>Pool ${p.ordinal}${p.isWalkover ? ' (Walkover)' : ''}</h3>
-      ${warnings}
+      ${warningsHtml(p.warnings)}
       ${bracketNote}
       <table>
         <thead><tr><th style="width:10mm">No</th><th>Peserta</th><th>Kontingen</th></tr></thead>
@@ -33,14 +38,16 @@ function poolBlockHtml(p: ExportPool): string {
 }
 
 function categoryBlockHtml(c: ExportCategory, first: boolean): string {
+  const displayName = formatCategoryDisplayName(c);
   return `
     <div class="${first ? '' : 'page-break'}">
-      <h2 id="cat-${esc(c.id)}">${esc(c.categoryKey)}</h2>
+      <div class="doc-kicker">Kategori</div>
+      <h2 id="cat-${esc(c.id)}">${esc(displayName)}</h2>
       <div class="meta">
-        <div>${esc(c.discipline)} &middot; ${esc(c.gender)}${c.weightClassCode ? ` &middot; ${esc(c.weightClassCode)}` : ''}${c.movement ? ` &middot; ${esc(c.movement)}` : ''}</div>
-        <div>Peserta: ${c.participantCount} &middot; Status: ${esc(c.readiness)}</div>
+        <div>Peserta: ${c.participantCount} &middot; Status: ${esc(readinessLabel(c.readiness))}</div>
       </div>
       ${c.pools.map(poolBlockHtml).join('') || '<div class="meta">Belum ada pool.</div>'}
+      <div class="tech-meta">Kunci kategori (teknis): ${esc(c.categoryKey)}</div>
     </div>
   `;
 }
@@ -49,7 +56,7 @@ function indexHtml(categories: readonly ExportCategory[]): string {
   const rows = categories
     .map(
       (c) =>
-        `<tr><td>${esc(c.categoryKey)}</td><td>${esc(c.discipline)}</td><td>${c.participantCount}</td></tr>`,
+        `<tr><td>${esc(formatCategoryDisplayName(c))}</td><td>${esc(disciplineLabel(c.discipline))}</td><td>${c.participantCount}</td></tr>`,
     )
     .join('');
   return `
