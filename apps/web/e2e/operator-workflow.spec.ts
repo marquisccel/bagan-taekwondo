@@ -67,12 +67,32 @@ test.describe('operator workflow', () => {
     await expect(page.getByRole('button', { name: /\(current\)/ })).toBeVisible();
     await page.getByRole('button', { name: 'Cancel' }).click();
 
-    // Swap two entries within the pool — this is a real command that rebuilds the bracket via the
-    // frozen engine and is reflected back after refetch.
-    const before = await page.locator('.bracket-match').first().innerText();
+    // Swap two entries within the pool — a real command, applied by the server and reflected back
+    // after the refetch. Synchronize on the observable state (the command's response, the revision's
+    // lock_version, the refetch and the server's verdict shown in the UI), never on incidental bracket
+    // text: a swap inside one pool may legitimately rebuild the very same layout.
+    const lockVersion = async () =>
+      (
+        await seed.db.query<{ lock_version: number }>(
+          `select lock_version from draw_revision where tournament_id = $1`,
+          [seed.tournament],
+        )
+      )[0]?.lock_version;
+    const lockBefore = await lockVersion();
+    const swapResponse = page.waitForResponse(
+      (r) => r.url().includes('/commands/swap-entry') && r.request().method() === 'POST',
+    );
+    const refetch = page.waitForResponse(
+      (r) => /\/revisions\/[^/]+\/categories\/[^/]+$/.test(r.url()) && r.request().method() === 'GET',
+    );
     await page.getByRole('button', { name: 'Swap…' }).first().click();
     await page.getByRole('dialog').getByRole('button').filter({ hasNotText: 'Cancel' }).first().click();
-    await expect.poll(async () => page.locator('.bracket-match').first().innerText()).not.toBe(before);
+    const swapped = await swapResponse;
+    expect(swapped.status()).toBe(201);
+    expect(await swapped.json()).toMatchObject({ outcome: 'APPLIED' });
+    await refetch;
+    await expect.poll(lockVersion).toBe((lockBefore ?? -1) + 1);
+    await expect(page.getByTestId('command-feedback')).toHaveAttribute('data-level', 'GREEN');
 
     // Lifecycle: submit for review (officer), then switch to a Technical Delegate for the rest.
     await page.goto(`/tournaments/${seed.tournament}/categories`);
