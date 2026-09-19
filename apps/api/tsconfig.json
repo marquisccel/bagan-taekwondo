@@ -16,6 +16,7 @@
     { "path": "../../packages/domain" },
     { "path": "../../packages/draw-engine" },
     { "path": "../../packages/export" },
+    { "path": "../../packages/rules" },
     { "path": "../../packages/shared" }
   ]
 }

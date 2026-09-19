@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { canExportInMode, exportTransitionAllowed } from './export-policy.js';
+import {
+  canExportInMode,
+  exportFormatFor,
+  exportScopeFor,
+  exportTransitionAllowed,
+  isSemiPrestasiOnlyExport,
+} from './export-policy.js';
 import { canRequestExport, canViewExport } from './rbac.js';
 
 describe('canExportInMode', () => {
@@ -47,5 +53,35 @@ describe('canViewExport', () => {
   it('is true for any resolved role and false for an unresolved actor', () => {
     expect(canViewExport('VIEWER')).toBe(true);
     expect(canViewExport(null)).toBe(false);
+  });
+});
+
+describe('exportScopeFor', () => {
+  it('keeps the fixed scope of the pre-existing export types, regardless of a supplied category id', () => {
+    expect(exportScopeFor('TOURNAMENT_DRAW_BOOK', false)).toBe('REVISION');
+    expect(exportScopeFor('TOURNAMENT_DRAW_BOOK', true)).toBe('REVISION');
+    expect(exportScopeFor('XLSX_WORKBOOK', false)).toBe('REVISION');
+    expect(exportScopeFor('CATEGORY_DRAW', true)).toBe('CATEGORY');
+    expect(exportScopeFor('CATEGORY_DRAW', false)).toBe('CATEGORY');
+    expect(exportScopeFor('POOL_SHEET', false)).toBe('POOL');
+    expect(exportScopeFor('BRACKET_SHEET', false)).toBe('POOL');
+  });
+
+  it('SEMI_PRESTASI_COMPACT_DRAW_SHEET is CATEGORY-scoped with a category and REVISION-scoped without one', () => {
+    expect(exportScopeFor('SEMI_PRESTASI_COMPACT_DRAW_SHEET', true)).toBe('CATEGORY');
+    expect(exportScopeFor('SEMI_PRESTASI_COMPACT_DRAW_SHEET', false)).toBe('REVISION');
+  });
+});
+
+describe('export type helpers', () => {
+  it('only the compact sheet is semi-prestasi-only', () => {
+    expect(isSemiPrestasiOnlyExport('SEMI_PRESTASI_COMPACT_DRAW_SHEET')).toBe(true);
+    expect(isSemiPrestasiOnlyExport('CATEGORY_DRAW')).toBe(false);
+  });
+
+  it('the compact sheet is a PDF; only the workbook is XLSX', () => {
+    expect(exportFormatFor('SEMI_PRESTASI_COMPACT_DRAW_SHEET')).toBe('PDF');
+    expect(exportFormatFor('XLSX_WORKBOOK')).toBe('XLSX');
+    expect(exportFormatFor('CATEGORY_DRAW')).toBe('PDF');
   });
 });

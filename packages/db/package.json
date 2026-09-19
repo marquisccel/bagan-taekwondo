@@ -13,6 +13,11 @@
       "source": "./src/testing/seed.ts",
       "types": "./dist/testing/seed.d.ts",
       "default": "./dist/testing/seed.js"
+    },
+    "./testing/seed-revision": {
+      "source": "./src/testing/seed-revision.ts",
+      "types": "./dist/testing/seed-revision.d.ts",
+      "default": "./dist/testing/seed-revision.js"
     }
   },
   "scripts": {

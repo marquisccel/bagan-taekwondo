@@ -107,3 +107,50 @@ export async function seedTournament(
     close: () => pool.end(),
   };
 }
+
+export interface SeededIntake {
+  readonly tournament: string;
+  readonly officer: string;
+  readonly td: string;
+  readonly viewer: string;
+  readonly db: Db;
+  close(): Promise<void>;
+}
+
+/**
+ * A tournament with its rule set and an imported registration, but NO draw run yet — the operator
+ * creates the draw from the UI (UAT flow). `bytes` is a registration export (see `kyorugiSemiCsv`).
+ */
+export async function seedIntakeOnly(
+  databaseUrl: string,
+  rs: RuleSet,
+  bytes: Uint8Array,
+): Promise<SeededIntake> {
+  const pool = new pg.Pool({ connectionString: databaseUrl, max: 5 });
+  const db = poolDb(pool);
+  const t = await newTournament(db);
+  await newArena(db, t.tournament);
+  const persisted = await db.transaction((tx) =>
+    persistRuleSet(tx, { tournamentId: t.tournament, actorId: t.officer, ruleSet: rs }),
+  );
+  const intake = runIntake({ sourceName: 'uat-registrasi.csv', bytes, ruleSet: rs });
+  if (!intake.snapshot) throw new Error('no snapshot');
+  await db.transaction((tx) =>
+    persistIntake(tx, {
+      tournamentId: t.tournament,
+      ruleSetId: persisted.ruleSetId,
+      actorId: t.officer,
+      result: intake,
+      nikKeys: TEST_NIK_KEYS,
+      mode: 'INITIAL',
+    }),
+  );
+  return {
+    tournament: t.tournament,
+    officer: t.officer,
+    td: t.td,
+    viewer: t.viewer,
+    db,
+    close: () => pool.end(),
+  };
+}

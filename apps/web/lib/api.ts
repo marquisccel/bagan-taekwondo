@@ -11,6 +11,8 @@ export class ApiClientError extends Error {
     readonly status: number,
     readonly code: string,
     message: string,
+    /** Optional structured context of a refusal (e.g. the command verdict); never a stack trace. */
+    readonly details?: unknown,
   ) {
     super(message);
     this.name = 'ApiClientError';
@@ -25,8 +27,13 @@ async function request<T>(path: string, actorId: string, init?: RequestInit): Pr
   const text = await res.text();
   const body: unknown = text ? JSON.parse(text) : null;
   if (!res.ok) {
-    const b = body as { code?: string; message?: string } | null;
-    throw new ApiClientError(res.status, b?.code ?? 'UNKNOWN_ERROR', b?.message ?? res.statusText);
+    const b = body as { code?: string; message?: string; details?: unknown } | null;
+    throw new ApiClientError(
+      res.status,
+      b?.code ?? 'UNKNOWN_ERROR',
+      b?.message ?? res.statusText,
+      b?.details,
+    );
   }
   return body as T;
 }
@@ -233,7 +240,12 @@ export interface SearchResult {
 }
 
 export type ExportType =
-  'TOURNAMENT_DRAW_BOOK' | 'CATEGORY_DRAW' | 'POOL_SHEET' | 'BRACKET_SHEET' | 'XLSX_WORKBOOK';
+  | 'TOURNAMENT_DRAW_BOOK'
+  | 'CATEGORY_DRAW'
+  | 'POOL_SHEET'
+  | 'BRACKET_SHEET'
+  | 'XLSX_WORKBOOK'
+  | 'SEMI_PRESTASI_COMPACT_DRAW_SHEET';
 export type ExportMode = 'PREVIEW' | 'OFFICIAL';
 export type ExportStatus = 'REQUESTED' | 'GENERATING' | 'READY' | 'FAILED';
 
@@ -260,13 +272,38 @@ export interface ExportArtifact {
   readonly generatedAt: string | null;
 }
 
+/** Aggregate pool-quality figures computed by the draw engine (server-side only). */
+export interface VerdictMetrics {
+  readonly tier0: number;
+  readonly tier1Fp: number;
+  readonly tier2Fp: number;
+  readonly spread: number;
+  readonly sizePenaltyFp: number;
+  readonly singletons: number;
+  readonly ranges: Readonly<Record<string, number>>;
+  readonly excess: Readonly<Record<string, number>>;
+}
+export interface VerdictImpact {
+  readonly change: 'IMPROVED' | 'UNCHANGED' | 'WORSE';
+  readonly poolUids: readonly string[];
+  readonly before: VerdictMetrics;
+  readonly after: VerdictMetrics;
+}
+/** The server's canonical quality verdict of a command (AUD-005); the client never computes one. */
+export type CommandVerdict =
+  | { readonly level: 'GREEN'; readonly impact?: VerdictImpact }
+  | {
+      readonly level: 'YELLOW';
+      readonly softViolations: readonly string[];
+      readonly reasonRequired: true;
+      readonly impact?: VerdictImpact;
+    }
+  | { readonly level: 'RED'; readonly hardViolations: readonly string[]; readonly impact?: VerdictImpact };
+
 export interface CommandOutcome {
   readonly outcome: 'APPLIED' | 'REJECTED';
   readonly rejectionCode: string | null;
-  readonly verdict:
-    | { readonly level: 'GREEN' }
-    | { readonly level: 'YELLOW'; readonly softViolations: readonly string[]; readonly reasonRequired: true }
-    | { readonly level: 'RED'; readonly hardViolations: readonly string[] };
+  readonly verdict: CommandVerdict;
   readonly resultingRevisionId: string | null;
   readonly commandRowId: string;
   readonly replayed: boolean;
@@ -296,6 +333,18 @@ export const api = {
     ),
   search: (actorId: string, tournamentId: string, q: string) =>
     get<SearchResult[]>(`/tournaments/${tournamentId}/search?q=${encodeURIComponent(q)}`, actorId),
+
+  tournaments: (actorId: string) => get<TournamentListItem[]>('/tournaments', actorId),
+  entries: (actorId: string, tournamentId: string, params: EntryListParams = {}) => {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== '') qs.set(k, String(v));
+    const s = qs.toString();
+    return get<EntryList>(`/tournaments/${tournamentId}/entries${s ? `?${s}` : ''}`, actorId);
+  },
+  drawPreflight: (actorId: string, tournamentId: string) =>
+    get<DrawPreflight>(`/tournaments/${tournamentId}/draw-preflight`, actorId),
+  createDrawRun: (actorId: string, tournamentId: string, body: CreateDrawRunBody) =>
+    post<CreateDrawRunResult>(`/tournaments/${tournamentId}/draw-runs`, actorId, body),
 
   moveEntry: (
     actorId: string,
@@ -398,4 +447,124 @@ export async function downloadExportFile(actorId: string, exp: ExportArtifact): 
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------------------
+// Pre-UAT additions: tournament list (AUD-008), participant inspection (AUD-009), draw generation (AUD-010)
+// ---------------------------------------------------------------------------------------
+
+export interface TournamentListItem {
+  readonly id: string;
+  readonly code: string;
+  readonly name: string;
+  readonly status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
+  readonly eventStart: string;
+  readonly eventEnd: string;
+  readonly activeRuleSetStatus: string;
+  readonly latestDrawRun: TournamentSummary['latestDrawRun'];
+  readonly latestRevision: TournamentSummary['latestRevision'];
+  readonly categoryCounts: TournamentSummary['categoryCounts'];
+}
+
+export interface EntryListParams {
+  readonly q?: string;
+  readonly contingent?: string;
+  readonly discipline?: string;
+  readonly format?: string;
+  readonly eligibility?: string;
+  /** A category id, or 'NONE' for entries without an assigned category. */
+  readonly categoryId?: string;
+  readonly hasIssues?: boolean;
+  readonly limit?: number;
+  readonly offset?: number;
+}
+
+export interface EntryIssue {
+  readonly id: string;
+  readonly code: string;
+  readonly severity: 'ERROR' | 'WARNING' | 'INFO';
+  readonly status: 'OPEN' | 'ACKNOWLEDGED' | 'OVERRIDDEN' | 'CORRECTED' | 'RESOLVED';
+  readonly field: string | null;
+  readonly subjectType: string;
+}
+
+export interface EntryListItem {
+  readonly entryId: string;
+  readonly externalRef: string | null;
+  readonly contingent: string;
+  /** Member names joined with ' / ' (falls back to the external ref). */
+  readonly displayName: string;
+  readonly format: 'INDIVIDUAL' | 'PAIR' | 'TEAM';
+  readonly members: readonly {
+    readonly position: number;
+    readonly fullName: string | null;
+    readonly gender: string | null;
+    readonly beltCode: string | null;
+  }[];
+  readonly declared: {
+    readonly stream: string;
+    readonly discipline: string;
+    readonly format: string;
+    readonly ageDivision: string;
+    readonly weightClass: string | null;
+  };
+  /** Assigned by a draw run; null until then. `displayName` is the human-readable title, never the raw key. */
+  readonly category: { readonly id: string; readonly displayName: string } | null;
+  readonly registrationStatus: string;
+  readonly eligibilityStatus: 'BLOCKED' | 'READY' | 'OVERRIDDEN' | 'DRAWN';
+  readonly eligibilityReasons: readonly string[];
+  readonly group: { readonly source: string; readonly status: string; readonly confidence: string } | null;
+  readonly issues: readonly EntryIssue[];
+  readonly openIssueCounts: { readonly error: number; readonly warning: number; readonly info: number };
+}
+
+export interface EntryList {
+  readonly items: readonly EntryListItem[];
+  readonly total: number;
+  readonly limit: number;
+  readonly offset: number;
+  readonly facets: { readonly categories: readonly { readonly id: string; readonly displayName: string }[] };
+}
+
+export interface DrawPreflight {
+  readonly tournament: { readonly id: string; readonly code: string; readonly name: string };
+  readonly role: TournamentMember['role'];
+  readonly canRequest: boolean;
+  readonly ruleSet: {
+    readonly id: string;
+    readonly code: string;
+    readonly version: number;
+    readonly name: string;
+    readonly status: string;
+  } | null;
+  readonly ruleSetLock: {
+    readonly lockable: boolean;
+    readonly requiresAcknowledgement: boolean;
+    readonly blockerCount: number;
+    readonly warningCount: number;
+    readonly findings: readonly { readonly code: string; readonly level: string; readonly count: number }[];
+  } | null;
+  readonly intakeSnapshot: {
+    readonly id: string;
+    readonly entryCount: number;
+    readonly createdAt: string;
+  } | null;
+  readonly entries: { readonly total: number; readonly eligible: number; readonly blocked: number };
+  readonly openIssues: { readonly error: number; readonly warning: number; readonly info: number };
+  readonly blockers: readonly ('NO_ACTIVE_RULE_SET' | 'NO_INTAKE_SNAPSHOT')[];
+}
+
+export interface CreateDrawRunBody {
+  readonly ruleSetId: string;
+  readonly intakeSnapshotId: string;
+  readonly kind: 'CANDIDATE' | 'SIMULATION';
+  readonly seed: string;
+  /** Category keys to draw; [] = every category (docs/ENGINE_CONTRACT.md). */
+  readonly scope: readonly string[];
+}
+
+export interface CreateDrawRunResult {
+  readonly drawRunId: string;
+  readonly inputFingerprint: string;
+  readonly status: 'QUEUED';
 }

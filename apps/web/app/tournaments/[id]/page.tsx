@@ -69,6 +69,18 @@ export default function TournamentOverviewPage() {
         </div>
       </div>
 
+      <nav aria-label="Navigasi turnamen" className="panel" style={{ marginTop: 20 }}>
+        <a className="btn" href={`/tournaments/${id}/peserta`}>
+          Lihat peserta
+        </a>{' '}
+        <a className="btn btn-primary" href={`/tournaments/${id}/drawing`}>
+          Buat Drawing
+        </a>{' '}
+        <a className="btn" href="/tournaments">
+          Semua turnamen
+        </a>
+      </nav>
+
       <div style={{ marginTop: 20 }} className="grid">
         {run ? (
           <div className="panel">
@@ -92,7 +104,10 @@ export default function TournamentOverviewPage() {
       </div>
 
       {rev ? (
-        <ExportPanel revisionId={rev.id} availableTypes={['TOURNAMENT_DRAW_BOOK', 'XLSX_WORKBOOK']} />
+        <ExportPanel
+          revisionId={rev.id}
+          availableTypes={['TOURNAMENT_DRAW_BOOK', 'XLSX_WORKBOOK', 'SEMI_PRESTASI_COMPACT_DRAW_SHEET']}
+        />
       ) : null}
     </main>
   );

@@ -5,11 +5,19 @@ import {
   type Db,
   type ExportArtifactRow,
 } from '@bagantkd/db';
-import { canExportInMode, canRequestExport, canViewExport, type RevisionLifecycle } from '@bagantkd/domain';
+import {
+  canExportInMode,
+  canRequestExport,
+  canViewExport,
+  exportFormatFor,
+  exportScopeFor,
+  isSemiPrestasiOnlyExport,
+  type RevisionLifecycle,
+} from '@bagantkd/domain';
 import {
   computeParametersFingerprint,
   computeSourceFingerprint,
-  EXPORT_TEMPLATE_VERSION,
+  exportTemplateVersionFor,
   type ArtifactStorage,
 } from '@bagantkd/export';
 import { Body, Controller, Get, Inject, Param, Post, Res, UseGuards } from '@nestjs/common';
@@ -23,9 +31,6 @@ import { ApiError } from '../errors/api-error';
 import { JOB_QUEUE, type JobQueue } from '../jobs/job-queue.module';
 import { body, oneOf, strOrNull } from '../validation';
 import { EXPORT_STORAGE } from './export-storage.module';
-
-const CATEGORY_SCOPED = new Set(['CATEGORY_DRAW']);
-const POOL_SCOPED = new Set(['POOL_SHEET', 'BRACKET_SHEET']);
 
 interface RevisionRow {
   readonly id: string;
@@ -91,6 +96,7 @@ export class ExportController {
       'POOL_SHEET',
       'BRACKET_SHEET',
       'XLSX_WORKBOOK',
+      'SEMI_PRESTASI_COMPACT_DRAW_SHEET',
     ] as const);
     const mode = oneOf(b, 'mode', ['PREVIEW', 'OFFICIAL'] as const);
     const categoryId = strOrNull(b, 'categoryId');
@@ -111,19 +117,18 @@ export class ExportController {
       throw new ApiError('EXPORT_REVISION_NOT_ALLOWED', `revision is ${revision.lifecycle}`);
     }
 
-    const scopeType = CATEGORY_SCOPED.has(exportType)
-      ? 'CATEGORY'
-      : POOL_SCOPED.has(exportType)
-        ? 'POOL'
-        : 'REVISION';
+    const scopeType = exportScopeFor(exportType, categoryId !== null);
     if (scopeType === 'CATEGORY') {
       if (!categoryId) throw new ApiError('VALIDATION_ERROR', 'categoryId is required for this export type');
-      const [row] = await this.db.query<{ id: string }>(
-        `select c.id from draw_run_category rc join category c on c.id = rc.category_id
+      const [row] = await this.db.query<{ id: string; stream: string }>(
+        `select c.id, c.stream from draw_run_category rc join category c on c.id = rc.category_id
          where rc.draw_run_id = $1 and c.id = $2`,
         [revision.draw_run_id, categoryId],
       );
       if (!row) throw new ApiError('EXPORT_SOURCE_NOT_FOUND', 'category not found in this revision');
+      if (isSemiPrestasiOnlyExport(exportType) && row.stream !== 'SEMI_PRESTASI') {
+        throw new ApiError('VALIDATION_ERROR', 'this export type only supports semi-prestasi categories');
+      }
     }
     if (scopeType === 'POOL') {
       if (!poolId) throw new ApiError('VALIDATION_ERROR', 'poolId is required for this export type');
@@ -133,13 +138,22 @@ export class ExportController {
       );
       if (!row) throw new ApiError('EXPORT_SOURCE_NOT_FOUND', 'pool not found in this revision');
     }
+    if (scopeType === 'REVISION' && isSemiPrestasiOnlyExport(exportType)) {
+      const [row] = await this.db.query<{ id: string }>(
+        `select c.id from draw_run_category rc join category c on c.id = rc.category_id
+         where rc.draw_run_id = $1 and c.stream = 'SEMI_PRESTASI' limit 1`,
+        [revision.draw_run_id],
+      );
+      if (!row) throw new ApiError('VALIDATION_ERROR', 'this revision has no semi-prestasi categories');
+    }
 
     const [run] = await this.db.query<{ engine_version: string }>(
       `select engine_version from draw_run where id = $1`,
       [revision.draw_run_id],
     );
 
-    const format = exportType === 'XLSX_WORKBOOK' ? 'XLSX' : 'PDF';
+    const format = exportFormatFor(exportType);
+    const templateVersion = exportTemplateVersionFor(exportType);
     const sourceFingerprint = computeSourceFingerprint({
       revisionId,
       contentFingerprint: revision.content_fingerprint,
@@ -152,7 +166,7 @@ export class ExportController {
       format,
       mode,
       locale: 'id',
-      templateVersion: EXPORT_TEMPLATE_VERSION,
+      templateVersion,
     });
 
     const { exportId } = await this.db.transaction((tx) =>
@@ -170,7 +184,7 @@ export class ExportController {
         sourceFingerprint,
         parametersFingerprint,
         engineVersion: run?.engine_version ?? 'unknown',
-        templateVersion: EXPORT_TEMPLATE_VERSION,
+        templateVersion,
         requestedBy: actor.userId,
       }),
     );

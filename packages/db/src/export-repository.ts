@@ -4,7 +4,12 @@ import type { Db } from './db.js';
 import type { SqlExecutor } from './intake-repository.js';
 
 export type ExportRowType =
-  'TOURNAMENT_DRAW_BOOK' | 'CATEGORY_DRAW' | 'POOL_SHEET' | 'BRACKET_SHEET' | 'XLSX_WORKBOOK';
+  | 'TOURNAMENT_DRAW_BOOK'
+  | 'CATEGORY_DRAW'
+  | 'POOL_SHEET'
+  | 'BRACKET_SHEET'
+  | 'XLSX_WORKBOOK'
+  | 'SEMI_PRESTASI_COMPACT_DRAW_SHEET';
 export type ExportRowFormat = 'PDF' | 'XLSX';
 export type ExportRowMode = 'PREVIEW' | 'OFFICIAL';
 export type ExportRowStatus = 'REQUESTED' | 'GENERATING' | 'READY' | 'FAILED';

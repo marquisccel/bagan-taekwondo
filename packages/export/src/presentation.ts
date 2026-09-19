@@ -176,3 +176,63 @@ export function formatCategoryDisplayName(
 
   return [disciplineStream, ageGender, detail].filter((part) => part && part.length > 0).join(' — ');
 }
+
+// ---------------------------------------------------------------------------------------
+// Compact semi-prestasi draw sheet (AUD-012) — display helpers. Same rule as everything above:
+// pure, driven only by the persisted value, never inventing one that is missing.
+// ---------------------------------------------------------------------------------------
+
+/** Shown wherever a persisted value (belt, height, weight, ...) is absent — never a guessed default. */
+export const MISSING_VALUE = '—';
+
+export const SEMI_PRESTASI_COMPACT_LABEL = {
+  documentTitle: 'Lembar Drawing Ringkas Semi Prestasi',
+  documentSubtitle: 'Untuk panitia drawing, peninjauan keberatan, dan meja pertandingan',
+  pool: 'Pool',
+  participant: 'Peserta',
+  participantName: 'Nama peserta',
+  contingent: 'Kontingen',
+  belt: 'Sabuk',
+  heightCm: 'TB (cm)',
+  weightKg: 'BB (kg)',
+  number: 'No',
+  movement: 'Gerakan',
+  format: 'Format',
+  category: 'Kategori',
+  matchCode: 'Kode',
+  walkover: 'Walkover',
+  bye: 'BYE',
+  final: 'FINAL',
+  noBracket: 'Tanpa bagan pertandingan.',
+  bracketTooLarge: 'Bagan berukuran besar — lihat dokumen Bagan Pertandingan untuk diagram lengkap.',
+  noPools: 'Belum ada pool.',
+  noParticipants: 'Tidak ada peserta',
+  noCategories: 'Tidak ada kategori semi prestasi pada revisi ini.',
+  incompleteData: 'Data belum lengkap',
+} as const;
+
+/** "GEUP_9" -> "Geup 9", "HITAM" -> "Hitam"; null -> "—". The rule set's own longer label is not part of the export model. */
+export function beltLabel(code: string | null): string {
+  return code && code.trim().length > 0 ? humanizeCode(code.trim()) : MISSING_VALUE;
+}
+
+const decimalId = (value: number, digits: number): string =>
+  Number(value.toFixed(digits)).toString().replace('.', ',');
+
+/** Persisted height is in mm; sheets show cm ("1655" -> "165,5"). Null -> "—". */
+export function formatHeightCm(heightMm: number | null): string {
+  return heightMm === null ? MISSING_VALUE : decimalId(heightMm / 10, 1);
+}
+
+/** Persisted weight is in grams; sheets show kg ("40250" -> "40,25"). Null -> "—". */
+export function formatWeightKg(weightG: number | null): string {
+  return weightG === null ? MISSING_VALUE : decimalId(weightG / 1000, 2);
+}
+
+export function poolLabel(ordinal: number): string {
+  return `Pool ${ordinal}`;
+}
+
+export function participantCountLabel(count: number): string {
+  return `${count} peserta`;
+}

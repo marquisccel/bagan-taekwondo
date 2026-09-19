@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useApiSWR } from '../../../../../lib/use-api-swr';
 
 import { BracketView } from '../../../../../components/BracketView';
+import { CommandFeedback, ReasonPrompt } from '../../../../../components/CommandFeedback';
 import { EntryDrawer } from '../../../../../components/EntryDrawer';
 import { ExportPanel } from '../../../../../components/ExportPanel';
 import { MoveEntryDialog } from '../../../../../components/MoveEntryDialog';
@@ -12,10 +13,12 @@ import { PoolCard } from '../../../../../components/PoolCard';
 import { RevisionConflictBanner } from '../../../../../components/RevisionConflictBanner';
 import { StatusBadge } from '../../../../../components/StatusBadge';
 import { SwapEntryDialog } from '../../../../../components/SwapEntryDialog';
-import { api, type CommandOutcome, type EntryDisplay } from '../../../../../lib/api';
-import { friendlyMessage, runCommand } from '../../../../../lib/command-error';
+import { api, type CommandOutcome, type CommandVerdict, type EntryDisplay } from '../../../../../lib/api';
+import { friendlyCommandRefusal, friendlyMessage, runCommand } from '../../../../../lib/command-error';
 import { useDevAuth } from '../../../../../lib/dev-auth';
 import { isDraft } from '../../../../../lib/lifecycle';
+
+type CommandCall = (reason: string | null) => Promise<CommandOutcome>;
 
 export default function CategoryDetailPage() {
   const { id, categoryId } = useParams<{ id: string; categoryId: string }>();
@@ -49,6 +52,9 @@ export default function CategoryDetailPage() {
   const [swapTarget, setSwapTarget] = useState<EntryDisplay | null>(null);
   const [conflict, setConflict] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<CommandVerdict | null>(null);
+  const [pending, setPending] = useState<{ call: CommandCall; verdict: CommandVerdict } | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const summary = categories?.find((c) => c.category_id === categoryId);
   const editable = !!revision && isDraft(revision.lifecycle);
@@ -59,15 +65,27 @@ export default function CategoryDetailPage() {
     void mutateDetail();
   };
 
-  const withOutcomeHandling = async (fn: () => Promise<CommandOutcome>) => {
-    const result = await runCommand(fn);
+  /**
+   * Runs a command through the server's canonical verdict (AUD-005): applied -> show its quality
+   * feedback; REASON_REQUIRED -> ask for a reason and send the same command again (a fresh
+   * idempotency key, the command body differs); hard refusal -> Indonesian explanation, nothing changed.
+   */
+  const withOutcomeHandling = async (call: CommandCall, reason: string | null = null) => {
+    const result = await runCommand(() => call(reason));
     if (result.ok) {
+      setPending(null);
+      setBanner(null);
+      setFeedback(result.outcome.verdict);
       void mutateRevision();
       void mutateDetail();
     } else if (result.code === 'REVISION_CONFLICT') {
+      setPending(null);
       setConflict(true);
+    } else if (result.code === 'REASON_REQUIRED' && result.verdict) {
+      setPending({ call, verdict: result.verdict });
     } else {
-      setBanner(friendlyMessage(result.code, result.message));
+      setPending(null);
+      setBanner(friendlyCommandRefusal(result) ?? friendlyMessage(result.code, result.message));
     }
   };
 
@@ -89,10 +107,19 @@ export default function CategoryDetailPage() {
       </div>
 
       {revisionId ? (
-        <ExportPanel revisionId={revisionId} availableTypes={['CATEGORY_DRAW']} categoryId={categoryId} />
+        <ExportPanel
+          revisionId={revisionId}
+          availableTypes={
+            detail.category.stream === 'SEMI_PRESTASI'
+              ? ['CATEGORY_DRAW', 'SEMI_PRESTASI_COMPACT_DRAW_SHEET']
+              : ['CATEGORY_DRAW']
+          }
+          categoryId={categoryId}
+        />
       ) : null}
 
       {conflict ? <RevisionConflictBanner onReload={reload} /> : null}
+      {feedback ? <CommandFeedback verdict={feedback} onDismiss={() => setFeedback(null)} /> : null}
       {banner ? (
         <div className="banner banner-conflict" role="alert">
           <span>{banner}</span>
@@ -133,28 +160,28 @@ export default function CategoryDetailPage() {
                 onDropEntry={(entryId, toPoolUid) => {
                   const entry = allPools.flatMap((pp) => pp.members).find((m) => m.entryId === entryId);
                   if (!entry || !revisionId) return;
-                  void withOutcomeHandling(() =>
+                  void withOutcomeHandling((reason) =>
                     api.moveEntry(actorId, revisionId, {
                       entryId,
                       toPoolUid,
                       toSlot: null,
                       expectedLockVersion: lockVersion,
                       idempotencyKey: crypto.randomUUID(),
-                      reason: null,
+                      reason,
                       complaintId: null,
                     }),
                   );
                 }}
                 onMovePool={(poolUid, toArenaCode, toOrder) => {
                   if (!revisionId) return;
-                  void withOutcomeHandling(() =>
+                  void withOutcomeHandling((reason) =>
                     api.movePool(actorId, revisionId, {
                       poolUid,
                       toArenaCode,
                       toOrder,
                       expectedLockVersion: lockVersion,
                       idempotencyKey: crypto.randomUUID(),
-                      reason: null,
+                      reason,
                       complaintId: null,
                     }),
                   );
@@ -201,14 +228,14 @@ export default function CategoryDetailPage() {
           onPick={(poolUid) => {
             setMoveTarget(null);
             if (!revisionId) return;
-            void withOutcomeHandling(() =>
+            void withOutcomeHandling((reason) =>
               api.moveEntry(actorId, revisionId, {
                 entryId: moveTarget.entry.entryId,
                 toPoolUid: poolUid,
                 toSlot: null,
                 expectedLockVersion: lockVersion,
                 idempotencyKey: crypto.randomUUID(),
-                reason: null,
+                reason,
                 complaintId: null,
               }),
             );
@@ -224,16 +251,28 @@ export default function CategoryDetailPage() {
           onPick={(otherEntryId) => {
             setSwapTarget(null);
             if (!revisionId) return;
-            void withOutcomeHandling(() =>
+            void withOutcomeHandling((reason) =>
               api.swapEntry(actorId, revisionId, {
                 entryA: swapTarget.entryId,
                 entryB: otherEntryId,
                 expectedLockVersion: lockVersion,
                 idempotencyKey: crypto.randomUUID(),
-                reason: null,
+                reason,
                 complaintId: null,
               }),
             );
+          }}
+        />
+      ) : null}
+
+      {pending ? (
+        <ReasonPrompt
+          verdict={pending.verdict}
+          busy={busy}
+          onCancel={() => setPending(null)}
+          onConfirm={(reason) => {
+            setBusy(true);
+            void withOutcomeHandling(pending.call, reason).finally(() => setBusy(false));
           }}
         />
       ) : null}

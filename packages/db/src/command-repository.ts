@@ -8,8 +8,15 @@ import {
   type DrawCommand,
   type Role,
 } from '@bagantkd/domain';
-import { buildBracket, checkBracket, type BracketEntry } from '@bagantkd/draw-engine';
-import { assessRuleSet } from '@bagantkd/rules';
+import {
+  buildBracket,
+  checkBracket,
+  evaluatePoolChange,
+  resolvePolicy,
+  type BracketEntry,
+  type PoolEntry,
+} from '@bagantkd/draw-engine';
+import { assessRuleSet, type RuleSet } from '@bagantkd/rules';
 import {
   compareStrings,
   deterministicUuid,
@@ -40,6 +47,12 @@ export const COMMAND_ERROR_CODES = [
   'POOL_NOT_FOUND',
   'RULE_SET_NOT_READY',
   'IDEMPOTENCY_CONFLICT',
+  /** AUD-005: a pool-changing command would introduce a hard (Tier 0) rule violation. */
+  'HARD_CONSTRAINT_VIOLATED',
+  /** AUD-005: a valid command that degrades soft quality was sent without an operator reason. */
+  'REASON_REQUIRED',
+  /** AUD-007: the rebuilt bracket failed a structural invariant; the whole command is rolled back. */
+  'BRACKET_INVARIANT_VIOLATED',
 ] as const;
 export type CommandErrorCode = (typeof COMMAND_ERROR_CODES)[number];
 
@@ -65,6 +78,8 @@ class ContentRejected extends Error {
   constructor(
     readonly code: CommandErrorCode,
     readonly hard: readonly string[],
+    /** The verdict to persist for the rejection; defaults to RED(hard). */
+    readonly verdict: ConstraintVerdict | null = null,
   ) {
     super(code);
   }
@@ -129,10 +144,12 @@ async function rebuildPoolBracket(
   });
   const violations = checkBracket(built, entries);
   if (violations.length > 0) {
-    throw new DomainError('BRACKET_INVARIANT_VIOLATED', {
-      poolId: args.poolId,
-      violations: violations.map((v) => v.code),
-    });
+    // An expected, stable rejection (AUD-007): the transaction rolls back (no partial mutation) and
+    // the rejection is recorded; the raw detail never reaches the client.
+    throw new ContentRejected(
+      'BRACKET_INVARIANT_VIOLATED',
+      violations.map((v) => v.code),
+    );
   }
   await tx.query(`delete from match where bracket_id in (select id from bracket where pool_id = $1)`, [
     args.poolId,
@@ -349,6 +366,145 @@ async function applyContent(
   }
 }
 
+// ---------------------------------------------------------------------------------------
+// AUD-005: canonical quality verdict of MOVE_ENTRY / SWAP_ENTRIES
+// ---------------------------------------------------------------------------------------
+
+interface PoolSnapshot {
+  readonly poolUid: string;
+  readonly entryIds: readonly string[];
+}
+
+/** The pools (and their category) a MOVE_ENTRY / SWAP_ENTRIES will change; null when it changes none. */
+async function poolsChangedBy(
+  tx: SqlExecutor,
+  rev: RevisionRow,
+  cmd: DrawCommand,
+): Promise<{ poolIds: string[]; categoryId: string } | null> {
+  if (cmd.type === 'MOVE_ENTRY') {
+    const from = await poolOfEntry(tx, rev.id, cmd.entryId);
+    const [to] = await tx.query<{ id: string; category_id: string }>(
+      `select id, category_id from pool where revision_id = $1 and pool_uid = $2`,
+      [rev.id, cmd.toPoolUid],
+    );
+    if (!from || !to || to.id === from.poolId || to.category_id !== from.categoryId) return null;
+    return { poolIds: [from.poolId, to.id], categoryId: from.categoryId };
+  }
+  if (cmd.type === 'SWAP_ENTRIES') {
+    const a = await poolOfEntry(tx, rev.id, cmd.entryA);
+    const b = await poolOfEntry(tx, rev.id, cmd.entryB);
+    if (!a || !b || a.poolId === b.poolId) return null;
+    return { poolIds: [a.poolId, b.poolId], categoryId: a.categoryId };
+  }
+  return null;
+}
+
+async function snapshotPools(tx: SqlExecutor, poolIds: readonly string[]): Promise<PoolSnapshot[]> {
+  const out: PoolSnapshot[] = [];
+  for (const id of poolIds) {
+    const [p] = await tx.query<{ pool_uid: string }>(`select pool_uid from pool where id = $1`, [id]);
+    const ms = await tx.query<{ entry_id: string }>(
+      `select entry_id from pool_member where pool_id = $1 order by entry_id`,
+      [id],
+    );
+    out.push({ poolUid: p?.pool_uid ?? '', entryIds: ms.map((m) => m.entry_id) });
+  }
+  return out;
+}
+
+/** Same values the draw used: registered data of the entry's first member, contingent by name. */
+async function loadPoolEntries(
+  tx: SqlExecutor,
+  entryIds: readonly string[],
+  beltRank: ReadonlyMap<string, number>,
+): Promise<Map<string, PoolEntry>> {
+  const rows = await tx.query<{
+    id: string;
+    contingent: string;
+    weight_g: number | null;
+    height_mm: number | null;
+    belt_code: string | null;
+  }>(
+    `select e.id, con.name as contingent, a.registered_weight_g as weight_g,
+            a.registered_height_mm as height_mm, a.registered_belt_code as belt_code
+     from entry e
+     join contingent con on con.id = e.contingent_id
+     left join lateral (
+       select at.registered_weight_g, at.registered_height_mm, at.registered_belt_code
+       from entry_member em join athlete at on at.id = em.athlete_id
+       where em.entry_id = e.id order by em.position limit 1
+     ) a on true
+     where e.id = any($1::uuid[])`,
+    [entryIds],
+  );
+  return new Map(
+    rows.map((r) => [
+      r.id,
+      {
+        id: r.id,
+        weightG: r.weight_g,
+        heightMm: r.height_mm,
+        beltRank: r.belt_code ? (beltRank.get(r.belt_code) ?? null) : null,
+        contingent: r.contingent,
+      },
+    ]),
+  );
+}
+
+/**
+ * The engine's own quality verdict for the change (never re-implemented elsewhere). Null when the
+ * category is not pooled (nothing to evaluate) — the command is then simply GREEN.
+ */
+async function evaluateChange(
+  tx: SqlExecutor,
+  rev: RevisionRow,
+  categoryId: string,
+  before: readonly PoolSnapshot[],
+  after: readonly PoolSnapshot[],
+): Promise<{
+  verdict: ConstraintVerdict;
+  hard: readonly string[];
+  soft: readonly string[];
+} | null> {
+  const [cat] = await tx.query<{ age_code: string; template_code: string }>(
+    `select ad.code as age_code, t.code as template_code
+     from category c
+     join rule_age_division ad on ad.id = c.age_division_id
+     join rule_category_template t on t.id = c.template_id
+     where c.id = $1`,
+    [categoryId],
+  );
+  const [run] = await tx.query<{ rules_snapshot: RuleSet }>(
+    `select rules_snapshot from draw_run where id = $1`,
+    [rev.draw_run_id],
+  );
+  const rs = run?.rules_snapshot;
+  const template = rs?.categoryTemplates?.find((t) => t.code === cat?.template_code);
+  if (!cat || !rs || !template || template.drawFormat !== 'POOLED_SINGLE_ELIMINATION') return null;
+  const policy = rs.poolPolicies.find((p) => p.code === template.poolPolicyCode);
+  if (!policy) return null;
+
+  const beltRank = new Map(rs.belts.map((b) => [b.code, b.rank]));
+  const ids = [...new Set([...before, ...after].flatMap((s) => s.entryIds))];
+  const entries = await loadPoolEntries(tx, ids, beltRank);
+  const pools = (snaps: readonly PoolSnapshot[]) =>
+    snaps.map((s) => s.entryIds.flatMap((id) => entries.get(id) ?? []));
+  const r = evaluatePoolChange(pools(before), pools(after), resolvePolicy(rs, policy, cat.age_code));
+  const impact = {
+    change: r.change,
+    poolUids: after.map((s) => s.poolUid),
+    before: r.before,
+    after: r.after,
+  };
+  const verdict: ConstraintVerdict =
+    r.level === 'RED'
+      ? { level: 'RED', hardViolations: r.hardViolations, impact }
+      : r.level === 'YELLOW'
+        ? { level: 'YELLOW', softViolations: r.softViolations, reasonRequired: true, impact }
+        : { level: 'GREEN', impact };
+  return { verdict, hard: r.hardViolations, soft: r.softViolations };
+}
+
 async function insertDrawCommand(
   tx: SqlExecutor,
   args: {
@@ -490,6 +646,8 @@ async function applyOnce(tx: SqlExecutor, cmd: DrawCommand, actor: CommandActor)
     // to bump lock_version by exactly +1): the CAS check and the lifecycle/field change happen in
     // the same statement, keyed on (id, expectedLockVersion).
     let resultingRevisionId = rev.id;
+    /** AUD-006: the AMENDED parent retired by this PUBLISH, if any (audited after the publish event). */
+    let supersededParentId: string | null = null;
     if (cmd.action === 'LOCK') {
       const fp = fingerprint({ revisionId: rev.id, at: 'lock' });
       const cas = await tx.query<RevisionRow>(
@@ -527,6 +685,21 @@ async function applyOnce(tx: SqlExecutor, cmd: DrawCommand, actor: CommandActor)
           `insert into official_category_assignment (category_id, revision_id) values ($1,$2) on conflict (category_id) do update set revision_id = excluded.revision_id, published_at = now()`,
           [c.category_id, rev.id],
         );
+      }
+      // AUD-006: the replacement is now the official revision, so its AMENDED parent takes the
+      // existing SUPERSEDE transition (no new state). Lineage, audit history and every artifact
+      // that references the parent are untouched: only the lifecycle flag moves.
+      if (rev.parent_revision_id) {
+        const [parent] = await tx.query<RevisionRow>(`select * from draw_revision where id = $1 for update`, [
+          rev.parent_revision_id,
+        ]);
+        if (parent && nextLifecycle(parent.lifecycle as never, 'SUPERSEDE') === 'SUPERSEDED') {
+          const sup = await tx.query<RevisionRow>(
+            `update draw_revision set lifecycle = 'SUPERSEDED', superseded_at = now(), lock_version = lock_version + 1 where id = $1 and lock_version = $2 returning *`,
+            [parent.id, parent.lock_version],
+          );
+          if (sup.length === 1) supersededParentId = parent.id;
+        }
       }
     } else if (cmd.action === 'AMEND') {
       const cas = await tx.query<RevisionRow>(
@@ -598,6 +771,23 @@ async function applyOnce(tx: SqlExecutor, cmd: DrawCommand, actor: CommandActor)
       commandId: id,
       correlationId: null,
     });
+    if (supersededParentId) {
+      await appendAuditEvent(tx, {
+        chainKey: tournamentChainKey(rev.tournament_id),
+        tournamentId: rev.tournament_id,
+        actorKind: 'USER',
+        actorId: actor.userId,
+        action: 'LIFECYCLE_SUPERSEDE',
+        subjectType: 'DRAW_REVISION',
+        subjectId: supersededParentId,
+        before: { lifecycle: 'AMENDED' },
+        after: { lifecycle: 'SUPERSEDED', supersededBy: rev.id },
+        reason: cmd.reason,
+        complaintId: cmd.complaintId,
+        commandId: id,
+        correlationId: null,
+      });
+    }
     return {
       outcome: 'APPLIED',
       rejectionCode: null,
@@ -628,9 +818,33 @@ async function applyOnce(tx: SqlExecutor, cmd: DrawCommand, actor: CommandActor)
       `expected lock_version ${cmd.expectedLockVersion}, current is different`,
     ]);
 
+  // AUD-005: remember the touched pools before the mutation so the change can be judged after it.
+  const changed = await poolsChangedBy(tx, rev, cmd);
+  const beforePools = changed ? await snapshotPools(tx, changed.poolIds) : null;
+
   const result = await applyContent(tx, rev, cmd);
   if ('rejected' in result) {
     throw new ContentRejected(result.rejected, result.hard);
+  }
+
+  let verdict: ConstraintVerdict = GREEN;
+  if (changed && beforePools) {
+    const evaluated = await evaluateChange(
+      tx,
+      rev,
+      changed.categoryId,
+      beforePools,
+      await snapshotPools(tx, changed.poolIds),
+    );
+    if (evaluated) {
+      verdict = evaluated.verdict;
+      // Hard violations refuse the command; the transaction (including the CAS) rolls back.
+      if (verdict.level === 'RED')
+        throw new ContentRejected('HARD_CONSTRAINT_VIOLATED', evaluated.hard, verdict);
+      // Soft degradation is allowed, but only with a stated reason (ADR-0004: YELLOW needs a reason).
+      if (verdict.level === 'YELLOW' && (cmd.reason ?? '').trim() === '')
+        throw new ContentRejected('REASON_REQUIRED', evaluated.soft, verdict);
+    }
   }
 
   const { seed, budgetPerEntry } = await drawRunOf(tx, rev.id);
@@ -638,7 +852,6 @@ async function applyOnce(tx: SqlExecutor, cmd: DrawCommand, actor: CommandActor)
     await rebuildPoolBracket(tx, { revisionId: rev.id, poolId, seed, budgetPerEntry });
   }
 
-  const verdict = GREEN;
   const id = await insertDrawCommand(tx, {
     tournamentId: rev.tournament_id,
     revisionId: rev.id,
@@ -658,7 +871,12 @@ async function applyOnce(tx: SqlExecutor, cmd: DrawCommand, actor: CommandActor)
     subjectType: 'DRAW_REVISION',
     subjectId: rev.id,
     before: null,
-    after: { touchedPools: result.touchedPools },
+    after: {
+      touchedPools: result.touchedPools,
+      verdict: verdict.level,
+      violations: verdict.level === 'YELLOW' ? verdict.softViolations : [],
+      impact: verdict.level === 'RED' ? null : (verdict.impact ?? null),
+    },
     reason: cmd.reason,
     complaintId: cmd.complaintId,
     commandId: id,
@@ -862,7 +1080,7 @@ async function recordContentRejection(
   }
   const rev = await loadRevision(tx, cmd.revisionId);
   if (!rev) throw new DomainError('REVISION_NOT_FOUND', { revisionId: cmd.revisionId });
-  const verdict = RED(e.hard);
+  const verdict = e.verdict ?? RED(e.hard);
   const id = await insertDrawCommand(tx, {
     tournamentId: rev.tournament_id,
     revisionId: rev.id,

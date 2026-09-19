@@ -13,9 +13,13 @@ export default function ConnectPage() {
 
   const connect = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setTournament(tid.trim());
     setActor(aid.trim());
-    router.push(`/tournaments/${tid.trim()}`);
+    if (tid.trim()) {
+      setTournament(tid.trim());
+      router.push(`/tournaments/${tid.trim()}`);
+    } else {
+      router.push('/tournaments');
+    }
   };
 
   return (
@@ -24,6 +28,10 @@ export default function ConnectPage() {
       <p style={{ color: 'var(--text-dim)' }}>
         Enter a tournament id and your user id (from a seed script or another operator) to connect. This is a
         development identity adapter, not a login system — see lib/dev-auth.tsx.
+      </p>
+      <p>
+        Tidak tahu ID turnamen? Isi ID pengguna saja lalu tekan Connect, atau{' '}
+        <a href="/tournaments">buka daftar turnamen</a>.
       </p>
       <form onSubmit={connect} className="panel grid" style={{ maxWidth: 420 }}>
         <label>
@@ -34,8 +42,10 @@ export default function ConnectPage() {
             onChange={(e) => setTid(e.target.value)}
             placeholder="00000000-0000-0000-0000-000000000000"
             style={{ width: '100%' }}
-            required
           />
+          <small style={{ color: 'var(--text-dim)' }}>
+            Opsional — kosongkan untuk memilih dari daftar turnamen.
+          </small>
         </label>
         <label>
           Your user ID
@@ -55,7 +65,8 @@ export default function ConnectPage() {
       {tournamentId && actorId ? (
         <p>
           Currently connected to tournament <code>{tournamentId}</code> as <code>{actorId}</code>. Go to{' '}
-          <a href={`/tournaments/${tournamentId}`}>the dashboard</a>.
+          <a href={`/tournaments/${tournamentId}`}>the dashboard</a> atau{' '}
+          <a href="/tournaments">daftar turnamen</a>.
         </p>
       ) : null}
     </main>

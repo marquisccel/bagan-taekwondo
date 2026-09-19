@@ -49,6 +49,9 @@
   "engineFingerprints": {
     "0.2.0": {
       "REAL_2026": "sha256:e9f8d118c336d1a7f9b1b97f70648043a1e6c52185a3a8975a1ba38bc8df45ed"
+    },
+    "0.3.0": {
+      "REAL_2026": "sha256:9625825c368b7682b8ea3b89b4eb246c12b810f9b38da41c6ea0fa9df956e5f2"
     }
   }
 }

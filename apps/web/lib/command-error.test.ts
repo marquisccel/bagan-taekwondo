@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ApiClientError } from './api';
-import { friendlyMessage, runCommand } from './command-error';
+import { friendlyCommandRefusal, friendlyMessage, runCommand } from './command-error';
 
 describe('runCommand', () => {
   it('is ok when the command applies', async () => {
@@ -40,7 +40,12 @@ describe('runCommand', () => {
         replayed: false,
       }),
     );
-    expect(result).toEqual({ ok: false, code: 'FORBIDDEN_COMMAND', message: 'role too low' });
+    expect(result).toEqual({
+      ok: false,
+      code: 'FORBIDDEN_COMMAND',
+      message: 'role too low',
+      verdict: { level: 'RED', hardViolations: ['role too low'] },
+    });
   });
 
   it('falls back to UNKNOWN_ERROR for a non-ApiClientError failure (e.g. a network drop)', async () => {
@@ -48,6 +53,53 @@ describe('runCommand', () => {
       throw new Error('fetch failed');
     });
     expect(result).toEqual({ ok: false, code: 'UNKNOWN_ERROR', message: 'fetch failed' });
+  });
+});
+
+describe('runCommand — server verdict on a refusal (AUD-005)', () => {
+  it('carries the verdict of a REASON_REQUIRED refusal so the UI can ask for a reason', async () => {
+    const verdict = {
+      level: 'YELLOW',
+      softViolations: ['WEIGHT_TOLERANCE_WORSENED'],
+      reasonRequired: true,
+    };
+    const result = await runCommand(() => {
+      throw new ApiClientError(422, 'REASON_REQUIRED', 'REASON_REQUIRED', { verdict });
+    });
+    expect(result).toEqual({ ok: false, code: 'REASON_REQUIRED', message: 'REASON_REQUIRED', verdict });
+  });
+
+  it('a refusal without details has no verdict', async () => {
+    const result = await runCommand(() => {
+      throw new ApiClientError(409, 'REVISION_CONFLICT', 'stale');
+    });
+    expect(result).toMatchObject({ ok: false, verdict: undefined });
+  });
+});
+
+describe('friendlyCommandRefusal (Indonesian)', () => {
+  it('explains a hard violation with the server reason codes and says nothing changed', () => {
+    const text = friendlyCommandRefusal({
+      code: 'HARD_CONSTRAINT_VIOLATED',
+      message: 'POOL_SIZE_EXCEEDED',
+      verdict: { level: 'RED', hardViolations: ['POOL_SIZE_EXCEEDED'] },
+    });
+    expect(text).toContain('melanggar aturan wajib');
+    expect(text).toContain('melebihi batas maksimum');
+    expect(text).toContain('Drawing tidak diubah');
+  });
+
+  it('explains a bracket invariant failure without leaking internals', () => {
+    const text = friendlyCommandRefusal({
+      code: 'BRACKET_INVARIANT_VIOLATED',
+      message: 'FORCED_INVARIANT',
+    });
+    expect(text).toContain('susunan bagan');
+    expect(text).not.toContain('FORCED_INVARIANT');
+  });
+
+  it('returns null for codes it does not own', () => {
+    expect(friendlyCommandRefusal({ code: 'REVISION_LOCKED', message: 'x' })).toBeNull();
   });
 });
 

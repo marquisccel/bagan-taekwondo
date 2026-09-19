@@ -89,6 +89,56 @@ describe('ExportPanel', () => {
     );
   });
 
+  it('offers the compact semi-prestasi sheet with its Indonesian label and requests it revision-wide', async () => {
+    mockAuth('DRAWING_OFFICER');
+    vi.mocked(api.listExports).mockResolvedValue([]);
+    vi.mocked(api.requestExport).mockResolvedValue(
+      exportRow({ exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET' }),
+    );
+    renderIsolated(
+      <ExportPanel
+        revisionId="r1"
+        availableTypes={['TOURNAMENT_DRAW_BOOK', 'SEMI_PRESTASI_COMPACT_DRAW_SHEET']}
+      />,
+    );
+    expect(
+      screen.getByRole('option', { name: 'Lembar Drawing Ringkas Semi Prestasi (PDF)' }),
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Jenis ekspor'), {
+      target: { value: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Buat Ekspor' }));
+    await waitFor(() =>
+      expect(api.requestExport).toHaveBeenCalledWith('actor-1', 'r1', {
+        exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET',
+        mode: 'PREVIEW',
+        categoryId: undefined,
+        poolId: undefined,
+      }),
+    );
+  });
+
+  it('requests the compact semi-prestasi sheet for one category when a categoryId is given', async () => {
+    mockAuth('DRAWING_OFFICER');
+    vi.mocked(api.listExports).mockResolvedValue([]);
+    vi.mocked(api.requestExport).mockResolvedValue(
+      exportRow({ exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET', scopeType: 'CATEGORY', categoryId: 'c1' }),
+    );
+    renderIsolated(
+      <ExportPanel revisionId="r1" availableTypes={['SEMI_PRESTASI_COMPACT_DRAW_SHEET']} categoryId="c1" />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Buat Ekspor' }));
+    await waitFor(() =>
+      expect(api.requestExport).toHaveBeenCalledWith('actor-1', 'r1', {
+        exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET',
+        mode: 'PREVIEW',
+        categoryId: 'c1',
+        poolId: undefined,
+      }),
+    );
+  });
+
   it('shows a safe Indonesian message on EXPORT_UNAUTHORIZED, not the raw backend text', async () => {
     mockAuth('DRAWING_OFFICER');
     vi.mocked(api.listExports).mockResolvedValue([]);

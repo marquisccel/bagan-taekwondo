@@ -138,6 +138,8 @@ export const EXPORT_TYPES = values(
   'POOL_SHEET',
   'BRACKET_SHEET',
   'XLSX_WORKBOOK',
+  // AUD-012: dense semi-prestasi tournament-desk sheet (PDF only).
+  'SEMI_PRESTASI_COMPACT_DRAW_SHEET',
 );
 export type ExportType = (typeof EXPORT_TYPES)[number];
 

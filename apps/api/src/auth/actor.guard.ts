@@ -12,6 +12,7 @@ interface RequestWithActor {
   headers: Record<string, string | string[] | undefined>;
   params: Record<string, string>;
   actor?: Actor;
+  actorId?: string;
 }
 
 /**
@@ -37,6 +38,12 @@ export class ActorGuard implements CanActivate {
     const userId = req.headers['x-actor-id'];
     if (typeof userId !== 'string' || userId.length === 0) {
       throw new ApiError('UNAUTHORIZED_TOURNAMENT_ACCESS', 'x-actor-id header is required');
+    }
+
+    if (scope.kind === 'actor') {
+      // Collection route (not scoped to one tournament): identity only, membership is enforced by the handler's query.
+      req.actorId = userId;
+      return true;
     }
 
     const routeValue = req.params[scope.param];

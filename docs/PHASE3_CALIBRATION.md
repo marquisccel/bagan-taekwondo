@@ -93,3 +93,61 @@ starts to cost physical similarity. These are tradeoffs for the committee to con
   `DRAW_FORMAT_NOT_IMPLEMENTED`; a READY-scope draw excludes them.
 - Public match codes. `allocateMatchCodes` assigns stable `matchUid`s only; codes need arenas and
   a schedule (ADR-0005, Phase 4).
+
+## 6. Tier 3 — contingent spread (AUD-004, engine 0.3.0)
+
+Requirement (pre-UAT audit `docs/audit/SEMI_PRESTASI_REQUIREMENT_AUDIT.md`, AUD-004): contingent
+separation stays **soft**, but when a dominant contingent cannot be avoided the engine must prefer
+spreading the outsiders across pools (`A=6, B=1, C=1` → `AAAB` + `AAAC`, not `AAAA` + `AABC`). Tier 2
+sums per-pool costs, so both layouts cost the same and the choice was arbitrary.
+
+- **Definition.** `spread(pool) = Σ_contingents (members of that contingent in the pool)²`. Lower is
+  more spread out. It never appears in Tier 0 and never blocks a draw.
+- **Where it acts.** After the Tier-2 phase every strategy runs a third local-search phase
+  (`localSearch(..., 'tier3')`, move and swap only). A change is accepted only if the total spread
+  strictly decreases **and** Tier 0, Tier 1 and Tier 2 do not increase, no singleton is created, no
+  pool leaves its ideal tolerance, and **no weight, height or belt range grows in total** — also for a
+  dimension the rule set switched off (Poomsae weight, Q5), so the tie-break never quietly worsens a
+  grouping the committee may later re-enable. It never spends Tier-1 slack. Rejections are counted per
+  reason (`NO_TIER3_GAIN`, `TIER_REGRESSION`, plus the existing `IDEAL_REGRESSION` and
+  `SINGLETON_CREATION`).
+- **Ranking.** `rankCandidates` compares `(tier0, tier1, tier2)`, then the spread, then the strategy
+  order. `decidedOn` of a beaten candidate can now be `TIER3_CONTINGENT_SPREAD`.
+- **Explanation.** Each pool of a multi-contingent pooled category carries `POOL_CONTINGENT_MIX`
+  (`size`, `distinctContingents`, `largestGroup`, `spread`); `CANDIDATE_SELECTED` and the candidate
+  metrics carry `contingentSpread`; the selection rule string is
+  `LOWEST_TIER0_TIER1_TIER2_TIER3_THEN_STRATEGY_ORDER`.
+- **Version.** Output for the same input changes, so `ENGINE_VERSION` 0.2.0 → **0.3.0**. The 0.2.0
+  golden fingerprint stays recorded for history.
+
+### REAL_2026 effect (golden seed 20260827, READY scope, 201 categories, 122 pooled)
+
+|                                                       | 0.2.0                    | 0.3.0                                 |
+| ----------------------------------------------------- | ------------------------ | ------------------------------------- |
+| output fingerprint                                    | `sha256:e9f8d118…45ed`   | `sha256:9625825c…e5f2`                |
+| categories with a different pool composition          | —                        | **10 of 201** (all pooled)            |
+| Σ Tier 0 / Tier 1 / Tier 2 of the selected candidates | 0 / 24 100 000 / 860 000 | 0 / 24 094 000 / 860 000              |
+| categories worse on any of Tier 0/1/2                 | —                        | **0** (120 equal, 2 better on Tier 1) |
+| walkovers, byes, real matches, pools                  | 24, 554, 1 994, 660      | unchanged                             |
+
+Affected categories and why. In each, pool members were exchanged between two or more pools (pool-size
+multisets unchanged), the total contingent spread strictly decreased, Tier 0/1/2 did not worsen, and no
+category's weight/height ranges grew — except the last one, explained below:
+
+- Kyorugi semi-prestasi (6): CADET FEMALE −41 (2 pools changed) and −44 (2); PRA_CADET_B MALE −20 (2), −22 (2),
+  −28 (2); PRA_CADET_C MALE −48 (2). Height and weight ranges equal or better in each (−48: total height
+  range 320 → 310 mm).
+- Poomsae semi-prestasi (4): CADET FEMALE Taegeuk 3 (2 pools); JUNIOR FEMALE Taegeuk 1 (5) and Taegeuk 3 (4);
+  PRA_CADET_B MALE Taegeuk 1 (4). The first three have equal or better height and weight ranges. **PRA_CADET_B
+  MALE Taegeuk 1** changed for a different reason: its WEIGHT_FIRST candidate, after the Tier-3 phase, ties the
+  other candidates on Tier 0/1/2 **and** spread (32), and wins on strategy order (the pre-existing final
+  tie-break). Its (switched-off) weight ranges total 31 → 33 kg; height is unchanged.
+
+Poomsae weight is switched off by the committee decision Q5 (AUD-001, unchanged), so its benchmark
+metrics are informational: over all 128 measured Poomsae pools the sum of weight ranges went 1 791 → 1 776 kg,
+while the share of pools within 3 kg / 5 kg went 10.9 % / 18.8 % → 10.2 % / 18.0 % (one pool each, from the
+category above). Every other Gate B metric is identical to 0.2.0.
+
+Gate A (21 seeds SAFE, INV-02/03/04/08), deterministic replay ×100 (one fingerprint, equal to the
+recorded one), the exhaustive pooling comparison (58 categories ≤ 10 entries, Tier-1 gap 0) and the
+committee benchmark (Gate B) were re-run for 0.3.0 — see `docs/PHASE3_GATE_REPORT.md` §7.

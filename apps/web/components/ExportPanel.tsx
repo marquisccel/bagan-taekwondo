@@ -20,6 +20,7 @@ const TYPE_LABEL: Record<ExportType, string> = {
   POOL_SHEET: 'Lembar Pool (PDF)',
   BRACKET_SHEET: 'Bagan Pertandingan (PDF)',
   XLSX_WORKBOOK: 'Workbook (XLSX)',
+  SEMI_PRESTASI_COMPACT_DRAW_SHEET: 'Lembar Drawing Ringkas Semi Prestasi (PDF)',
 };
 
 const STATUS_LABEL: Record<ExportArtifact['status'], string> = {

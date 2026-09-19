@@ -124,9 +124,11 @@ describe.skipIf(!available)('REAL_2026 production readiness', { timeout: 300_000
           'IDEAL_REGRESSION',
           'NO_TIER1_GAIN',
           'NO_TIER2_GAIN',
+          'NO_TIER3_GAIN', // AUD-004: the contingent-spread tie-break phase (engine 0.3.0)
           'SINGLETON_CREATION',
           'TIER0_VIOLATION',
           'TIER1_SLACK_EXCEEDED',
+          'TIER_REGRESSION', // AUD-004
         ]);
       }
     }

@@ -64,6 +64,13 @@
       "when": 1789658120008,
       "tag": "0008_export_artifact_guard_fingerprints",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789700000000,
+      "tag": "0009_export_type_semi_prestasi_compact",
+      "breakpoints": true
     }
   ]
 }

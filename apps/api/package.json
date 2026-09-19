@@ -12,6 +12,7 @@
     "@bagantkd/domain": "workspace:*",
     "@bagantkd/draw-engine": "workspace:*",
     "@bagantkd/export": "workspace:*",
+    "@bagantkd/rules": "workspace:*",
     "@bagantkd/shared": "workspace:*",
     "@nestjs/common": "11.2.3",
     "@nestjs/core": "11.2.3",
@@ -23,7 +24,6 @@
   },
   "devDependencies": {
     "@bagantkd/intake": "workspace:*",
-    "@bagantkd/rules": "workspace:*",
     "@types/pg": "8.23.1",
     "@types/supertest": "6.0.3",
     "drizzle-orm": "0.45.2",

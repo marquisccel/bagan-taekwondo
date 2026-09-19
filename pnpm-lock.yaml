@@ -53,6 +53,9 @@ importers:
       '@bagantkd/export':
         specifier: workspace:*
         version: link:../../packages/export
+      '@bagantkd/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
       '@bagantkd/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -81,9 +84,6 @@ importers:
       '@bagantkd/intake':
         specifier: workspace:*
         version: link:../../packages/intake
-      '@bagantkd/rules':
-        specifier: workspace:*
-        version: link:../../packages/rules
       '@types/pg':
         specifier: 8.23.1
         version: 8.23.1

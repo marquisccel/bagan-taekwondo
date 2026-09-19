@@ -130,6 +130,48 @@ for (const backend of testBackends()) {
       expect(official.exportId).not.toBe(preview.exportId);
     });
 
+    it('the export_type enum has SEMI_PRESTASI_COMPACT_DRAW_SHEET (migration 0009), appended after the original five', async () => {
+      const ordered = await db.query<{ v: string }>(
+        `select unnest(enum_range(null::export_type))::text as v`,
+      );
+      expect(ordered.map((r) => r.v)).toEqual([
+        'TOURNAMENT_DRAW_BOOK',
+        'CATEGORY_DRAW',
+        'POOL_SHEET',
+        'BRACKET_SHEET',
+        'XLSX_WORKBOOK',
+        'SEMI_PRESTASI_COMPACT_DRAW_SHEET',
+      ]);
+    });
+
+    it('a SEMI_PRESTASI_COMPACT_DRAW_SHEET request is stored with its own template version and reused when retried', async () => {
+      const args = {
+        ...baseArgs,
+        exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET' as const,
+        templateVersion: 'semi-compact-v1',
+        sourceFingerprint: 'sha256:s-semi',
+        parametersFingerprint: 'sha256:p-semi',
+      };
+      const first = await db.transaction((tx) => createExportRequest(tx, args));
+      expect(first.reused).toBe(false);
+      const row = await getExport(db, first.exportId);
+      expect(row).toMatchObject({
+        status: 'REQUESTED',
+        exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET',
+        format: 'PDF',
+        scopeType: 'REVISION',
+        categoryId: null,
+        templateVersion: 'semi-compact-v1',
+      });
+      const second = await db.transaction((tx) => createExportRequest(tx, args));
+      expect(second).toEqual({ exportId: first.exportId, reused: true });
+      // A different export type with otherwise identical fingerprints is a distinct export.
+      const other = await db.transaction((tx) =>
+        createExportRequest(tx, { ...args, exportType: 'TOURNAMENT_DRAW_BOOK', templateVersion: 'v1' }),
+      );
+      expect(other.exportId).not.toBe(first.exportId);
+    });
+
     it('claimExport atomically transitions REQUESTED -> GENERATING and sets started_at', async () => {
       const { exportId } = await db.transaction((tx) =>
         createExportRequest(tx, {

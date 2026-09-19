@@ -198,6 +198,50 @@ describe('strategies and optimization', () => {
     );
   });
 
+  it('AUD-004 tie-break: every accepted Tier-3 change lowers the contingent spread and worsens nothing else', () => {
+    fc.assert(
+      fc.property(categoryArb(4, 24), (es) => {
+        for (const p of [KYORUGI, POOMSAE]) {
+          const afterTier2 = localSearch(
+            localSearch(dpPartition(es, p, false), p, 'tier1', newStats()),
+            p,
+            'tier2',
+            newStats(),
+          );
+          localSearch(afterTier2, p, 'tier3', newStats(), (ch) => {
+            const sum = (k: 'tier0' | 'tier1' | 'tier2' | 'spread') =>
+              [ch.before, ch.after].map((xs) => xs.reduce((s, x) => s + (x?.[k] ?? 0), 0)) as [
+                number,
+                number,
+              ];
+            const [s0, s1] = sum('spread');
+            expect(s1).toBeLessThan(s0); // spread strictly improves
+            for (const k of ['tier0', 'tier1', 'tier2'] as const) {
+              const [b, a] = sum(k);
+              expect(a).toBeLessThanOrEqual(b); // Tiers 0-2 never get worse
+            }
+            ch.before.forEach((b, i) => {
+              const a = ch.after[i];
+              if (a && a.members === 1) expect(b?.members).toBe(1); // no singleton is created
+              if (b && a) {
+                b.ranges.forEach((r, d) => {
+                  const ideal = p.dimensions[d]?.ideal ?? 0;
+                  if (r <= ideal) expect(a.ranges[d]).toBeLessThanOrEqual(ideal);
+                });
+              }
+            });
+            for (let d = 0; d < p.dimensions.length; d += 1) {
+              const tot = (xs: readonly ({ ranges: readonly number[] } | null)[]) =>
+                xs.reduce((s, x) => s + (x?.ranges[d] ?? 0), 0);
+              expect(tot(ch.after)).toBeLessThanOrEqual(tot(ch.before)); // physical grouping neutral
+            }
+          });
+        }
+      }),
+      { numRuns: 150 },
+    );
+  });
+
   it('deterministic: same entries and seed give the same candidates', () => {
     fc.assert(
       fc.property(categoryArb(1, 20), (es) => {

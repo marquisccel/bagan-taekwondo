@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  beltLabel,
   formatCategoryDisplayName,
+  formatHeightCm,
+  formatWeightKg,
   genderLabel,
   humanizeCode,
+  MISSING_VALUE,
+  participantCountLabel,
+  poolLabel,
   readinessLabel,
+  SEMI_PRESTASI_COMPACT_LABEL,
   warningLabel,
 } from './presentation.js';
 
@@ -89,5 +96,47 @@ describe('presentation labels (final polish pass)', () => {
         movement: null,
       }),
     ).toContain('Kyorugi');
+  });
+});
+
+describe('compact semi-prestasi sheet labels (AUD-012)', () => {
+  it('shows "—" for a missing belt/height/weight, never a guessed value', () => {
+    expect(MISSING_VALUE).toBe('—');
+    expect(beltLabel(null)).toBe('—');
+    expect(beltLabel('   ')).toBe('—');
+    expect(formatHeightCm(null)).toBe('—');
+    expect(formatWeightKg(null)).toBe('—');
+  });
+
+  it('turns belt codes into readable Indonesian-friendly labels without inventing colors', () => {
+    expect(beltLabel('GEUP_9')).toBe('Geup 9');
+    expect(beltLabel('GEUP_10')).toBe('Geup 10');
+    expect(beltLabel('HITAM')).toBe('Hitam');
+  });
+
+  it('converts persisted mm/g to cm/kg with an Indonesian decimal comma', () => {
+    expect(formatHeightCm(1650)).toBe('165');
+    expect(formatHeightCm(1655)).toBe('165,5');
+    expect(formatHeightCm(734)).toBe('73,4');
+    expect(formatWeightKg(40000)).toBe('40');
+    expect(formatWeightKg(40250)).toBe('40,25');
+    expect(formatWeightKg(40500)).toBe('40,5');
+    expect(formatWeightKg(0)).toBe('0');
+  });
+
+  it('has standardized Indonesian labels for every printed column', () => {
+    const l = SEMI_PRESTASI_COMPACT_LABEL;
+    expect(l.documentTitle).toBe('Lembar Drawing Ringkas Semi Prestasi');
+    expect([l.participantName, l.belt, l.heightCm, l.weightKg, l.contingent, l.movement, l.format]).toEqual([
+      'Nama peserta',
+      'Sabuk',
+      'TB (cm)',
+      'BB (kg)',
+      'Kontingen',
+      'Gerakan',
+      'Format',
+    ]);
+    expect(poolLabel(3)).toBe('Pool 3');
+    expect(participantCountLabel(4)).toBe('4 peserta');
   });
 });

@@ -191,9 +191,10 @@ export function drawCategory(args: {
         strategy: selected.strategy,
         tier1CostFp: selected.cost[1],
         tier2CostFp: selected.cost[2],
+        contingentSpread: selected.spread,
         runnerUp: runnerUp?.strategy ?? null,
         runnerUpTier1CostFp: runnerUp?.cost[1] ?? null,
-        rule: 'LOWEST_TIER0_TIER1_TIER2_THEN_STRATEGY_ORDER',
+        rule: 'LOWEST_TIER0_TIER1_TIER2_TIER3_THEN_STRATEGY_ORDER',
       },
     });
   } else {
@@ -248,6 +249,7 @@ export function drawCategory(args: {
         tier0: c.tier0,
         tier1CostFp: c.tier1,
         tier2CostFp: c.tier2,
+        contingentSpread: c.spread,
         minSameContingentRound1: c.minSameRound1,
       });
       reasons.push({
@@ -268,6 +270,19 @@ export function drawCategory(args: {
         });
       });
       reasons.push(...closureReasons(pool, partition, idx, resolved, members.length));
+      if (pool.length >= 2 && contingents.size > 1) {
+        const perContingent = new Map<string, number>();
+        for (const e of pool) perContingent.set(e.contingent, (perContingent.get(e.contingent) ?? 0) + 1);
+        reasons.push({
+          code: 'POOL_CONTINGENT_MIX',
+          params: {
+            size: pool.length,
+            distinctContingents: perContingent.size,
+            largestGroup: Math.max(...perContingent.values()),
+            spread: c.spread,
+          },
+        });
+      }
       if (pool.length === 1) {
         reasons.push({
           code: 'SINGLETON_WALKOVER',
@@ -520,7 +535,9 @@ function candidateResult(
                   ? 'TIER1'
                   : winner && winner.cost[2] !== c.cost[2]
                     ? 'TIER2'
-                    : 'STRATEGY_ORDER',
+                    : winner && winner.spread !== c.spread
+                      ? 'TIER3_CONTINGENT_SPREAD'
+                      : 'STRATEGY_ORDER',
           },
         },
     {
@@ -549,6 +566,7 @@ function candidateResult(
       singletons: c.pools.filter((x) => x.length === 1).length,
       dpTier1CostFp: c.dpCost[1],
       tier1PhaseTier1CostFp: c.tier1PhaseCost[1],
+      contingentSpread: c.spread,
       evaluated: c.search.evaluated,
       accepted: c.search.accepted,
       work: c.search.work,

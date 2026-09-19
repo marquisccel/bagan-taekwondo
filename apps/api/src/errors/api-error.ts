@@ -22,6 +22,11 @@ export const API_ERROR_STATUS: Readonly<Record<string, HttpStatus>> = {
   POOL_NOT_FOUND: HttpStatus.NOT_FOUND,
   TOURNAMENT_NOT_FOUND: HttpStatus.NOT_FOUND,
   VALIDATION_ERROR: HttpStatus.BAD_REQUEST,
+  // Post-draw quality (AUD-005) and clean bracket-invariant rejection (AUD-007): the command was
+  // understood but refused (nothing changed), or needs an operator reason first.
+  HARD_CONSTRAINT_VIOLATED: HttpStatus.UNPROCESSABLE_ENTITY,
+  REASON_REQUIRED: HttpStatus.UNPROCESSABLE_ENTITY,
+  BRACKET_INVARIANT_VIOLATED: HttpStatus.UNPROCESSABLE_ENTITY,
   // Phase 6 — exports.
   EXPORT_SOURCE_NOT_FOUND: HttpStatus.NOT_FOUND,
   EXPORT_NOT_FOUND: HttpStatus.NOT_FOUND,
@@ -35,10 +40,15 @@ export const API_ERROR_STATUS: Readonly<Record<string, HttpStatus>> = {
 };
 
 export class ApiError extends HttpException {
+  /** `details` is optional structured, machine-readable context (e.g. a command verdict); never a stack. */
   constructor(
     readonly code: string,
     message?: string,
+    details?: unknown,
   ) {
-    super({ code, message: message ?? code }, API_ERROR_STATUS[code] ?? HttpStatus.INTERNAL_SERVER_ERROR);
+    super(
+      { code, message: message ?? code, ...(details === undefined ? {} : { details }) },
+      API_ERROR_STATUS[code] ?? HttpStatus.INTERNAL_SERVER_ERROR,
+    );
   }
 }

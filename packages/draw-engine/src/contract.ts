@@ -10,7 +10,7 @@ import type { DrawSeed, Fingerprint } from '@bagantkd/shared';
  * data: no Dates, no class instances, integer units only (ADR-0006). The same contract is
  * used by the worker, the API (predictive validation) and the draw simulator.
  */
-export const ENGINE_VERSION = '0.2.0';
+export const ENGINE_VERSION = '0.3.0';
 
 export const ENGINE_STAGES = [
   'normalizeEntries',

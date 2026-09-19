@@ -33,6 +33,30 @@ describe('TournamentOverviewPage (read-only)', () => {
     expect(screen.getByText(/is DRAFT, not ACTIVE/)).toBeInTheDocument();
   });
 
+  it('links to the participant inspection page, the Buat Drawing page and the tournament list', async () => {
+    vi.mocked(api.tournament).mockResolvedValue({
+      id: 't1',
+      code: 'T1',
+      name: 'Piala Test',
+      activeRuleSetStatus: 'ACTIVE',
+      latestDrawRun: null,
+      latestRevision: null,
+      categoryCounts: { total: 0, ready: 0, blocked: 0 },
+      warningCount: 0,
+      errorCount: 0,
+    });
+    renderIsolated(<TournamentOverviewPage />);
+    expect(await screen.findByRole('link', { name: 'Lihat peserta' })).toHaveAttribute(
+      'href',
+      '/tournaments/t1/peserta',
+    );
+    expect(screen.getByRole('link', { name: 'Buat Drawing' })).toHaveAttribute(
+      'href',
+      '/tournaments/t1/drawing',
+    );
+    expect(screen.getByRole('link', { name: 'Semua turnamen' })).toHaveAttribute('href', '/tournaments');
+  });
+
   it('shows draw run status, revision status, and blocked/warning counts once a draw run exists', async () => {
     vi.mocked(api.tournament).mockResolvedValue({
       id: 't1',

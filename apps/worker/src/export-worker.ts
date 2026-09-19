@@ -14,11 +14,13 @@ import {
   type ExportCategory,
   type ExportModel,
   type ExportPool,
+  semiPrestasiFingerprintSubject,
 } from '@bagantkd/export';
 import {
   renderBracketSheetPdf,
   renderCategoryDrawPdf,
   renderPoolSheetPdf,
+  renderSemiPrestasiCompactDrawSheetPdf,
   renderTournamentDrawBookPdf,
   type RenderOptions,
 } from '@bagantkd/export/pdf';
@@ -35,6 +37,16 @@ interface ScopedTarget {
 }
 
 function resolveScope(model: ExportModel, row: ExportArtifactRow): ScopedTarget {
+  if (row.exportType === 'SEMI_PRESTASI_COMPACT_DRAW_SHEET') {
+    // Covers only its own (semi-prestasi) categories; a category-scoped row must name a semi-prestasi one.
+    const categoryId = row.scopeType === 'CATEGORY' ? row.categoryId : null;
+    const category = categoryId ? (model.categories.find((c) => c.id === categoryId) ?? null) : null;
+    return {
+      category,
+      pool: null,
+      fingerprintSubject: semiPrestasiFingerprintSubject(model, categoryId),
+    };
+  }
   if (row.scopeType === 'REVISION') {
     return { category: null, pool: null, fingerprintSubject: model };
   }
@@ -73,6 +85,12 @@ async function renderBytes(
       return renderTournamentDrawBookPdf(model, opts);
     case 'XLSX_WORKBOOK':
       return buildExportWorkbook(model, opts);
+    case 'SEMI_PRESTASI_COMPACT_DRAW_SHEET':
+      return renderSemiPrestasiCompactDrawSheetPdf(
+        model,
+        opts,
+        row.scopeType === 'CATEGORY' ? (row.categoryId ?? '') : null,
+      );
     /* c8 ignore next 2 -- exhaustive over the ExportRowType union */
     default:
       throw new Error(`unknown export type: ${String(row.exportType)}`);

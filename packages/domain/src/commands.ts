@@ -48,8 +48,41 @@ export type DrawCommand =
 
 export type DrawCommandType = DrawCommand['type'];
 
-/** Command validation feedback shared by client (predictive) and server (authoritative). */
+/**
+ * Aggregate pool-quality figures of the pools a MOVE_ENTRY / SWAP_ENTRIES touched, computed by the
+ * draw engine's own pool cost (packages/draw-engine/src/impact.ts). Integer units only.
+ */
+export interface VerdictMetrics {
+  readonly tier0: number;
+  readonly tier1Fp: number;
+  readonly tier2Fp: number;
+  readonly spread: number;
+  readonly sizePenaltyFp: number;
+  readonly singletons: number;
+  readonly ranges: Readonly<Record<string, number>>;
+  readonly excess: Readonly<Record<string, number>>;
+}
+
+/** Structured, machine-readable impact of a pool-changing command (AUD-005). */
+export interface VerdictImpact {
+  readonly change: 'IMPROVED' | 'UNCHANGED' | 'WORSE';
+  readonly poolUids: readonly string[];
+  readonly before: VerdictMetrics;
+  readonly after: VerdictMetrics;
+}
+
+/**
+ * Command verdict, authoritative on the server (the client never computes one).
+ * GREEN: no meaningful degradation. YELLOW: valid, but a soft-constraint quality degradation; the
+ * operator must give a reason. RED: hard rule violation — the command is refused, nothing changes.
+ * `impact` is present for pool-changing commands on pooled categories.
+ */
 export type ConstraintVerdict =
-  | { readonly level: 'GREEN' }
-  | { readonly level: 'YELLOW'; readonly softViolations: readonly string[]; readonly reasonRequired: true }
-  | { readonly level: 'RED'; readonly hardViolations: readonly string[] };
+  | { readonly level: 'GREEN'; readonly impact?: VerdictImpact }
+  | {
+      readonly level: 'YELLOW';
+      readonly softViolations: readonly string[];
+      readonly reasonRequired: true;
+      readonly impact?: VerdictImpact;
+    }
+  | { readonly level: 'RED'; readonly hardViolations: readonly string[]; readonly impact?: VerdictImpact };

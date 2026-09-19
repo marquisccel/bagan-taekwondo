@@ -1,4 +1,4 @@
-# Draw engine contract (frozen at engine 0.2.0)
+# Draw engine contract (engine 0.3.0; 0.2.0 → 0.3.0 = AUD-004 contingent-spread tie-break, see PHASE3_CALIBRATION §6)
 
 Package `@bagantkd/draw-engine`. One entry point: **`runDraw(input: EngineInput): EngineOutput`**.
 The function is pure: no clock, no I/O, no ambient randomness, no locale. Types are defined in

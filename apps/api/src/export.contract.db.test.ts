@@ -18,6 +18,7 @@ import {
 } from '@bagantkd/db';
 import { newArena, newTournament } from '@bagantkd/db/testing/seed';
 import { ENGINE_VERSION, runDraw } from '@bagantkd/draw-engine';
+import { exportTemplateVersionFor } from '@bagantkd/export';
 import { runIntake } from '@bagantkd/intake';
 import type { RuleSet } from '@bagantkd/rules';
 import { parseDrawSeed } from '@bagantkd/shared';
@@ -292,6 +293,95 @@ describe.skipIf(!adminUrl)('export API contract — postgres', () => {
     expect(res.headers['content-disposition']).toContain('x.pdf');
   });
 
+  describe('SEMI_PRESTASI_COMPACT_DRAW_SHEET', () => {
+    const categoriesOfRevision = async (): Promise<{ id: string; stream: string }[]> =>
+      db.query<{ id: string; stream: string }>(
+        `select c.id, c.stream from draw_run_category rc join category c on c.id = rc.category_id
+         join draw_revision r on r.draw_run_id = rc.draw_run_id
+         where r.id = $1 order by c.category_key`,
+        [revisionId],
+      );
+
+    it('without a categoryId it is a REVISION-scoped PDF with its own template version', async () => {
+      const res = await request(server)
+        .post(`/revisions/${revisionId}/exports`)
+        .set('x-actor-id', officer)
+        .send({ exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET', mode: 'PREVIEW' });
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({
+        exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET',
+        format: 'PDF',
+        scopeType: 'REVISION',
+        categoryId: null,
+        poolId: null,
+        status: 'REQUESTED',
+      });
+      const [row] = await db.query<{ template_version: string }>(
+        `select template_version from export_artifact where id = $1`,
+        [res.body.id],
+      );
+      expect(row?.template_version).toBe(exportTemplateVersionFor('SEMI_PRESTASI_COMPACT_DRAW_SHEET'));
+      expect(row?.template_version).not.toBe('v1');
+      // Its parameters fingerprint is not the draw book's, and an identical retry is reused.
+      const draw = await request(server)
+        .post(`/revisions/${revisionId}/exports`)
+        .set('x-actor-id', officer)
+        .send({ exportType: 'TOURNAMENT_DRAW_BOOK', mode: 'PREVIEW' });
+      expect(draw.body.parametersFingerprint).not.toBe(res.body.parametersFingerprint);
+      const retry = await request(server)
+        .post(`/revisions/${revisionId}/exports`)
+        .set('x-actor-id', officer)
+        .send({ exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET', mode: 'PREVIEW' });
+      expect(retry.body.id).toBe(res.body.id);
+    });
+
+    it('with a semi-prestasi categoryId it is a CATEGORY-scoped export', async () => {
+      const semi = (await categoriesOfRevision()).find((c) => c.stream === 'SEMI_PRESTASI');
+      expect(semi).toBeDefined();
+      const res = await request(server)
+        .post(`/revisions/${revisionId}/exports`)
+        .set('x-actor-id', officer)
+        .send({ exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET', mode: 'PREVIEW', categoryId: semi?.id });
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({ scopeType: 'CATEGORY', categoryId: semi?.id, poolId: null });
+    });
+
+    it('a category that is not semi-prestasi is refused with VALIDATION_ERROR (400)', async () => {
+      const other = (await categoriesOfRevision()).find((c) => c.stream !== 'SEMI_PRESTASI');
+      if (!other) return; // this dataset's revision has only semi-prestasi categories
+      const res = await request(server)
+        .post(`/revisions/${revisionId}/exports`)
+        .set('x-actor-id', officer)
+        .send({ exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET', mode: 'PREVIEW', categoryId: other.id });
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('an unknown category id is EXPORT_SOURCE_NOT_FOUND (404)', async () => {
+      const res = await request(server)
+        .post(`/revisions/${revisionId}/exports`)
+        .set('x-actor-id', officer)
+        .send({ exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET', mode: 'PREVIEW', categoryId: randomUUID() });
+      expect(res.status).toBe(404);
+      expect(res.body.code).toBe('EXPORT_SOURCE_NOT_FOUND');
+    });
+
+    it('keeps the same role and lifecycle rules as every other export type', async () => {
+      const viewerRes = await request(server)
+        .post(`/revisions/${revisionId}/exports`)
+        .set('x-actor-id', viewer)
+        .send({ exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET', mode: 'PREVIEW' });
+      expect(viewerRes.status).toBe(403);
+      expect(viewerRes.body.code).toBe('EXPORT_UNAUTHORIZED');
+      const officialDraft = await request(server)
+        .post(`/revisions/${revisionId}/exports`)
+        .set('x-actor-id', td)
+        .send({ exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET', mode: 'OFFICIAL' });
+      expect(officialDraft.status).toBe(409);
+      expect(officialDraft.body.code).toBe('EXPORT_REVISION_NOT_ALLOWED');
+    });
+  });
+
   it('LOCK -> PUBLISH via HTTP, then a TECHNICAL_DELEGATE can request an OFFICIAL export', async () => {
     const cmd = (action: string, expectedLockVersion: number) =>
       request(server)
@@ -314,5 +404,19 @@ describe.skipIf(!adminUrl)('export API contract — postgres', () => {
       .send({ exportType: 'TOURNAMENT_DRAW_BOOK', mode: 'OFFICIAL' });
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({ mode: 'OFFICIAL', status: 'REQUESTED' });
+  });
+
+  it('once PUBLISHED, a TECHNICAL_DELEGATE can also request an OFFICIAL compact semi-prestasi sheet', async () => {
+    const res = await request(server)
+      .post(`/revisions/${revisionId}/exports`)
+      .set('x-actor-id', td)
+      .send({ exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET', mode: 'OFFICIAL' });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET',
+      mode: 'OFFICIAL',
+      scopeType: 'REVISION',
+      status: 'REQUESTED',
+    });
   });
 });

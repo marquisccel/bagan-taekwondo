@@ -109,6 +109,11 @@ export interface PoolCost {
   readonly ranges: readonly number[];
   readonly minSameRound1: number;
   readonly contingentExcess: number;
+  /**
+   * Tier 3 (AUD-004): sum over contingents of (members of that contingent in this pool)². Lower is
+   * more spread out. Never a hard rule; only breaks ties left by Tiers 0–2.
+   */
+  readonly spread: number;
   readonly members: number;
 }
 
@@ -210,20 +215,56 @@ export function poolCost(members: readonly PoolEntry[], p: ResolvedPolicy): Pool
     );
     if (bands.size > 1 || bands.has('?')) tier0 += 1;
   }
-  // Largest contingent count (pools are small: a quadratic scan beats allocating a map).
+  // Largest contingent count (pools are small: a quadratic scan beats allocating a map). The sum of
+  // every member's own group size equals the sum of squared group sizes (Tier 3 spread).
   let cmax = 0;
+  let spread = 0;
   for (let i = 0; i < k; i += 1) {
     let c = 0;
     const ci = (members[i] as PoolEntry).contingent;
     for (let j = 0; j < k; j += 1) if ((members[j] as PoolEntry).contingent === ci) c += 1;
     if (c > cmax) cmax = c;
+    spread += c;
   }
   const minSameRound1 = minSameContingentRound1([cmax], k);
   const contingentExcess = Math.max(0, cmax - Math.ceil(k / 2));
   const tier2 =
     (p.bracketWeightPermille * minSameRound1 + p.contingentWeightPermille * contingentExcess) *
     (FP_SCALE / 1000);
-  return { tier0, tier1, tier2, ranges, minSameRound1, contingentExcess, members: k };
+  return { tier0, tier1, tier2, ranges, minSameRound1, contingentExcess, spread, members: k };
+}
+
+/**
+ * The named causes behind `poolCost(...).tier0` (one entry per counted violation). Kept out of
+ * `poolCost` on purpose: that function is the hot loop of the optimizer and must not allocate.
+ * A test pins `tier0Causes(x).length === poolCost(x).tier0`.
+ */
+export function tier0Causes(members: readonly PoolEntry[], p: ResolvedPolicy): string[] {
+  const out: string[] = [];
+  const k = members.length;
+  if (k > p.poolMax) out.push('POOL_SIZE_EXCEEDED');
+  for (const d of p.dimensions) {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const m of members) {
+      const v = m[d.field];
+      if (v === null) {
+        out.push('MEASURE_MISSING');
+        continue;
+      }
+      if (v < lo) lo = v;
+      if (v > hi) hi = v;
+    }
+    const range = k === 0 || lo === Infinity ? 0 : hi - lo;
+    if (d.max !== null && range > d.max) out.push('MAX_TOLERANCE_EXCEEDED');
+  }
+  if (p.beltHard) {
+    const bands = new Set(
+      members.map((m) => (m.beltRank === null ? '?' : (p.beltHard?.bandOf.get(m.beltRank) ?? '?'))),
+    );
+    if (bands.size > 1 || bands.has('?')) out.push('BELT_BAND_MISMATCH');
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -313,7 +354,9 @@ export type RejectionReason =
   | 'NO_TIER2_GAIN'
   | 'IDEAL_REGRESSION'
   | 'TIER1_SLACK_EXCEEDED'
-  | 'SINGLETON_CREATION';
+  | 'SINGLETON_CREATION'
+  | 'NO_TIER3_GAIN'
+  | 'TIER_REGRESSION';
 
 export interface SearchStats {
   evaluated: number;
@@ -337,12 +380,41 @@ export const newStats = (workCap = Number.MAX_SAFE_INTEGER): SearchStats => ({
     IDEAL_REGRESSION: 0,
     TIER1_SLACK_EXCEEDED: 0,
     SINGLETON_CREATION: 0,
+    NO_TIER3_GAIN: 0,
+    TIER_REGRESSION: 0,
   },
   budgetExhausted: false,
   work: 0,
   workCap,
   workCapHit: false,
 });
+
+const RAW_FIELDS = ['weightG', 'heightMm', 'beltRank'] as const;
+
+/** max − min of one physical field over the pool's known values (0 when fewer than two are known). */
+function rawRange(pool: readonly PoolEntry[], field: (typeof RAW_FIELDS)[number]): number {
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const m of pool) {
+    const v = m[field];
+    if (v === null) continue;
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  }
+  return lo === Infinity ? 0 : hi - lo;
+}
+
+/** True when, for any field, the descending-sorted ranges after exceed the ones before at some rank. */
+function physicallyWorse(
+  before: readonly (readonly number[])[],
+  after: readonly (readonly number[])[],
+): boolean {
+  return before.some((b, k) => {
+    const o = [...b].sort((x, y) => y - x);
+    const n = [...(after[k] ?? [])].sort((x, y) => y - x);
+    return n.some((v, i) => v > (o[i] ?? 0));
+  });
+}
 
 const within = (c: PoolCost, p: ResolvedPolicy) => c.ranges.map((r, i) => r <= (p.dimensions[i]?.ideal ?? 0));
 
@@ -368,12 +440,16 @@ function sumCosts(pools: readonly PoolEntry[][], p: ResolvedPolicy): Cost3 {
  * singleton is created, no affected pool leaves its ideal tolerance on any dimension, and total
  * tier1 stays within `tier1Base + tier1SlackFp` (the slack is a budget for the whole category).
  *
+ * Phase "tier3" (AUD-004, contingent spread): move and swap only; accept iff the spread
+ * (Σ squared contingent group sizes per pool) decreases while tier0, tier1 and tier2 do not
+ * increase, no singleton is created and no pool leaves its ideal tolerance. It never spends slack.
+ *
  * First improvement in a fixed scan order; one evaluation = one candidate change (a pair
  * re-optimization counts once). The search stops at `budgetPerEntry × n` evaluations.
  */
 /** Called for every accepted change (tests use it to check the Tier-2 rules change by change). */
 export type ChangeObserver = (change: {
-  readonly phase: 'tier1' | 'tier2';
+  readonly phase: 'tier1' | 'tier2' | 'tier3';
   readonly before: readonly (PoolCost | null)[];
   readonly after: readonly (PoolCost | null)[];
   readonly tier1Total: number;
@@ -383,7 +459,7 @@ export type ChangeObserver = (change: {
 export function localSearch(
   start: readonly PoolEntry[][],
   p: ResolvedPolicy,
-  phase: 'tier1' | 'tier2',
+  phase: 'tier1' | 'tier2' | 'tier3',
   stats: SearchStats,
   observer?: ChangeObserver,
 ): PoolEntry[][] {
@@ -417,17 +493,39 @@ export function localSearch(
     let d0 = 0;
     let d1 = 0;
     let d2 = 0;
+    let d3 = 0;
+    const rawBefore: number[][] = RAW_FIELDS.map(() => []);
+    const rawAfter: number[][] = RAW_FIELDS.map(() => []);
     const evaluated = changes.map(({ i, next }) => {
       const old = i < pools.length ? (cost[i] as PoolCost) : null;
       const c = next.length > 0 ? poolCost(next, p) : null;
       d0 += (c?.tier0 ?? 0) - (old?.tier0 ?? 0);
       d1 += (c?.tier1 ?? 0) - (old?.tier1 ?? 0);
       d2 += (c?.tier2 ?? 0) - (old?.tier2 ?? 0);
+      d3 += (c?.spread ?? 0) - (old?.spread ?? 0);
+      if (phase === 'tier3') {
+        RAW_FIELDS.forEach((f, k) => {
+          rawBefore[k]?.push(rawRange(pools[i] ?? [], f));
+          rawAfter[k]?.push(rawRange(next, f));
+        });
+      }
       return { i, next, old, c };
     });
     if (d0 > 0) return reject(stats, 'TIER0_VIOLATION');
     if (phase === 'tier1') {
       if (!(d0 < 0 || d1 < 0)) return reject(stats, 'NO_TIER1_GAIN');
+    } else if (phase === 'tier3') {
+      // Tie-break only (AUD-004): spread must improve while Tiers 0–2 stay exactly as good.
+      if (d3 >= 0) return reject(stats, 'NO_TIER3_GAIN');
+      // Neutral for the physical grouping: for weight, height and belt — also a dimension the rule
+      // set switched off (e.g. Poomsae weight) — the affected pools' ranges, sorted largest first,
+      // may not grow anywhere. So no pool gets wider than a pool that was already at least as wide,
+      // and the number of pools beyond any tolerance can never increase.
+      if (d1 > 0 || d2 > 0 || physicallyWorse(rawBefore, rawAfter)) return reject(stats, 'TIER_REGRESSION');
+      if (evaluated.some((x) => x.next.length === 1 && (x.old?.members ?? 0) !== 1))
+        return reject(stats, 'SINGLETON_CREATION');
+      if (evaluated.some((x) => x.old !== null && x.c !== null && regress(x.old, x.c)))
+        return reject(stats, 'IDEAL_REGRESSION');
     } else {
       if (d2 >= 0) return reject(stats, 'NO_TIER2_GAIN');
       // A walkover is never the price of contingent diversity: Tier 2 may not create a singleton.
@@ -596,7 +694,15 @@ export interface PoolingCandidate {
   readonly dpCost: Cost3;
   /** Cost after the Tier-1 local search, before Tier-2 spends slack (exhaustive comparisons use it). */
   readonly tier1PhaseCost: Cost3;
+  /** Tier 3 contingent spread of the final pools (lower = more spread); breaks Tier 0–2 ties. */
+  readonly spread: number;
   readonly search: SearchStats;
+}
+
+function sumSpread(pools: readonly PoolEntry[][], p: ResolvedPolicy): number {
+  let s = 0;
+  for (const pool of pools) s += poolCost(pool, p).spread;
+  return s;
 }
 
 /** Canonical pool order: by the first active dimension's minimum, then the rest, then ids. */
@@ -643,13 +749,15 @@ export function buildCandidates(
     const search = newStats(workCapPerCandidate);
     const afterTier1 = localSearch(dp, p, 'tier1', search);
     const afterTier2 = localSearch(afterTier1, p, 'tier2', search);
-    const pools = canonicalPools(afterTier2, p);
+    const afterTier3 = search.workCapHit ? afterTier2 : localSearch(afterTier2, p, 'tier3', search);
+    const pools = canonicalPools(afterTier3, p);
     out.push({
       strategy,
       pools,
       cost: sumCosts(pools, p),
       dpCost: sumCosts(dp, p),
       tier1PhaseCost: sumCosts(afterTier1, p),
+      spread: sumSpread(pools, p),
       search,
     });
     // A candidate stopped by the hard work cap makes the category unusable; stop spending work.
@@ -658,13 +766,15 @@ export function buildCandidates(
   return out;
 }
 
-/** Lowest (tier0, tier1, tier2) wins; ties break by strategy order (ADR-0008). */
+/** Lowest (tier0, tier1, tier2), then lowest contingent spread (Tier 3); ties break by strategy order (ADR-0008). */
 export function rankCandidates(cands: readonly PoolingCandidate[]): PoolingCandidate[] {
   return [...cands].sort((a, b) => {
     for (let i = 0; i < 3; i += 1) {
       const c = compareNumbers(a.cost[i] ?? 0, b.cost[i] ?? 0);
       if (c !== 0) return c;
     }
+    const spread = compareNumbers(a.spread, b.spread);
+    if (spread !== 0) return spread;
     return STRATEGY_ORDER.indexOf(a.strategy) - STRATEGY_ORDER.indexOf(b.strategy);
   });
 }

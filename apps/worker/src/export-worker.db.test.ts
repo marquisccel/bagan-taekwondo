@@ -10,6 +10,7 @@ import {
   createExportRequest,
   executeDrawRun,
   getExport,
+  loadExportModel,
   MIGRATIONS_FOLDER,
   persistIntake,
   persistRuleSet,
@@ -18,7 +19,11 @@ import {
 } from '@bagantkd/db';
 import { newArena, newTournament, TEST_NIK_KEYS } from '@bagantkd/db/testing/seed';
 import { ENGINE_VERSION, runDraw } from '@bagantkd/draw-engine';
-import { localArtifactStorage } from '@bagantkd/export';
+import {
+  computeSemanticExportFingerprint,
+  localArtifactStorage,
+  semiPrestasiFingerprintSubject,
+} from '@bagantkd/export';
 import { runIntake } from '@bagantkd/intake';
 import type { RuleSet } from '@bagantkd/rules';
 import { parseDrawSeed } from '@bagantkd/shared';
@@ -197,6 +202,101 @@ describe.skipIf(!adminUrl)('export worker (pg-boss + reconciliation) — postgre
       await worker.stop();
     }
   }, 40_000);
+
+  const requestCompact = async (scope: { categoryId: string | null }, tag: string): Promise<string> => {
+    const { exportId } = await db.transaction((tx) =>
+      createExportRequest(tx, {
+        tournamentId: tournament,
+        drawRunId,
+        revisionId,
+        revisionNo: 1,
+        exportType: 'SEMI_PRESTASI_COMPACT_DRAW_SHEET',
+        format: 'PDF',
+        mode: 'PREVIEW',
+        scopeType: scope.categoryId ? 'CATEGORY' : 'REVISION',
+        categoryId: scope.categoryId,
+        poolId: null,
+        sourceFingerprint: `sha256:compact-source-${tag}`,
+        parametersFingerprint: `sha256:compact-params-${tag}`,
+        engineVersion: ENGINE_VERSION,
+        templateVersion: 'semi-compact-v1',
+        requestedBy: td,
+      }),
+    );
+    return exportId;
+  };
+
+  const runWorkerUntilFinished = async (exportIds: readonly string[]): Promise<void> => {
+    const worker = await startWorker({
+      connectionString: url,
+      reconcileIntervalMs: 3_600_000,
+      exportStorageDir: storageDir,
+      log: { log() {}, warn() {}, error() {} },
+    });
+    const sender = new PgBoss(url);
+    try {
+      await sender.start();
+      for (const exportId of exportIds) await sender.send(EXPORT_QUEUE, { exportId });
+      await waitFor(async () => {
+        const rows = await Promise.all(exportIds.map((id) => getExport(db, id)));
+        return rows.every((r) => r?.status === 'READY' || r?.status === 'FAILED');
+      }, 60_000);
+    } finally {
+      await sender.stop({ graceful: false });
+      await worker.stop();
+    }
+  };
+
+  it('SEMI_PRESTASI_COMPACT_DRAW_SHEET: request -> worker generates -> READY for both REVISION and CATEGORY scope, fingerprinting only semi-prestasi content', async () => {
+    const semi = await db.query<{ id: string }>(
+      `select c.id from draw_run_category rc join category c on c.id = rc.category_id
+       where rc.draw_run_id = $1 and c.stream = 'SEMI_PRESTASI' order by c.category_key`,
+      [drawRunId],
+    );
+    expect(semi.length).toBeGreaterThan(0);
+    const categoryId = semi[0]?.id ?? '';
+
+    const revisionExport = await requestCompact({ categoryId: null }, 'rev');
+    const categoryExport = await requestCompact({ categoryId }, 'cat');
+    await runWorkerUntilFinished([revisionExport, categoryExport]);
+
+    const model = await loadExportModel(db, revisionId);
+    const storage = localArtifactStorage(storageDir);
+    for (const [id, subjectCategoryId] of [
+      [revisionExport, null],
+      [categoryExport, categoryId],
+    ] as const) {
+      const row = await getExport(db, id);
+      expect(row?.status).toBe('READY');
+      expect(row?.errorCode).toBeNull();
+      expect(row?.filename).toContain('semi-prestasi-compact-draw-sheet');
+      expect(row?.filename?.endsWith('.pdf')).toBe(true);
+      expect(row?.outputFingerprint).toBe(
+        computeSemanticExportFingerprint(semiPrestasiFingerprintSubject(model, subjectCategoryId)),
+      );
+      const bytes = await storage.read(row?.storageKey ?? '');
+      expect(Buffer.from(bytes.slice(0, 5)).toString('latin1')).toBe('%PDF-');
+      expect(bytes.byteLength).toBe(row?.sizeBytes);
+    }
+    expect((await getExport(db, revisionExport))?.outputFingerprint).not.toBe(
+      (await getExport(db, categoryExport))?.outputFingerprint,
+    );
+  }, 90_000);
+
+  it('SEMI_PRESTASI_COMPACT_DRAW_SHEET on a non-semi-prestasi category fails safely with a stable code', async () => {
+    const [prestasi] = await db.query<{ id: string }>(
+      `select c.id from draw_run_category rc join category c on c.id = rc.category_id
+       where rc.draw_run_id = $1 and c.stream <> 'SEMI_PRESTASI' limit 1`,
+      [drawRunId],
+    );
+    if (!prestasi) return; // this dataset's revision has only semi-prestasi categories — nothing to refuse
+    const exportId = await requestCompact({ categoryId: prestasi.id }, 'prestasi');
+    await runWorkerUntilFinished([exportId]);
+    const row = await getExport(db, exportId);
+    expect(row?.status).toBe('FAILED');
+    expect(row?.errorCode).toBe('EXPORT_GENERATION_FAILED');
+    expect(row?.errorMessage).toContain('not a semi-prestasi category');
+  }, 90_000);
 
   it('a duplicate request with the same fingerprints reuses the existing export instead of regenerating', async () => {
     const args = {

@@ -6,6 +6,7 @@ import { useApiSWR } from '../../../../lib/use-api-swr';
 
 import { api } from '../../../../lib/api';
 import { useDevAuth } from '../../../../lib/dev-auth';
+import { auditDetail } from '../../../../lib/audit-detail';
 
 export default function AuditPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +31,7 @@ export default function AuditPage() {
             <th>Action</th>
             <th>Subject</th>
             <th>Reason</th>
+            <th>Detail</th>
             <th>Hash</th>
           </tr>
         </thead>
@@ -42,6 +44,7 @@ export default function AuditPage() {
                 {e.subject_type} {e.subject_id?.slice(0, 8) ?? ''}
               </td>
               <td>{e.reason ?? '—'}</td>
+              <td data-testid="audit-detail">{auditDetail(e.action, e.after) ?? '—'}</td>
               <td>
                 <code style={{ fontSize: 11 }}>{e.hash.slice(0, 18)}…</code>
               </td>

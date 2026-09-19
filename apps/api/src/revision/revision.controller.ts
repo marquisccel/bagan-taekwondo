@@ -39,6 +39,9 @@ export class RevisionController {
       throw new ApiError(
         outcome.rejectionCode,
         outcome.verdict.level === 'RED' ? outcome.verdict.hardViolations.join('; ') : outcome.rejectionCode,
+        // The verdict (with its machine-readable violation codes and quality impact) travels with a
+        // refusal so the client can explain it — it never computes one itself.
+        { verdict: outcome.verdict },
       );
     return outcome;
   }
