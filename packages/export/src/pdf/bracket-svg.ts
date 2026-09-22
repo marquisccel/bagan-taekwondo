@@ -70,11 +70,18 @@ export function renderBracketSvg(tile: BracketTile, finalRound: number): string 
       `<line x1="${x}" y1="${y - 8}" x2="${x}" y2="${y + 8}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`,
     );
     const codeLabel = node.match.publicCode ?? node.match.matchUid;
+    // The match code sits just above the connector line; "FINAL" and the status (when present) stack
+    // just below it, closest line first -- so the whole annotation straddles the line and reads as
+    // centered on it, rather than the old layout that stacked everything above the line only.
     parts.push(textEl(x + 4, y - 5, codeLabel, { bold: isFinal, size: isFinal ? 9.5 : 8 }));
-    if (node.match.status !== 'PENDING') {
-      parts.push(textEl(x + 4, y + 9, matchStatusLabel(node.match.status), { size: 6.5, fill: '#a66' }));
+    let belowY = y + 9;
+    if (isFinal) {
+      parts.push(textEl(x + 4, belowY, 'FINAL', { bold: true, size: 7.5, fill: '#a33' }));
+      belowY += 9;
     }
-    if (isFinal) parts.push(textEl(x + 4, y - 15, 'FINAL', { bold: true, size: 7.5, fill: '#a33' }));
+    if (node.match.status !== 'PENDING') {
+      parts.push(textEl(x + 4, belowY, matchStatusLabel(node.match.status), { size: 6.5, fill: '#a66' }));
+    }
   }
 
   return `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">${parts.join('')}</svg>`;

@@ -2,10 +2,9 @@ import type { ExportAthleteDisplay, ExportCategory, ExportEntry, ExportModel, Ex
 import {
   beltDisplay,
   disciplineLabel,
-  formatHeightCm,
   formatLabel,
   formatOperatorCategoryTitle,
-  formatWeightKg,
+  heightCmDisplay,
   humanizeCode,
   MISSING_VALUE,
   participantCountLabel,
@@ -14,6 +13,7 @@ import {
   readinessLabel,
   revisionLifecycleLabel,
   SEMI_PRESTASI_COMPACT_LABEL as L,
+  weightKgDisplay,
 } from '../presentation.js';
 import { selectSemiPrestasiCategories } from '../semi-prestasi.js';
 import { compactBracketFits, renderCompactBracketSvg } from './compact-bracket-svg.js';
@@ -81,7 +81,6 @@ const COMPACT_CSS = `
   .pool-no { font-size: 9pt; font-weight: 700; }
   .pool-flag { font-size: 6.5pt; font-weight: 700; color: #a33; margin-left: 1.5mm; }
   .card-count { font-size: 7pt; color: #333; white-space: nowrap; }
-  .card-poomsae { font-size: 6.5pt; color: #222; }
   /* One pool per row, spanning the full page width (table refinement -- layout correction): the
      participant table gets a modest, fixed share and the bracket -- now substantially larger since
      its container is the full page width, not half of a 2-column grid -- gets the rest. */
@@ -89,8 +88,11 @@ const COMPACT_CSS = `
   .card-body .col-table { width: 34%; flex: none; min-width: 0; }
   .card-body .col-bracket { flex: 1; min-width: 0; }
   table.pt { margin: 0; width: 100%; table-layout: fixed; }
+  /* Header and body share the same font size/padding (visual polish pass) -- only the background and
+     weight distinguish the header row now, instead of a visibly smaller, more cramped header. */
   table.pt th, table.pt td { font-size: 7pt; padding: 0.3mm 1mm; border: 0.3pt solid #bbb; line-height: 1.15; }
-  table.pt th { font-size: 6.2pt; background: #e8e8e8; padding: 0.3mm 0.4mm; white-space: nowrap; }
+  table.pt th { background: #e8e8e8; white-space: nowrap; }
+  table.pt th.wrap-ok { white-space: normal; }
   table.pt tr { break-inside: avoid; page-break-inside: avoid; }
   table.pt td.num, table.pt th.num { text-align: center; }
   /* Peserta/Kontingen/Sabuk are visually clamped to 2 lines (with an ellipsis) so one very long value
@@ -113,8 +115,8 @@ const COMPACT_CSS = `
 `;
 
 const NUMBER_COL = '5.5mm';
-const HEIGHT_COL = '9mm';
-const WEIGHT_COL = '9mm';
+const HEIGHT_COL = '11mm';
+const WEIGHT_COL = '11mm';
 /** Percentages of the whole table (not the remainder): wide enough that a two-word belt color
  * ("Kuning Strip", "Hijau Strip") fits on one line, so a three-word compound name ("Kuning Strip
  * Hijau") breaks after "Strip" — two full lines, never a truncated/ellipsized one — with `.clamp2`
@@ -159,7 +161,7 @@ function participantRow(pool: ExportPool, e: ExportEntry, index: number): string
     <td class="num">${positionOf(pool, e, index)}</td>
     <td><div class="nm clamp2">${esc(e.displayName)}</div></td>
     <td><div class="ct clamp2">${e.contingent ? esc(e.contingent) : MISSING_VALUE}</div></td>
-    ${beltCell(perAthlete(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}${valueCell(perAthlete(e, (a) => formatHeightCm(a.heightMm)))}${valueCell(perAthlete(e, (a) => formatWeightKg(a.weightG)))}
+    ${beltCell(perAthlete(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}${valueCell(perAthlete(e, (a) => heightCmDisplay(a.heightMm)))}${valueCell(perAthlete(e, (a) => weightKgDisplay(a.weightG)))}
   </tr>`;
 }
 
@@ -167,7 +169,7 @@ function participantTable(pool: ExportPool): string {
   const rows = pool.members.map((e, i) => participantRow(pool, e, i)).join('');
   return `<table class="pt">
     <colgroup><col style="width:${NUMBER_COL}"><col><col style="width:${CONTINGENT_COL}"><col style="width:${BELT_COL}"><col style="width:${HEIGHT_COL}"><col style="width:${WEIGHT_COL}"></colgroup>
-    <thead><tr><th class="num">${esc(L.number)}</th><th>${esc(L.participant)}</th><th>${esc(L.contingent)}</th><th class="num">${esc(L.belt)}</th><th class="num">${esc(L.heightCm)}</th><th class="num">${esc(L.weightKg)}</th></tr></thead>
+    <thead><tr><th class="num">${esc(L.number)}</th><th>${esc(L.participant)}</th><th>${esc(L.contingent)}</th><th class="num">${esc(L.belt)}</th><th class="num wrap-ok">${esc(L.heightCm)}</th><th class="num wrap-ok">${esc(L.weightKg)}</th></tr></thead>
     <tbody>${rows || `<tr><td colspan="6">${esc(L.noParticipants)}</td></tr>`}</tbody>
   </table>`;
 }
@@ -212,16 +214,17 @@ function poolCard(category: ExportCategory, pool: ExportPool): string {
   const bracketBits = pool.bracket
     ? ` &middot; Bagan ${pool.bracket.size} slot${pool.bracket.byes > 0 ? ` &middot; ${pool.bracket.byes} ${L.bye}` : ''}`
     : '';
-  const poomsaeLine = isPoomsae
-    ? `<div class="card-poomsae">${esc(L.movement)}: ${esc(category.movement ? humanizeCode(category.movement) : MISSING_VALUE)} &middot; ${esc(L.format)}: ${esc(formatLabel(category.format))}</div>`
+  // Movement/format sit on the same line as the pool's own metadata, to the right of "Pool N"
+  // (visual polish pass) -- no longer a separate line below it.
+  const poomsaeBits = isPoomsae
+    ? ` &middot; ${esc(L.movement)}: ${esc(category.movement ? humanizeCode(category.movement) : MISSING_VALUE)} &middot; ${esc(L.format)}: ${esc(formatLabel(category.format))}`
     : '';
   // One pool per row, full page width (layout correction): table on the left, bracket on the right.
   // A pool's row is only as tall as its own content -- never stretched to fill the page.
   const body = `<div class="card-body"><div class="col-table">${participantTable(pool)}</div><div class="col-bracket">${bracketHtml(pool, POOL_BRACKET_AREA)}</div></div>`;
   return `<div class="card${tall ? ' tall' : ''}">
     <div class="card-head">
-      <div class="row"><span><span class="pool-no">${esc(poolLabel(pool.ordinal))}</span>${pool.isWalkover ? `<span class="pool-flag">${esc(L.walkover.toUpperCase())}</span>` : ''}</span><span class="card-count">${esc(participantCountLabel(pool.members.length))}${bracketBits}</span></div>
-      ${poomsaeLine}
+      <div class="row"><span><span class="pool-no">${esc(poolLabel(pool.ordinal))}</span>${pool.isWalkover ? `<span class="pool-flag">${esc(L.walkover.toUpperCase())}</span>` : ''}</span><span class="card-count">${esc(participantCountLabel(pool.members.length))}${bracketBits}${poomsaeBits}</span></div>
     </div>
     ${body}
     ${cardFooter(pool)}

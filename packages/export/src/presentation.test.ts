@@ -227,8 +227,8 @@ describe('compact semi-prestasi sheet labels (AUD-012)', () => {
     expect([l.participantName, l.belt, l.heightCm, l.weightKg, l.contingent, l.movement, l.format]).toEqual([
       'Nama peserta',
       'Sabuk',
-      'TB (cm)',
-      'BB (kg)',
+      'Tinggi Badan',
+      'Berat Badan',
       'Kontingen',
       'Gerakan',
       'Format',

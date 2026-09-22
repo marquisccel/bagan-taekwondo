@@ -39,6 +39,7 @@ export const PDF_BASE_CSS = `
   table { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
   th, td { border: 0.3pt solid #999; padding: 1.2mm 2mm; text-align: left; vertical-align: top; word-break: break-word; }
   th { background: #eee; font-weight: 600; }
+  .num { text-align: center; }
   .meta { font-size: 8.5pt; color: #444; margin-bottom: 3mm; }
   .meta div { margin-bottom: 0.5mm; }
   .doc-kicker { font-size: 8.5pt; letter-spacing: 0.06em; text-transform: uppercase; color: #777; margin-bottom: 1mm; }

@@ -231,8 +231,8 @@ export const SEMI_PRESTASI_COMPACT_LABEL = {
   participantName: 'Nama peserta',
   contingent: 'Kontingen',
   belt: 'Sabuk',
-  heightCm: 'TB (cm)',
-  weightKg: 'BB (kg)',
+  heightCm: 'Tinggi Badan',
+  weightKg: 'Berat Badan',
   number: 'No',
   movement: 'Gerakan',
   format: 'Format',
@@ -285,14 +285,30 @@ export function beltDisplay(beltCode: string | null, beltLabel?: string | null):
 const decimalId = (value: number, digits: number): string =>
   Number(value.toFixed(digits)).toString().replace('.', ',');
 
-/** Persisted height is in mm; sheets show cm ("1655" -> "165,5"). Null -> "—". */
+/** Persisted height is in mm; sheets show cm ("1655" -> "165,5"). Null -> the missing-value marker. */
 export function formatHeightCm(heightMm: number | null): string {
   return heightMm === null ? MISSING_VALUE : decimalId(heightMm / 10, 1);
 }
 
-/** Persisted weight is in grams; sheets show kg ("40250" -> "40,25"). Null -> "—". */
+/** Persisted weight is in grams; sheets show kg ("40250" -> "40,25"). Null -> the missing-value marker. */
 export function formatWeightKg(weightG: number | null): string {
   return weightG === null ? MISSING_VALUE : decimalId(weightG / 1000, 2);
+}
+
+/**
+ * The operator-facing height VALUE, unit included ("165,5 cm") -- the "Tinggi Badan"/"Berat Badan"
+ * column headers no longer carry the unit themselves (visual polish pass), so each cell states its
+ * own unit instead. Never appends a unit to the missing-value marker.
+ */
+export function heightCmDisplay(heightMm: number | null): string {
+  const v = formatHeightCm(heightMm);
+  return v === MISSING_VALUE ? v : `${v} cm`;
+}
+
+/** The operator-facing weight VALUE, unit included ("40,25 kg") -- see `heightCmDisplay`. */
+export function weightKgDisplay(weightG: number | null): string {
+  const v = formatWeightKg(weightG);
+  return v === MISSING_VALUE ? v : `${v} kg`;
 }
 
 export function poolLabel(ordinal: number): string {

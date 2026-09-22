@@ -1,14 +1,14 @@
 import type { ExportEntry, ExportModel, ExportPool } from '../model.js';
 import {
   beltDisplay,
-  formatHeightCm,
   formatLabel,
   formatOperatorCategoryTitle,
-  formatWeightKg,
   genderLabel,
+  heightCmDisplay,
   humanizeCode,
   MISSING_VALUE,
   SEMI_PRESTASI_COMPACT_LABEL as L,
+  weightKgDisplay,
 } from '../presentation.js';
 import {
   esc,
@@ -37,12 +37,12 @@ function positionOf(pool: ExportPool, entry: ExportEntry, index: number): number
 
 function kyorugiRow(pool: ExportPool, e: ExportEntry, index: number): string {
   return `<tr>
-    <td>${positionOf(pool, e, index)}</td>
+    <td class="num">${positionOf(pool, e, index)}</td>
     <td>${esc(e.displayName)}</td>
     <td>${esc(e.contingent)}</td>
     <td>${esc(joinAthleteField(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}</td>
-    <td>${esc(joinAthleteField(e, (a) => formatHeightCm(a.heightMm)))}</td>
-    <td>${esc(joinAthleteField(e, (a) => formatWeightKg(a.weightG)))}</td>
+    <td>${esc(joinAthleteField(e, (a) => heightCmDisplay(a.heightMm)))}</td>
+    <td>${esc(joinAthleteField(e, (a) => weightKgDisplay(a.weightG)))}</td>
   </tr>`;
 }
 
@@ -53,7 +53,7 @@ function poomsaeRow(
   index: number,
 ): string {
   return `<tr>
-    <td>${positionOf(pool, e, index)}</td>
+    <td class="num">${positionOf(pool, e, index)}</td>
     <td>${esc(e.displayName)}</td>
     <td>${esc(e.contingent)}</td>
     <td>${esc(category.movement ? humanizeCode(category.movement) : MISSING_VALUE)}</td>
@@ -76,6 +76,13 @@ export async function renderPoolSheetPdf(
   const headCols = isKyorugi
     ? ['Posisi', L.participant, L.contingent, L.belt, L.heightCm, L.weightKg]
     : ['Posisi', L.participant, L.contingent, L.movement, L.format, 'Jenis Kelamin', L.belt];
+  // Explicit, fixed proportional column widths (visual polish pass): an auto-sized table left the
+  // last column's right border a fraction of a pixel narrower than the others, visible as a
+  // noticeably thinner line at print resolution. Posisi is centered like the compact sheet's; Peserta
+  // is the sole unset column, so it gets whatever remains (the widest, as intended).
+  const colWidths = isKyorugi
+    ? ['18mm', null, '23%', '15%', '15%', '15%']
+    : ['18mm', null, '21%', '13%', '12%', '12%', '13%'];
   const rows = pool.members
     .map((e, i) => (isKyorugi ? kyorugiRow(pool, e, i) : poomsaeRow(pool, category, e, i)))
     .join('');
@@ -87,8 +94,9 @@ export async function renderPoolSheetPdf(
     <h1>${esc(displayName)}</h1>
     ${metaBlockHtml(model, opts)}
     <div class="meta">Pool ${pool.ordinal}${pool.isWalkover ? ' (Walkover)' : ''}</div>
-    <table>
-      <thead><tr>${headCols.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+    <table style="table-layout: fixed">
+      <colgroup>${colWidths.map((w) => (w ? `<col style="width:${w}">` : '<col>')).join('')}</colgroup>
+      <thead><tr>${headCols.map((h, i) => `<th${i === 0 ? ' class="num"' : ''}>${esc(h)}</th>`).join('')}</tr></thead>
       <tbody>${rows || `<tr><td colspan="${headCols.length}">${esc(L.noParticipants)}</td></tr>`}</tbody>
     </table>
   `;

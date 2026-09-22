@@ -44,7 +44,11 @@ describe('SEMI_PRESTASI_COMPACT_DRAW_SHEET rendering (headless Chromium)', () =>
     const first = await renderSemiPrestasiCompactDrawSheetPdf(model, opts, 'c1');
     const second = await renderSemiPrestasiCompactDrawSheetPdf(model, opts, 'c1');
     expect(isWellFormedPdf(first)).toBe(true);
-    expect(pageCount(first)).toBe(3);
+    // Visual polish pass: the header row now matches the body's font size (was visibly smaller/
+    // cramped) and TB/BB show their unit per value ("142 cm" instead of a bare "142" with the unit
+    // only in the header) -- both legitimately taller/wider than before, so this fixture needs one
+    // more page. Readability was explicitly prioritized over this page count.
+    expect(pageCount(first)).toBe(4);
     expect(pageCount(second)).toBe(pageCount(first));
   });
 

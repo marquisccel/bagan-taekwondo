@@ -43,8 +43,8 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     for (const label of [
       '>Peserta<',
       'Sabuk',
-      'TB (cm)',
-      'BB (kg)',
+      'Tinggi Badan',
+      'Berat Badan',
       'Kontingen',
       'Pool 1',
       'Revisi 3',
@@ -118,9 +118,9 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     expect(html).toContain('Kuning');
     expect(html).not.toContain('Geup');
     expect(html).not.toContain('GEUP_9');
-    expect(html).toContain('>142<'); // 1420 mm -> 142 cm
-    expect(html).toContain('>34<'); // 34000 g -> 34 kg
-    expect(html).toContain('35,5');
+    expect(html).toContain('>142 cm<'); // 1420 mm -> 142 cm
+    expect(html).toContain('>34 kg<'); // 34000 g -> 34 kg
+    expect(html).toContain('35,5 kg');
   });
 
   it("uses the rule set's own curated belt label when the model carries one, showing only the color — never the raw GEUP_N code or the rank prefix", () => {
@@ -164,10 +164,28 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     expect(build({}, idOf('P-PAIR')).html).toContain('Format: Pasangan');
   });
 
+  it("a Poomsae pool's Gerakan/Format sit inline with its own peserta/bagan count, to the right of Pool N (visual polish pass) -- never on a separate line below", () => {
+    const html = build({}, idOf('P-RAW-KEY')).html;
+    expect(html).toMatch(
+      /<span class="card-count">4 peserta &middot; Bagan 4 slot &middot; Gerakan: Taegeuk 1 &middot; Format: Individu<\/span>/,
+    );
+    expect(html).not.toContain('class="card-poomsae"');
+  });
+
+  it('height/weight headers are the full Indonesian words, with the unit stated per value instead of only in the header (visual polish pass)', () => {
+    const { html } = build();
+    expect(html).toContain('>Tinggi Badan<');
+    expect(html).toContain('>Berat Badan<');
+    expect(html).not.toContain('TB (cm)');
+    expect(html).not.toContain('BB (kg)');
+    expect(html).toMatch(/<td class="num">142 cm<\/td>/);
+    expect(html).toMatch(/<td class="num">34 kg<\/td>/);
+  });
+
   it('a pair entry stacks one belt/height/weight line per athlete', () => {
     const html = build({}, idOf('P-PAIR')).html;
     expect(html).toMatch(/<div class="clamp2">Kuning<\/div><div class="clamp2">Kuning<\/div>/);
-    expect(html).toMatch(/>142<br>142</);
+    expect(html).toMatch(/>142 cm<br>142 cm</);
   });
 
   it('shows the compact bracket with the persisted match codes, BYEs and the final', () => {

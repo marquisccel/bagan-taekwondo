@@ -19,23 +19,24 @@ function roundOneHtml(slots: readonly ExportBracketSlot[]): string {
   const rows = slots
     .map(
       (s) => `<tr>
-        <td>${s.position + 1}</td>
+        <td class="num">${s.position + 1}</td>
         <td>${s.isBye ? '<span class="bye">BYE</span>' : esc(s.entry?.displayName ?? '')}</td>
         <td>${s.isBye ? '' : esc(s.entry?.contingent ?? '')}</td>
-        <td>${s.seedNo ?? ''}</td>
+        <td class="num">${s.seedNo ?? ''}</td>
       </tr>`,
     )
     .join('');
   // Explicit fixed column widths (table refinement §7): Kontingen is bounded rather than left to
   // consume whatever the browser's auto layout doesn't give Peserta, and Unggulan is wide enough
   // that the single word never wraps ("Ungg" / "ulan"). Peserta is the sole unset column, so it
-  // gets whatever remains — the widest column, as intended.
+  // gets whatever remains — the widest column, as intended. Slot/Unggulan are short numbers, so both
+  // they and their headers are centered rather than left-aligned (visual polish pass).
   return `
     <div class="section">
       <h3>Slot Awal</h3>
       <table style="table-layout: fixed">
         <colgroup><col style="width:12mm"><col><col style="width:44mm"><col style="width:22mm"></colgroup>
-        <thead><tr><th>Slot</th><th>Peserta</th><th>Kontingen</th><th>Unggulan</th></tr></thead>
+        <thead><tr><th class="num">Slot</th><th>Peserta</th><th>Kontingen</th><th class="num">Unggulan</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>

@@ -137,5 +137,10 @@ export function renderCompactBracketSvg(bracket: ExportBracket, opts: CompactBra
     }
   }
 
-  return `<svg viewBox="0 0 ${num(width)} ${num(height)}" style="width:${num((width / opts.width) * 100)}%;height:auto;display:block" xmlns="http://www.w3.org/2000/svg" role="img">${parts.join('')}</svg>`;
+  // Always 100% of the container's width (visual polish pass) -- a small bracket (few rounds) used
+  // to render at a fraction of its available space instead of filling it, since its natural geometry
+  // is narrower than `opts.width`. The viewBox preserves the aspect ratio, so the whole diagram (text,
+  // connectors, spacing) scales up together rather than distorting -- it is simply bigger, using the
+  // blank space that would otherwise sit unused beside it.
+  return `<svg viewBox="0 0 ${num(width)} ${num(height)}" style="width:100%;height:auto;display:block" xmlns="http://www.w3.org/2000/svg" role="img">${parts.join('')}</svg>`;
 }
