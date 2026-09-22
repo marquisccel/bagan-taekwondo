@@ -1,9 +1,9 @@
 import type { ExportEntry, ExportModel, ExportPool } from '../model.js';
 import {
   beltDisplay,
-  formatCategoryDisplayName,
   formatHeightCm,
   formatLabel,
+  formatOperatorCategoryTitle,
   formatWeightKg,
   genderLabel,
   humanizeCode,
@@ -80,7 +80,7 @@ export async function renderPoolSheetPdf(
     .map((e, i) => (isKyorugi ? kyorugiRow(pool, e, i) : poomsaeRow(pool, category, e, i)))
     .join('');
 
-  const displayName = formatCategoryDisplayName(category);
+  const displayName = formatOperatorCategoryTitle(category);
   const title = `Lembar Pool — ${displayName} — Pool ${pool.ordinal}`;
   const body = `
     <div class="doc-kicker">Lembar Pool</div>

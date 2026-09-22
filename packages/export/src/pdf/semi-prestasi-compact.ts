@@ -2,9 +2,9 @@ import type { ExportAthleteDisplay, ExportCategory, ExportEntry, ExportModel, Ex
 import {
   beltDisplay,
   disciplineLabel,
-  formatCategoryDisplayName,
   formatHeightCm,
   formatLabel,
+  formatOperatorCategoryTitle,
   formatWeightKg,
   humanizeCode,
   MISSING_VALUE,
@@ -91,13 +91,17 @@ const COMPACT_CSS = `
   table.pt th { font-size: 6.2pt; background: #e8e8e8; padding: 0.3mm 0.4mm; white-space: nowrap; }
   table.pt tr { break-inside: avoid; page-break-inside: avoid; }
   table.pt td.num, table.pt th.num { text-align: center; }
-  /* Name/contingent are visually clamped to 2 lines (with an ellipsis) so one very long entry never
-     stretches a whole pool card — the full text still round-trips through this same HTML, unclamped,
-     to POOL_SHEET/XLSX/the DOM itself; only how this document paints it is bounded (final polish §2). */
-  table.pt .nm, table.pt .ct { overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical;
+  /* Peserta/Kontingen/Sabuk are visually clamped to 2 lines (with an ellipsis) so one very long value
+     never stretches a whole pool card — the full text still round-trips through this same HTML,
+     unclamped, to POOL_SHEET/XLSX/the DOM itself; only how this document paints it is bounded
+     (table refinement pass, items 3-5). Each is its own td (never nested/stacked with another
+     field) so a print operator can scan participant, contingent and belt independently -- the clamp
+     itself lives on a div INSIDE the cell, never on the td itself, since the -webkit-box display it
+     needs overrides a table cell's own table-cell display and desynchronizes it from the row height. */
+  table.pt .clamp2 { overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical;
     -webkit-line-clamp: 2; overflow: hidden; }
   table.pt .nm { font-weight: 600; }
-  table.pt .ct { font-size: 6.2pt; color: #333; font-weight: 400; }
+  table.pt .ct { font-size: 6.2pt; color: #333; }
   table.pt .na { color: #666; }
   .col-bracket, .bk { padding: 0.5mm 1.2mm 0.3mm; }
   .bk-note { font-size: 6.5pt; color: #555; font-style: italic; padding: 0.8mm 1.5mm; }
@@ -107,6 +111,16 @@ const COMPACT_CSS = `
 `;
 
 const NUMBER_COL = '5.5mm';
+const HEIGHT_COL = '9mm';
+const WEIGHT_COL = '9mm';
+/** Percentages of the whole table (not the remainder): wide enough that a two-word belt color
+ * ("Kuning Strip", "Hijau Strip") fits on one line, so a three-word compound name ("Kuning Strip
+ * Hijau") breaks after "Strip" — two full lines, never a truncated/ellipsized one — with `.clamp2`
+ * (below) as a deterministic backstop regardless of exact width, so it is never three either way.
+ * Kontingen is bounded narrower than Peserta, which is left as the sole unset column and so takes
+ * whatever remains — the widest textual column, as required. */
+const BELT_COL = '23%';
+const CONTINGENT_COL = '21%';
 
 interface BracketArea {
   readonly width: number;
@@ -130,20 +144,29 @@ function valueCell(values: readonly string[]): string {
   return `<td class="num${absent ? ' na' : ''}">${values.map(esc).join('<br>')}</td>`;
 }
 
+/** Same per-athlete stacking as `valueCell`, but each value gets its own 2-line clamp box — used for
+ * the belt column, where a two/three-word color name (never the participant/contingent columns'
+ * business) must never grow to a third line even for a pair/team entry's several stacked athletes. */
+function beltCell(values: readonly string[]): string {
+  const absent = values.every((v) => v === MISSING_VALUE);
+  return `<td class="num${absent ? ' na' : ''}">${values.map((v) => `<div class="clamp2">${esc(v)}</div>`).join('')}</td>`;
+}
+
 function participantRow(pool: ExportPool, e: ExportEntry, index: number): string {
   return `<tr>
     <td class="num">${positionOf(pool, e, index)}</td>
-    <td><div class="nm">${esc(e.displayName)}</div><div class="ct">${e.contingent ? esc(e.contingent) : MISSING_VALUE}</div></td>
-    ${valueCell(perAthlete(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}${valueCell(perAthlete(e, (a) => formatHeightCm(a.heightMm)))}${valueCell(perAthlete(e, (a) => formatWeightKg(a.weightG)))}
+    <td><div class="nm clamp2">${esc(e.displayName)}</div></td>
+    <td><div class="ct clamp2">${e.contingent ? esc(e.contingent) : MISSING_VALUE}</div></td>
+    ${beltCell(perAthlete(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}${valueCell(perAthlete(e, (a) => formatHeightCm(a.heightMm)))}${valueCell(perAthlete(e, (a) => formatWeightKg(a.weightG)))}
   </tr>`;
 }
 
 function participantTable(pool: ExportPool): string {
   const rows = pool.members.map((e, i) => participantRow(pool, e, i)).join('');
   return `<table class="pt">
-    <colgroup><col style="width:${NUMBER_COL}"><col><col style="width:12mm"><col style="width:11mm"><col style="width:11mm"></colgroup>
-    <thead><tr><th class="num">${esc(L.number)}</th><th>${esc(L.participant)}</th><th class="num">${esc(L.belt)}</th><th class="num">${esc(L.heightCm)}</th><th class="num">${esc(L.weightKg)}</th></tr></thead>
-    <tbody>${rows || `<tr><td colspan="5">${esc(L.noParticipants)}</td></tr>`}</tbody>
+    <colgroup><col style="width:${NUMBER_COL}"><col><col style="width:${CONTINGENT_COL}"><col style="width:${BELT_COL}"><col style="width:${HEIGHT_COL}"><col style="width:${WEIGHT_COL}"></colgroup>
+    <thead><tr><th class="num">${esc(L.number)}</th><th>${esc(L.participant)}</th><th>${esc(L.contingent)}</th><th class="num">${esc(L.belt)}</th><th class="num">${esc(L.heightCm)}</th><th class="num">${esc(L.weightKg)}</th></tr></thead>
+    <tbody>${rows || `<tr><td colspan="6">${esc(L.noParticipants)}</td></tr>`}</tbody>
   </table>`;
 }
 
@@ -222,7 +245,7 @@ function categoryInfoLine(c: ExportCategory): string {
 function categorySection(c: ExportCategory): string {
   const cards = c.pools.map((p) => poolCard(c, p)).join('');
   return `<div class="grid">
-    <div class="cat-head"><h2>${esc(formatCategoryDisplayName(c))}</h2><div class="cat-info">${categoryInfoLine(c)}</div></div>
+    <div class="cat-head"><h2>${esc(formatOperatorCategoryTitle(c))}</h2><div class="cat-info">${categoryInfoLine(c)}</div></div>
     ${cards || `<div class="bk-note" style="grid-column:1/-1">${esc(L.noPools)}</div>`}
   </div>`;
 }
@@ -271,7 +294,7 @@ export function buildSemiPrestasiCompactSheetHtml(
   const qualitySummary = categoryId === null ? qualitySummaryLabel(model.quality) : null;
   const qualityLine = qualitySummary ? `<div class="quality-line">${esc(qualitySummary)}</div>` : '';
   const title = single
-    ? `${L.documentTitle} — ${formatCategoryDisplayName(single)}`
+    ? `${L.documentTitle} — ${formatOperatorCategoryTitle(single)}`
     : `${L.documentTitle} — ${model.tournament.name}`;
   const body = `${docHeader(model, opts)}${qualityLine}${categories.map(categorySection).join('')}`;
   const html = `<!doctype html>
@@ -290,7 +313,7 @@ ${body}
     title,
     html,
     headerTitle: single
-      ? `${model.tournament.name} — ${L.documentTitle} — ${formatCategoryDisplayName(single)}`
+      ? `${model.tournament.name} — ${L.documentTitle} — ${formatOperatorCategoryTitle(single)}`
       : `${model.tournament.name} — ${L.documentTitle}`,
   };
 }

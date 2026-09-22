@@ -1,5 +1,5 @@
 import type { ExportBracket, ExportBracketSlot, ExportFeeder, ExportMatch, ExportModel } from '../model.js';
-import { formatCategoryDisplayName, matchStatusLabel } from '../presentation.js';
+import { formatOperatorCategoryTitle, matchStatusLabel } from '../presentation.js';
 import { renderBracketSvg } from './bracket-svg.js';
 import { tileBracketMatches, type BracketTile } from './bracket-tiling.js';
 import {
@@ -26,11 +26,16 @@ function roundOneHtml(slots: readonly ExportBracketSlot[]): string {
       </tr>`,
     )
     .join('');
+  // Explicit fixed column widths (table refinement §7): Kontingen is bounded rather than left to
+  // consume whatever the browser's auto layout doesn't give Peserta, and Unggulan is wide enough
+  // that the single word never wraps ("Ungg" / "ulan"). Peserta is the sole unset column, so it
+  // gets whatever remains — the widest column, as intended.
   return `
     <div class="section">
       <h3>Slot Awal</h3>
-      <table>
-        <thead><tr><th style="width:12mm">Slot</th><th>Peserta</th><th>Kontingen</th><th style="width:14mm">Unggulan</th></tr></thead>
+      <table style="table-layout: fixed">
+        <colgroup><col style="width:12mm"><col><col style="width:44mm"><col style="width:22mm"></colgroup>
+        <thead><tr><th>Slot</th><th>Peserta</th><th>Kontingen</th><th>Unggulan</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
@@ -107,7 +112,7 @@ export async function renderBracketSheetPdf(
   if (!pool.bracket) throw new Error(`pool ${poolId} has no bracket (walkover pools have none)`);
 
   const tiles = tileBracketMatches(pool.bracket);
-  const displayName = formatCategoryDisplayName(category);
+  const displayName = formatOperatorCategoryTitle(category);
   const title = `Bagan Pertandingan — ${displayName} — Pool ${pool.ordinal}`;
   const body = `
     <div class="doc-kicker">Bagan Pertandingan</div>

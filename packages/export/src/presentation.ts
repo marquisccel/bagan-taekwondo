@@ -143,38 +143,72 @@ export function weightClassLabel(code: string): string {
 }
 
 /**
+ * The operator-facing weight-class label (table-refinement pass): the canonical rule set only ever
+ * defines a weight class as "-NN" (an upper-bound-only class) or "+NN" (a lower-bound-only class —
+ * see the `/^[-+]\d+$/` schema in packages/rules/src/schema.ts; there is no third, bounded-range
+ * form in this domain). Never mutates or reinterprets the canonical code — `-41` always means
+ * "at most 41kg" and is shown "Under 41 kg"; `+78` always means "over 78kg" and is shown
+ * "Over 78 kg". A code outside that shape (should not occur for a real rule set) degrades to the
+ * plain `weightClassLabel` form rather than inventing a reading of it.
+ */
+export function weightClassDisplayLabel(code: string): string {
+  const m = /^([-+])(\d+)$/.exec(code);
+  if (!m) return weightClassLabel(code);
+  return m[1] === '-' ? `Under ${m[2]} kg` : `Over ${m[2]} kg`;
+}
+
+type CategoryTitleShape = Pick<
+  ExportCategory,
+  'discipline' | 'stream' | 'ageDivisionCode' | 'ageDivisionLabel' | 'gender' | 'weightClassCode' | 'movement'
+>;
+
+/** Shared composition for both title formatters below — only the weight-class wording and the join separator differ. */
+function categoryTitleParts(
+  category: CategoryTitleShape,
+  weightLabel: (code: string) => string,
+): readonly [string, string, string | null] {
+  const disciplineStream = `${disciplineLabel(category.discipline)} ${streamLabel(category.stream)}`;
+  const ageDivision =
+    category.ageDivisionLabel ?? (category.ageDivisionCode ? humanizeCode(category.ageDivisionCode) : null);
+  const ageGender = [ageDivision, genderLabel(category.gender)].filter(Boolean).join(' ');
+  const detail = category.weightClassCode
+    ? weightLabel(category.weightClassCode)
+    : category.movement
+      ? humanizeCode(category.movement)
+      : null;
+  return [disciplineStream, ageGender, detail];
+}
+
+/**
  * The canonical, single-source formatter for a category's human-readable display title
- * (ACCEPTANCE §2). Used by every PDF template and the XLSX workbook so a category is never titled
- * two different ways. Examples:
+ * (ACCEPTANCE §2). Used by CATEGORY_DRAW, TOURNAMENT_DRAW_BOOK and the XLSX workbook so those
+ * documents are never titled two different ways. Examples:
  *   "Kyorugi Prestasi — Cadet Putri — -29 kg"
  *   "Kyorugi Semi Prestasi — Pra Cadet C Putra — +53 kg"
  *   "Poomsae Prestasi — Dewasa Campuran — Tunggal"
  * The raw `categoryKey` is never used as a title; it remains available on the category as a
  * separate technical field for metadata/debug/reconciliation purposes.
  */
-export function formatCategoryDisplayName(
-  category: Pick<
-    ExportCategory,
-    | 'discipline'
-    | 'stream'
-    | 'ageDivisionCode'
-    | 'ageDivisionLabel'
-    | 'gender'
-    | 'weightClassCode'
-    | 'movement'
-  >,
-): string {
-  const disciplineStream = `${disciplineLabel(category.discipline)} ${streamLabel(category.stream)}`;
-  const ageDivision =
-    category.ageDivisionLabel ?? (category.ageDivisionCode ? humanizeCode(category.ageDivisionCode) : null);
-  const ageGender = [ageDivision, genderLabel(category.gender)].filter(Boolean).join(' ');
-  const detail = category.weightClassCode
-    ? weightClassLabel(category.weightClassCode)
-    : category.movement
-      ? humanizeCode(category.movement)
-      : null;
+export function formatCategoryDisplayName(category: CategoryTitleShape): string {
+  return categoryTitleParts(category, weightClassLabel)
+    .filter((part) => part && part.length > 0)
+    .join(' — ');
+}
 
-  return [disciplineStream, ageGender, detail].filter((part) => part && part.length > 0).join(' — ');
+/**
+ * The dense operational documents' category title (table-refinement pass, item 1): the same three
+ * parts as `formatCategoryDisplayName`, but joined with a middle dot instead of an em dash and
+ * using the human weight-class phrasing ("Under 41 kg") instead of the raw "-41 kg" notation.
+ * Reuses `categoryTitleParts` rather than a second parallel implementation, so the two formatters
+ * can never drift apart on anything but wording/punctuation. Used by
+ * SEMI_PRESTASI_COMPACT_DRAW_SHEET, POOL_SHEET and BRACKET_SHEET only — CATEGORY_DRAW and
+ * TOURNAMENT_DRAW_BOOK keep `formatCategoryDisplayName` as their audit-style title. Example:
+ *   "Kyorugi Semi Prestasi · Pra Cadet C Putra · Under 41 kg"
+ */
+export function formatOperatorCategoryTitle(category: CategoryTitleShape): string {
+  return categoryTitleParts(category, weightClassDisplayLabel)
+    .filter((part) => part && part.length > 0)
+    .join(' · ');
 }
 
 // ---------------------------------------------------------------------------------------

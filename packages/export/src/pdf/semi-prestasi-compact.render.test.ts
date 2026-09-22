@@ -93,11 +93,11 @@ describe('SEMI_PRESTASI_COMPACT_DRAW_SHEET rendering (headless Chromium)', () =>
     const pdf = await renderSemiPrestasiCompactDrawSheetPdf(model, opts, 'c1');
     expect(isWellFormedPdf(pdf)).toBe(true);
     // A 40-participant pool's table alone is taller than one page, so it fragments — but never clips.
-    // Final polish §1: some belt colors are two words ("Kuning Strip Hijau") and wrap to a second
-    // line in the fixed-width belt column, for those rows only — a modest, bounded consequence of
-    // showing the real curated color name instead of the old, always-short "Geup N", not uncontrolled
-    // growth (every belt value wraps to at most 2 lines). Across 40 rows that adds one more page.
-    expect(pageCount(pdf)).toBe(3);
+    // Table refinement pass: Peserta and Kontingen are now independent columns (each its own bounded
+    // 2-line clamp) instead of one column stacking both, and the belt column is wide enough that most
+    // two-word colors fit in one line — both reduce the average row height versus the prior "Geup N"
+    // rank-prefixed, single-column layout, so this fixture now needs one page fewer than before (was 3).
+    expect(pageCount(pdf)).toBe(2);
   });
 
   it('PREVIEW and OFFICIAL produce different documents; a non-semi-prestasi category is refused', async () => {

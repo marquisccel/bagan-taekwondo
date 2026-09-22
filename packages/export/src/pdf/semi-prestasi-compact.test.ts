@@ -65,13 +65,14 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     expect(build().html).toContain('class="watermark"');
   });
 
-  it('headings use the canonical display name, never the raw category key', () => {
+  it('headings use the canonical display name with middle dots and a human weight-class label, never the raw category key or em-dash chain', () => {
     const { html } = build();
-    expect(html).toContain('<h2>Kyorugi Semi Prestasi — Pra Cadet C Putra — -41 kg</h2>');
-    expect(html).toContain('<h2>Poomsae Semi Prestasi — Pra Cadet C Putra — Taegeuk 1</h2>');
+    expect(html).toContain('<h2>Kyorugi Semi Prestasi · Pra Cadet C Putra · Under 41 kg</h2>');
+    expect(html).toContain('<h2>Poomsae Semi Prestasi · Pra Cadet C Putra · Taegeuk 1</h2>');
     expect(html).not.toContain('K-RAW-KEY');
     expect(html).not.toContain('P-RAW-KEY');
     expect(html).not.toContain('STREAM=');
+    expect(html).not.toContain('-41 kg');
   });
 
   it('only semi-prestasi categories appear (REVISION scope)', () => {
@@ -84,21 +85,22 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     const { html } = build();
     expect(html).not.toContain('class="card-cat"');
     // the category header text still appears exactly once per category (the cat-head block), never again per pool card
-    const perCategory = html.match(/<h2>Kyorugi Semi Prestasi — Pra Cadet C Putra — -41 kg<\/h2>/g);
+    const perCategory = html.match(/<h2>Kyorugi Semi Prestasi · Pra Cadet C Putra · Under 41 kg<\/h2>/g);
     expect(perCategory).toHaveLength(1);
   });
 
   it('CATEGORY scope covers just that category and refuses a non-semi-prestasi one', () => {
     const one = build({}, idOf('K-MISSING'));
     expect(one.html.match(/<div class="cat-head">/g)).toHaveLength(1);
-    expect(one.html).toContain('Kyorugi Semi Prestasi — Pra Cadet C Putra — -30 kg');
-    expect(one.headerTitle).toContain('-30 kg');
+    expect(one.html).toContain('Kyorugi Semi Prestasi · Pra Cadet C Putra · Under 30 kg');
+    expect(one.headerTitle).toContain('Under 30 kg');
     expect(() => build({}, idOf('X-PRESTASI'))).toThrow(/not a semi-prestasi category/);
   });
 
   it('prints "—" for a missing belt/height/weight and flags the gap in Indonesian', () => {
     const { html } = build({}, idOf('K-MISSING'));
-    expect(html.match(/<td class="num na">—<\/td>/g)).toHaveLength(6); // 2 participants x belt/height/weight
+    expect(html.match(/<td class="num na">—<\/td>/g)).toHaveLength(4); // 2 participants x height/weight
+    expect(html.match(/<td class="num na"><div class="clamp2">—<\/div><\/td>/g)).toHaveLength(2); // 2 participants x belt
     expect(html).toContain('Data belum lengkap: sabuk, tinggi badan, berat badan.');
   });
 
@@ -154,7 +156,9 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
   });
 
   it('a pair entry stacks one belt/height/weight line per athlete', () => {
-    expect(build({}, idOf('P-PAIR')).html).toMatch(/Kuning<br>Kuning/);
+    const html = build({}, idOf('P-PAIR')).html;
+    expect(html).toMatch(/<div class="clamp2">Kuning<\/div><div class="clamp2">Kuning<\/div>/);
+    expect(html).toMatch(/>142<br>142</);
   });
 
   it('shows the compact bracket with the persisted match codes, BYEs and the final', () => {
@@ -216,6 +220,36 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     const { html } = build();
     expect(html).not.toMatch(/\b\d{16}\b/);
     expect(html).not.toMatch(/\bnik\b/i);
+  });
+
+  it('Peserta and Kontingen are independent table cells/columns, never one stacked on the other (table refinement §3)', () => {
+    const { html } = build();
+    expect(html).toContain('<th>Peserta</th><th>Kontingen</th>');
+    expect(html).toContain('<td><div class="nm clamp2">Peserta 1A 1</div></td>');
+    expect(html).toContain('<td><div class="ct clamp2">Kontingen 1</div></td>');
+    // the old stacked-in-one-cell shape (name and contingent inside the same <td>) must be gone
+    expect(html).not.toMatch(/<div class="nm[^"]*">[^<]*<\/div><div class="ct/);
+  });
+
+  it('a normal 1–4 participant multi-word belt color never needs 3 lines (table refinement §4) — clamped to at most 2', () => {
+    const twoWord = makeSemiPrestasiFixtureModel([{ key: 'BW', discipline: 'KYORUGI', poolSizes: [2] }]);
+    const labelled = {
+      ...twoWord,
+      categories: twoWord.categories.map((c) => ({
+        ...c,
+        pools: c.pools.map((p) => ({
+          ...p,
+          members: p.members.map((e) => ({
+            ...e,
+            athletes: e.athletes.map((a) => ({ ...a, beltLabel: 'Geup 8 (kuning strip hijau)' })),
+          })),
+        })),
+      })),
+    };
+    const { html } = buildSemiPrestasiCompactSheetHtml(labelled, opts, null);
+    expect(html).toContain('<div class="clamp2">Kuning Strip Hijau</div>');
+    // the belt cell relies on the same deterministic 2-line clamp as name/contingent, never a 3rd line
+    expect(html).toMatch(/table\.pt \.clamp2 \{[^}]*-webkit-line-clamp: 2;/);
   });
 
   it('is deterministic: the same model and options give byte-identical HTML', () => {

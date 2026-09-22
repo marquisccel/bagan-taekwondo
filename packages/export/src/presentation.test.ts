@@ -4,6 +4,7 @@ import {
   beltDisplay,
   formatCategoryDisplayName,
   formatHeightCm,
+  formatOperatorCategoryTitle,
   formatWeightKg,
   genderLabel,
   humanizeCode,
@@ -14,6 +15,8 @@ import {
   readinessLabel,
   SEMI_PRESTASI_COMPACT_LABEL,
   warningLabel,
+  weightClassDisplayLabel,
+  weightClassLabel,
 } from './presentation.js';
 
 describe('presentation labels (final polish pass)', () => {
@@ -97,6 +100,73 @@ describe('presentation labels (final polish pass)', () => {
         movement: null,
       }),
     ).toContain('Kyorugi');
+  });
+});
+
+describe('operator-facing weight class and category title (table refinement pass)', () => {
+  it('shows a negative (upper-bound-only) canonical code as "Under N kg"', () => {
+    expect(weightClassDisplayLabel('-41')).toBe('Under 41 kg');
+    expect(weightClassDisplayLabel('-44')).toBe('Under 44 kg');
+    expect(weightClassDisplayLabel('-49')).toBe('Under 49 kg');
+  });
+
+  it('shows a positive (open-upper) canonical code as "Over N kg"', () => {
+    expect(weightClassDisplayLabel('+78')).toBe('Over 78 kg');
+    expect(weightClassDisplayLabel('+53')).toBe('Over 53 kg');
+  });
+
+  it('never mutates the canonical code — only the display string differs from weightClassLabel', () => {
+    // the canonical value itself, as the caller holds and persists it, is untouched by either formatter
+    const canonical = '-41';
+    expect(weightClassLabel(canonical)).toBe('-41 kg');
+    expect(weightClassDisplayLabel(canonical)).toBe('Under 41 kg');
+    expect(canonical).toBe('-41'); // the input string reference is never reassigned or reformatted in place
+  });
+
+  it('degrades gracefully (never invents a reading) for a code outside the canonical "-NN"/"+NN" shape', () => {
+    expect(weightClassDisplayLabel('45-50')).toBe(weightClassLabel('45-50'));
+  });
+
+  it('composes the operator-facing category title with middle dots and the human weight-class label', () => {
+    const title = formatOperatorCategoryTitle({
+      discipline: 'KYORUGI',
+      stream: 'SEMI_PRESTASI',
+      ageDivisionCode: 'PRA_CADET_C',
+      ageDivisionLabel: 'Pra Cadet C',
+      gender: 'MALE',
+      weightClassCode: '-41',
+      movement: null,
+    });
+    expect(title).toBe('Kyorugi Semi Prestasi · Pra Cadet C Putra · Under 41 kg');
+    expect(title).not.toContain('—');
+    expect(title).not.toContain('-41 kg');
+  });
+
+  it('the operator title and the audit-document title describe the same category, only worded differently', () => {
+    const category = {
+      discipline: 'KYORUGI' as const,
+      stream: 'PRESTASI' as const,
+      ageDivisionCode: 'CADET',
+      ageDivisionLabel: 'Cadet',
+      gender: 'FEMALE' as const,
+      weightClassCode: '+78',
+      movement: null,
+    };
+    expect(formatCategoryDisplayName(category)).toBe('Kyorugi Prestasi — Cadet Putri — +78 kg');
+    expect(formatOperatorCategoryTitle(category)).toBe('Kyorugi Prestasi · Cadet Putri · Over 78 kg');
+  });
+
+  it('falls back to the movement (Poomsae) when there is no weight class, same as the audit title', () => {
+    const title = formatOperatorCategoryTitle({
+      discipline: 'POOMSAE',
+      stream: 'PRESTASI',
+      ageDivisionCode: 'DEWASA',
+      ageDivisionLabel: null,
+      gender: 'MIXED',
+      weightClassCode: null,
+      movement: 'TUNGGAL',
+    });
+    expect(title).toBe('Poomsae Prestasi · Dewasa Campuran · Tunggal');
   });
 });
 
