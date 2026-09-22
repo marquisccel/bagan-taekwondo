@@ -81,7 +81,6 @@ const COMPACT_CSS = `
   .pool-no { font-size: 9pt; font-weight: 700; }
   .pool-flag { font-size: 6.5pt; font-weight: 700; color: #a33; margin-left: 1.5mm; }
   .card-count { font-size: 6.5pt; color: #333; white-space: nowrap; }
-  .card-cat { font-size: 6.2pt; color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card-poomsae { font-size: 6.5pt; color: #222; }
   .card-body { padding: 0; display: flex; gap: 2mm; align-items: flex-start; }
   .card-body .col-table { width: 44%; flex: none; min-width: 0; }
@@ -92,8 +91,13 @@ const COMPACT_CSS = `
   table.pt th { font-size: 6.2pt; background: #e8e8e8; padding: 0.3mm 0.4mm; white-space: nowrap; }
   table.pt tr { break-inside: avoid; page-break-inside: avoid; }
   table.pt td.num, table.pt th.num { text-align: center; }
-  table.pt .nm { font-weight: 600; overflow-wrap: anywhere; }
-  table.pt .ct { font-size: 6.2pt; color: #333; font-weight: 400; overflow-wrap: anywhere; }
+  /* Name/contingent are visually clamped to 2 lines (with an ellipsis) so one very long entry never
+     stretches a whole pool card — the full text still round-trips through this same HTML, unclamped,
+     to POOL_SHEET/XLSX/the DOM itself; only how this document paints it is bounded (final polish §2). */
+  table.pt .nm, table.pt .ct { overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2; overflow: hidden; }
+  table.pt .nm { font-weight: 600; }
+  table.pt .ct { font-size: 6.2pt; color: #333; font-weight: 400; }
   table.pt .na { color: #666; }
   .col-bracket, .bk { padding: 0.5mm 1.2mm 0.3mm; }
   .bk-note { font-size: 6.5pt; color: #555; font-style: italic; padding: 0.8mm 1.5mm; }
@@ -194,7 +198,6 @@ function poolCard(category: ExportCategory, pool: ExportPool): string {
   return `<div class="card${wide ? ' wide' : ''}${tall ? ' tall' : ''}">
     <div class="card-head">
       <div class="row"><span><span class="pool-no">${esc(poolLabel(pool.ordinal))}</span>${pool.isWalkover ? `<span class="pool-flag">${esc(L.walkover.toUpperCase())}</span>` : ''}</span><span class="card-count">${esc(participantCountLabel(pool.members.length))}${bracketBits}</span></div>
-      <div class="card-cat">${esc(formatCategoryDisplayName(category))}</div>
       ${poomsaeLine}
     </div>
     ${body}

@@ -217,14 +217,30 @@ function titleCaseWords(s: string): string {
 }
 
 /**
- * The operator-facing belt label. Never a raw persisted code such as `GEUP_6` (ACCEPTANCE §6):
- * when the rule set's own curated label is available (`rule_belt.label`, e.g. "Geup 9 (kuning)") it
- * is used, title-cased for consistent display — this is real tournament/rule data, never an invented
- * color mapping. Absent that (older snapshots, synthetic fixtures), degrades gracefully to a plain
+ * The rule set's curated belt label is "<rank> (<color phrase>)", e.g. "Geup 9 (kuning)" or
+ * "Dan 1 (hitam)" — real tournament/rule data (`rule_belt.label`), never invented here. Returns the
+ * trailing parenthetical (the color phrase) when the label has that shape, null otherwise, so the
+ * caller can fall back gracefully to the label as a whole.
+ */
+function beltColorPhrase(label: string): string | null {
+  const m = /\(([^()]+)\)\s*$/.exec(label.trim());
+  return m?.[1]?.trim() || null;
+}
+
+/**
+ * The operator-facing belt label. Never a raw persisted code such as `GEUP_6` (ACCEPTANCE §6). For
+ * the dense operational documents (compact sheet, pool sheet, bracket sheet) the short, primary form
+ * is the belt COLOR alone ("Kuning", "Kuning Strip Hijau"), extracted from the rule set's own curated
+ * label — never an invented color mapping. If the curated label doesn't have the expected
+ * "<rank> (<color>)" shape, the whole label is shown title-cased instead of dropping it. Absent a
+ * curated label entirely (older snapshots, synthetic fixtures), degrades gracefully to a plain
  * humanized rendering of the code ("GEUP_9" -> "Geup 9"), and to "—" when there is no code at all.
  */
 export function beltDisplay(beltCode: string | null, beltLabel?: string | null): string {
-  if (beltLabel && beltLabel.trim().length > 0) return titleCaseWords(beltLabel.trim());
+  if (beltLabel && beltLabel.trim().length > 0) {
+    const trimmed = beltLabel.trim();
+    return titleCaseWords(beltColorPhrase(trimmed) ?? trimmed);
+  }
   return beltCode && beltCode.trim().length > 0 ? humanizeCode(beltCode.trim()) : MISSING_VALUE;
 }
 

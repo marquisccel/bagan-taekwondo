@@ -116,12 +116,19 @@ describe('compact semi-prestasi sheet labels (AUD-012)', () => {
     expect(beltDisplay('HITAM')).toBe('Hitam');
   });
 
-  it("uses the rule set's own curated belt label when available, title-cased (ACCEPTANCE §6) — never a raw GEUP_N code", () => {
-    expect(beltDisplay('GEUP_9', 'Geup 9 (kuning)')).toBe('Geup 9 (Kuning)');
-    expect(beltDisplay('GEUP_6', 'Geup 6 (hijau strip biru)')).toBe('Geup 6 (Hijau Strip Biru)');
-    expect(beltDisplay('DAN_1', 'Dan 1 (hitam)')).toBe('Dan 1 (Hitam)');
+  it('shows the belt COLOR alone when the curated rule-set label has that shape (ACCEPTANCE §6, final polish) — never a raw GEUP_N code or the rank prefix', () => {
+    expect(beltDisplay('GEUP_9', 'Geup 9 (kuning)')).toBe('Kuning');
+    expect(beltDisplay('GEUP_8', 'Geup 8 (kuning strip hijau)')).toBe('Kuning Strip Hijau');
+    expect(beltDisplay('GEUP_6', 'Geup 6 (hijau strip biru)')).toBe('Hijau Strip Biru');
+    expect(beltDisplay('DAN_1', 'Dan 1 (hitam)')).toBe('Hitam');
     expect(beltDisplay('GEUP_9', 'Geup 9 (kuning)')).not.toContain('GEUP_9');
+    expect(beltDisplay('GEUP_9', 'Geup 9 (kuning)')).not.toContain('Geup');
     expect(beltDisplay('GEUP_9', '  ')).toBe('Geup 9'); // blank label degrades to the code, not blank text
+  });
+
+  it('falls back to the whole curated label, title-cased, when it does not have the "<rank> (<color>)" shape', () => {
+    expect(beltDisplay('GEUP_9', 'Kuning')).toBe('Kuning');
+    expect(beltDisplay('GEUP_9', 'sabuk kuning')).toBe('Sabuk Kuning');
   });
 
   it('has one shared "N error, M peringatan" line for draw quality, omitting zero-count levels', () => {

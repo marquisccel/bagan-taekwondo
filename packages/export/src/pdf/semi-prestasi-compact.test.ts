@@ -80,6 +80,14 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     expect(html.match(/<div class="cat-head">/g)).toHaveLength(4);
   });
 
+  it('does not repeat the category name inside individual pool cards (final polish §3) — it appears once, in the page-level category header', () => {
+    const { html } = build();
+    expect(html).not.toContain('class="card-cat"');
+    // the category header text still appears exactly once per category (the cat-head block), never again per pool card
+    const perCategory = html.match(/<h2>Kyorugi Semi Prestasi — Pra Cadet C Putra — -41 kg<\/h2>/g);
+    expect(perCategory).toHaveLength(1);
+  });
+
   it('CATEGORY scope covers just that category and refuses a non-semi-prestasi one', () => {
     const one = build({}, idOf('K-MISSING'));
     expect(one.html.match(/<div class="cat-head">/g)).toHaveLength(1);
@@ -94,15 +102,17 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     expect(html).toContain('Data belum lengkap: sabuk, tinggi badan, berat badan.');
   });
 
-  it('prints present values converted to cm/kg with the belt label', () => {
+  it('prints present values converted to cm/kg with the belt COLOR (never the raw code or rank prefix)', () => {
     const { html } = build();
-    expect(html).toContain('Geup 9');
+    expect(html).toContain('Kuning');
+    expect(html).not.toContain('Geup');
+    expect(html).not.toContain('GEUP_9');
     expect(html).toContain('>142<'); // 1420 mm -> 142 cm
     expect(html).toContain('>34<'); // 34000 g -> 34 kg
     expect(html).toContain('35,5');
   });
 
-  it("uses the rule set's own curated belt label when the model carries one, never the raw GEUP_N code", () => {
+  it("uses the rule set's own curated belt label when the model carries one, showing only the color — never the raw GEUP_N code or the rank prefix", () => {
     const base = makeSemiPrestasiFixtureModel([{ key: 'BL', discipline: 'KYORUGI', poolSizes: [2] }]);
     const labelled = {
       ...base,
@@ -118,8 +128,9 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
       })),
     };
     const { html } = buildSemiPrestasiCompactSheetHtml(labelled, opts, null);
-    expect(html).toContain('Geup 9 (Kuning)');
+    expect(html).toContain('>Kuning<');
     expect(html).not.toContain('GEUP_9');
+    expect(html).not.toContain('Geup 9');
   });
 
   it('never shows a raw engine reason code — pool warnings are an audit (CATEGORY_DRAW) concern, not operational', () => {
@@ -143,7 +154,7 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
   });
 
   it('a pair entry stacks one belt/height/weight line per athlete', () => {
-    expect(build({}, idOf('P-PAIR')).html).toMatch(/Geup \d<br>Geup \d/);
+    expect(build({}, idOf('P-PAIR')).html).toMatch(/Kuning<br>Kuning/);
   });
 
   it('shows the compact bracket with the persisted match codes, BYEs and the final', () => {

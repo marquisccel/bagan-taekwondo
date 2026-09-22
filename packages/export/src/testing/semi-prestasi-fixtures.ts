@@ -39,6 +39,15 @@ export interface SemiFixtureCategory {
 }
 
 const BELTS = ['GEUP_9', 'GEUP_8', 'GEUP_7', 'GEUP_6', 'GEUP_5', 'GEUP_4'] as const;
+/** Mirrors the real ruleset's curated `rule_belt.label` shape (fixtures/rulesets/piala-gubernur-2026.provisional.json) so synthetic PDFs exercise the same rendering path as production. */
+const BELT_LABELS: Readonly<Record<(typeof BELTS)[number], string>> = {
+  GEUP_9: 'Geup 9 (kuning)',
+  GEUP_8: 'Geup 8 (kuning strip hijau)',
+  GEUP_7: 'Geup 7 (hijau)',
+  GEUP_6: 'Geup 6 (hijau strip biru)',
+  GEUP_5: 'Geup 5 (biru)',
+  GEUP_4: 'Geup 4 (biru strip merah)',
+};
 const LONG_NAME = 'Muhammad Abdurrahman Wicaksono Prasetyo Nugroho Setiawan';
 const LONG_CONTINGENT = 'Kontingen Persatuan Taekwondo Kabupaten Bogor Raya Selatan';
 
@@ -100,13 +109,17 @@ export function makeSemiPrestasiFixtureModel(
         poolEntryIds.push(entryId);
         const base = cat.longNames ? LONG_NAME : `Peserta ${ci + 1}${String.fromCharCode(65 + pi)}`;
         const name = `${base} ${i + 1}`;
-        const athlete = (suffix: string): ExportAthleteDisplay => ({
-          fullName: `${name}${suffix}`,
-          gender: cat.gender === 'FEMALE' ? 'FEMALE' : 'MALE',
-          weightG: cat.missing?.weight ? null : 34000 + (pi * 7 + i * 3) * 250,
-          heightMm: cat.missing?.height ? null : 1420 + (pi * 5 + i * 4) * 11,
-          beltCode: cat.missing?.belt ? null : (BELTS[(pi + i) % BELTS.length] ?? null),
-        });
+        const athlete = (suffix: string): ExportAthleteDisplay => {
+          const beltCode = cat.missing?.belt ? null : (BELTS[(pi + i) % BELTS.length] ?? null);
+          return {
+            fullName: `${name}${suffix}`,
+            gender: cat.gender === 'FEMALE' ? 'FEMALE' : 'MALE',
+            weightG: cat.missing?.weight ? null : 34000 + (pi * 7 + i * 3) * 250,
+            heightMm: cat.missing?.height ? null : 1420 + (pi * 5 + i * 4) * 11,
+            beltCode,
+            beltLabel: beltCode ? BELT_LABELS[beltCode] : null,
+          };
+        };
         const pairSize = cat.format === 'PAIR' ? 2 : cat.format === 'TEAM' ? 3 : 1;
         const athletes = Array.from({ length: pairSize }, (_, k) => athlete(pairSize > 1 ? ` ${k + 1}` : ''));
         entries.push({

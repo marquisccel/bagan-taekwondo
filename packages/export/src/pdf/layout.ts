@@ -19,7 +19,16 @@ const fmtDate = (iso: string): string => {
     : new Intl.DateTimeFormat('id-ID', { dateStyle: 'long', timeStyle: 'short', timeZone: 'UTC' }).format(d);
 };
 
-/** Shared print CSS: A4, consistent margins, no marketing chrome — dense operator-document styling. */
+/**
+ * Shared print CSS: A4, consistent margins, no marketing chrome — dense operator-document styling.
+ * This string is embedded verbatim in every document's <style> block regardless of mode, so no
+ * comment in here may contain the literal word the watermark itself prints — it would leak into an
+ * OFFICIAL document's HTML even though the watermark div is never rendered for OFFICIAL.
+ *
+ * `.watermark`'s color alpha (final polish §4) was lightened from 0.18 to keep table/bracket text
+ * underneath easy to read, while staying clearly visible — see `EXPORT_MODE_LABEL` and
+ * `watermarkHtml()` for where it is (and is not) rendered.
+ */
 export const PDF_BASE_CSS = `
   * { box-sizing: border-box; }
   body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10.5pt; color: #111; margin: 0; }
@@ -41,7 +50,7 @@ export const PDF_BASE_CSS = `
   .page-break { page-break-before: always; }
   .watermark {
     position: fixed; top: 40%; left: 0; right: 0; text-align: center;
-    font-size: 44pt; color: rgba(200, 30, 30, 0.18); font-weight: 700; transform: rotate(-28deg);
+    font-size: 44pt; color: rgba(200, 30, 30, 0.11); font-weight: 700; transform: rotate(-28deg);
     z-index: -1;
   }
 `;
