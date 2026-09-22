@@ -37,14 +37,14 @@ describe('SEMI_PRESTASI_COMPACT_DRAW_SHEET rendering (headless Chromium)', () =>
     });
   }
 
-  it('packs a multi-pool category densely: 12 pools of 4 fit on 2 pages, deterministically', async () => {
+  it('lays out a multi-pool category as one full-width row per pool, deterministically (layout correction: readability over density -- more pages than the old 2-column grid is accepted)', async () => {
     const model = makeSemiPrestasiFixtureModel([
       { key: 'M', discipline: 'KYORUGI', poolSizes: Array.from({ length: 12 }, () => 4) },
     ]);
     const first = await renderSemiPrestasiCompactDrawSheetPdf(model, opts, 'c1');
     const second = await renderSemiPrestasiCompactDrawSheetPdf(model, opts, 'c1');
     expect(isWellFormedPdf(first)).toBe(true);
-    expect(pageCount(first)).toBe(2);
+    expect(pageCount(first)).toBe(3);
     expect(pageCount(second)).toBe(pageCount(first));
   });
 

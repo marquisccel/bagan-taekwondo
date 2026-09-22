@@ -81,7 +81,7 @@ export async function renderPoolSheetPdf(
     .join('');
 
   const displayName = formatOperatorCategoryTitle(category);
-  const title = `Lembar Pool — ${displayName} — Pool ${pool.ordinal}`;
+  const title = `Lembar Pool · ${displayName} · Pool ${pool.ordinal}`;
   const body = `
     <div class="doc-kicker">Lembar Pool</div>
     <h1>${esc(displayName)}</h1>
@@ -93,7 +93,7 @@ export async function renderPoolSheetPdf(
     </table>
   `;
   return renderHtmlToPdf(pageShell(title, body, opts), {
-    headerTemplate: headerTemplate(`${model.tournament.name} — ${displayName} — Pool ${pool.ordinal}`),
+    headerTemplate: headerTemplate(`${model.tournament.name} · ${displayName} · Pool ${pool.ordinal}`),
     footerTemplate: footerTemplate(),
   });
 }

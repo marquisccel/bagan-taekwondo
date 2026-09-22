@@ -113,7 +113,7 @@ export async function renderBracketSheetPdf(
 
   const tiles = tileBracketMatches(pool.bracket);
   const displayName = formatOperatorCategoryTitle(category);
-  const title = `Bagan Pertandingan — ${displayName} — Pool ${pool.ordinal}`;
+  const title = `Bagan Pertandingan · ${displayName} · Pool ${pool.ordinal}`;
   const body = `
     <div class="doc-kicker">Bagan Pertandingan</div>
     <h1>${esc(displayName)}</h1>
@@ -123,7 +123,7 @@ export async function renderBracketSheetPdf(
     ${daftarPertandinganHtml(pool.bracket, tiles.length > 1)}
   `;
   return renderHtmlToPdf(pageShell(title, body, opts), {
-    headerTemplate: headerTemplate(`${model.tournament.name} — ${displayName} — Pool ${pool.ordinal}`),
+    headerTemplate: headerTemplate(`${model.tournament.name} · ${displayName} · Pool ${pool.ordinal}`),
     footerTemplate: footerTemplate(),
   });
 }

@@ -58,7 +58,7 @@ export const DISCIPLINE_LABEL: Readonly<Record<string, string>> = {
 };
 
 export const EXPORT_MODE_LABEL: Readonly<Record<'PREVIEW' | 'OFFICIAL', string>> = {
-  PREVIEW: 'PREVIEW — BUKAN UNTUK PENGGUNAAN RESMI',
+  PREVIEW: 'PREVIEW · BUKAN UNTUK PENGGUNAAN RESMI',
   OFFICIAL: 'DOKUMEN RESMI',
 };
 
@@ -216,12 +216,16 @@ export function formatOperatorCategoryTitle(category: CategoryTitleShape): strin
 // pure, driven only by the persisted value, never inventing one that is missing.
 // ---------------------------------------------------------------------------------------
 
-/** Shown wherever a persisted value (belt, height, weight, ...) is absent — never a guessed default. */
-export const MISSING_VALUE = '—';
+/**
+ * Shown wherever a persisted value (belt, height, weight, ...) is absent — never a guessed default.
+ * An en dash, not an em dash (table refinement pass, item 1): the em dash is reserved for nothing in
+ * these documents now, so this stays visually distinct from the middle-dot structural separator
+ * while still reading as "no data" rather than a real value.
+ */
+export const MISSING_VALUE = '–';
 
 export const SEMI_PRESTASI_COMPACT_LABEL = {
   documentTitle: 'Lembar Drawing Ringkas Semi Prestasi',
-  documentSubtitle: 'Untuk panitia drawing, peninjauan keberatan, dan meja pertandingan',
   pool: 'Pool',
   participant: 'Peserta',
   participantName: 'Nama peserta',
@@ -238,7 +242,7 @@ export const SEMI_PRESTASI_COMPACT_LABEL = {
   bye: 'BYE',
   final: 'FINAL',
   noBracket: 'Tanpa bagan pertandingan.',
-  bracketTooLarge: 'Bagan berukuran besar — lihat dokumen Bagan Pertandingan untuk diagram lengkap.',
+  bracketTooLarge: 'Bagan berukuran besar. Lihat dokumen Bagan Pertandingan untuk diagram lengkap.',
   noPools: 'Belum ada pool.',
   noParticipants: 'Tidak ada peserta',
   noCategories: 'Tidak ada kategori semi prestasi pada revisi ini.',

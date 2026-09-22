@@ -171,12 +171,12 @@ describe('operator-facing weight class and category title (table refinement pass
 });
 
 describe('compact semi-prestasi sheet labels (AUD-012)', () => {
-  it('shows "—" for a missing belt/height/weight, never a guessed value', () => {
-    expect(MISSING_VALUE).toBe('—');
-    expect(beltDisplay(null)).toBe('—');
-    expect(beltDisplay('   ')).toBe('—');
-    expect(formatHeightCm(null)).toBe('—');
-    expect(formatWeightKg(null)).toBe('—');
+  it('shows an en dash (never an em dash) for a missing belt/height/weight, never a guessed value', () => {
+    expect(MISSING_VALUE).toBe('–');
+    expect(beltDisplay(null)).toBe('–');
+    expect(beltDisplay('   ')).toBe('–');
+    expect(formatHeightCm(null)).toBe('–');
+    expect(formatWeightKg(null)).toBe('–');
   });
 
   it('falls back to a humanized code (never a guessed color) when no curated rule-set label is on file', () => {

@@ -39,15 +39,18 @@ import { renderHtmlToPdf } from './render.js';
  * `CATEGORY_DRAW` document (category-draw.ts), never here — this sheet only ever shows a plain
  * "data belum lengkap" gap note, never a POOL_* code (PDF Presentation Remediation).
  *
- * Landscape, 2 columns: since semi-prestasi pools are almost always 1–4 participants, EVERY card
- * (not only the large-bracket "wide" ones) places its table and bracket side by side rather than
- * stacked — that is what makes a card only as tall as its roster, so a 2×4 grid (~8 pools/page) is
- * reachable without shrinking text; a category with longer rosters/names simply fits fewer per page.
+ * Landscape, one pool per row, full page content width (table refinement — layout correction): every
+ * pool card spans the full width of the page rather than sharing a 2-column grid, with the
+ * participant table on the left and a substantially larger, easier-to-read bracket on the right.
+ * A pool's row height is whatever its own content needs (a 2-person pool is naturally shorter than
+ * a 4-person one) — never artificially stretched. This trades page density for readability: a large
+ * category simply spans more pages, which is the accepted, intended outcome.
  */
 
-/** Bracket drawing area (CSS px, ~ the card's inner width) for a normal (2-column) card vs a wide (full-width) card. */
-const HALF_CARD_BRACKET = { width: 270, leafWidth: 66, nameChars: 15 } as const;
-const WIDE_CARD_BRACKET = { width: 560, leafWidth: 108, nameChars: 26 } as const;
+/** Bracket drawing area (CSS px, ~ the row's bracket-column width) — one size for every pool now that
+ * every row is full width; the physical container width (not this nominal size) is what makes the
+ * bracket look larger on the page, since the SVG always scales to fill its container. */
+const POOL_BRACKET_AREA = { width: 640, leafWidth: 130, nameChars: 30 } as const;
 
 /**
  * A pool whose table is roughly a page tall (>= ~30 participants) may fragment across pages; keeping it in
@@ -55,44 +58,43 @@ const WIDE_CARD_BRACKET = { width: 560, leafWidth: 108, nameChars: 26 } as const
  */
 const TALL_CARD_MIN_LINES = 60;
 
-/** Brackets with more than 8 slots (i.e. > 4 first-round matches) get a full-width card. */
-const WIDE_CARD_MIN_SIZE = 9;
-
 const COMPACT_CSS = `
   body { font-size: 7.5pt; line-height: 1.25; }
   .doc-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 6mm;
     border-bottom: 0.8pt solid #111; padding-bottom: 1.5mm; margin-bottom: 2.5mm; }
   .doc-head h1 { font-size: 13pt; margin: 0; }
   .doc-head .doc-kicker { margin-bottom: 0.5mm; }
-  .doc-sub { font-size: 7pt; color: #444; }
+  .doc-category { font-size: 9pt; font-weight: 600; color: #222; margin-top: 0.5mm; }
   .doc-meta { font-size: 7pt; color: #333; text-align: right; line-height: 1.35; }
   .doc-mode { font-weight: 700; }
   .quality-line { font-size: 7pt; color: #7a4b00; margin: 0 0 2mm; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm; margin-bottom: 4mm; }
-  .cat-head { grid-column: 1 / -1; break-after: avoid; page-break-after: avoid;
-    border-left: 2.2pt solid #111; background: #ececec; padding: 1mm 2mm; }
-  .cat-head h2 { font-size: 9.5pt; margin: 0; page-break-after: avoid; }
-  .cat-info { font-size: 7pt; color: #333; margin-top: 0.3mm; }
-  .card { border: 0.5pt solid #555; break-inside: avoid; page-break-inside: avoid; overflow: hidden; }
-  .card.wide { grid-column: 1 / -1; }
+  /* A plain heading (no boxed/backgrounded banner) before a category's pools -- only shown for a
+     REVISION-scope document with more than one category; a CATEGORY-scoped export already shows its
+     one category's title in the main doc header (docHeader()), so it is never repeated here. */
+  .cat-heading { font-size: 10pt; font-weight: 700; margin: 4mm 0 2mm; page-break-after: avoid; }
+  .cat-info { font-size: 7pt; color: #333; margin: -1.5mm 0 2mm; }
+  .card { border: 0.5pt solid #555; break-inside: avoid; page-break-inside: avoid; overflow: hidden;
+    margin-bottom: 2.5mm; }
   .card.tall { break-inside: auto; page-break-inside: auto; }
-  .card-head { background: #f3f3f3; border-bottom: 0.5pt solid #555; padding: 0.7mm 1.5mm; }
-  .card-head .row { display: flex; justify-content: space-between; align-items: baseline; gap: 2mm; }
+  .card-head { background: #fff; border-bottom: 0.5pt solid #555; padding: 1mm 2mm; }
+  .card-head .row { display: flex; justify-content: space-between; align-items: center; gap: 2mm; }
   .pool-no { font-size: 9pt; font-weight: 700; }
   .pool-flag { font-size: 6.5pt; font-weight: 700; color: #a33; margin-left: 1.5mm; }
-  .card-count { font-size: 6.5pt; color: #333; white-space: nowrap; }
+  .card-count { font-size: 7pt; color: #333; white-space: nowrap; }
   .card-poomsae { font-size: 6.5pt; color: #222; }
-  .card-body { padding: 0; display: flex; gap: 2mm; align-items: flex-start; }
-  .card-body .col-table { width: 44%; flex: none; min-width: 0; }
+  /* One pool per row, spanning the full page width (table refinement -- layout correction): the
+     participant table gets a modest, fixed share and the bracket -- now substantially larger since
+     its container is the full page width, not half of a 2-column grid -- gets the rest. */
+  .card-body { padding: 0; display: flex; gap: 4mm; align-items: flex-start; }
+  .card-body .col-table { width: 34%; flex: none; min-width: 0; }
   .card-body .col-bracket { flex: 1; min-width: 0; }
-  .card.wide .card-body .col-table { width: 46%; }
   table.pt { margin: 0; width: 100%; table-layout: fixed; }
   table.pt th, table.pt td { font-size: 7pt; padding: 0.3mm 1mm; border: 0.3pt solid #bbb; line-height: 1.15; }
   table.pt th { font-size: 6.2pt; background: #e8e8e8; padding: 0.3mm 0.4mm; white-space: nowrap; }
   table.pt tr { break-inside: avoid; page-break-inside: avoid; }
   table.pt td.num, table.pt th.num { text-align: center; }
   /* Peserta/Kontingen/Sabuk are visually clamped to 2 lines (with an ellipsis) so one very long value
-     never stretches a whole pool card — the full text still round-trips through this same HTML,
+     never stretches a whole pool card -- the full text still round-trips through this same HTML,
      unclamped, to POOL_SHEET/XLSX/the DOM itself; only how this document paints it is bounded
      (table refinement pass, items 3-5). Each is its own td (never nested/stacked with another
      field) so a print operator can scan participant, contingent and belt independently -- the clamp
@@ -205,20 +207,18 @@ function cardFooter(pool: ExportPool): string {
 
 function poolCard(category: ExportCategory, pool: ExportPool): string {
   const isPoomsae = category.discipline === 'POOMSAE';
-  const wide = (pool.bracket?.size ?? 0) >= WIDE_CARD_MIN_SIZE;
   const tableLines = pool.members.reduce((n, e) => n + Math.max(2, e.athletes.length), 0);
   const tall = tableLines > TALL_CARD_MIN_LINES;
-  const area = wide ? WIDE_CARD_BRACKET : HALF_CARD_BRACKET;
   const bracketBits = pool.bracket
     ? ` &middot; Bagan ${pool.bracket.size} slot${pool.bracket.byes > 0 ? ` &middot; ${pool.bracket.byes} ${L.bye}` : ''}`
     : '';
   const poomsaeLine = isPoomsae
     ? `<div class="card-poomsae">${esc(L.movement)}: ${esc(category.movement ? humanizeCode(category.movement) : MISSING_VALUE)} &middot; ${esc(L.format)}: ${esc(formatLabel(category.format))}</div>`
     : '';
-  // Always side by side (never table-then-bracket stacked): that is what keeps a card as short as
-  // its roster, so the landscape 2-column grid can fit several pool cards per page.
-  const body = `<div class="card-body"><div class="col-table">${participantTable(pool)}</div><div class="col-bracket">${bracketHtml(pool, area)}</div></div>`;
-  return `<div class="card${wide ? ' wide' : ''}${tall ? ' tall' : ''}">
+  // One pool per row, full page width (layout correction): table on the left, bracket on the right.
+  // A pool's row is only as tall as its own content -- never stretched to fill the page.
+  const body = `<div class="card-body"><div class="col-table">${participantTable(pool)}</div><div class="col-bracket">${bracketHtml(pool, POOL_BRACKET_AREA)}</div></div>`;
+  return `<div class="card${tall ? ' tall' : ''}">
     <div class="card-head">
       <div class="row"><span><span class="pool-no">${esc(poolLabel(pool.ordinal))}</span>${pool.isWalkover ? `<span class="pool-flag">${esc(L.walkover.toUpperCase())}</span>` : ''}</span><span class="card-count">${esc(participantCountLabel(pool.members.length))}${bracketBits}</span></div>
       ${poomsaeLine}
@@ -242,12 +242,18 @@ function categoryInfoLine(c: ExportCategory): string {
   return bits.join(' &middot; ');
 }
 
-function categorySection(c: ExportCategory): string {
+/**
+ * `showHeading`: a CATEGORY-scoped document already shows its one category's title integrated into
+ * the main doc header (see `docHeader`/`buildSemiPrestasiCompactSheetHtml`), so nothing repeats it
+ * here. A REVISION-scoped document has several categories, so each still needs a plain heading (no
+ * boxed/backgrounded banner) to mark where one category's pools end and the next begin.
+ */
+function categorySection(c: ExportCategory, showHeading: boolean): string {
   const cards = c.pools.map((p) => poolCard(c, p)).join('');
-  return `<div class="grid">
-    <div class="cat-head"><h2>${esc(formatOperatorCategoryTitle(c))}</h2><div class="cat-info">${categoryInfoLine(c)}</div></div>
-    ${cards || `<div class="bk-note" style="grid-column:1/-1">${esc(L.noPools)}</div>`}
-  </div>`;
+  const heading = showHeading
+    ? `<div class="cat-heading">${esc(formatOperatorCategoryTitle(c))}</div><div class="cat-info">${categoryInfoLine(c)}</div>`
+    : '';
+  return `${heading}${cards || `<div class="bk-note">${esc(L.noPools)}</div>`}`;
 }
 
 const fmtDate = (iso: string): string => {
@@ -257,12 +263,17 @@ const fmtDate = (iso: string): string => {
     : new Intl.DateTimeFormat('id-ID', { dateStyle: 'long', timeStyle: 'short', timeZone: 'UTC' }).format(d);
 };
 
-function docHeader(model: ExportModel, opts: RenderOptions): string {
+/** `categoryTitle`: for a CATEGORY-scoped document, its one category's title is shown directly under
+ * the main document title (table refinement -- layout correction) instead of a separate banner
+ * further down the page; `null` for a REVISION-scoped document (there is no single category to name
+ * here, and the old generic descriptive sentence is not replaced with anything). */
+function docHeader(model: ExportModel, opts: RenderOptions, categoryTitle: string | null): string {
+  const categoryLine = categoryTitle ? `<div class="doc-category">${esc(categoryTitle)}</div>` : '';
   return `<div class="doc-head">
     <div>
       <div class="doc-kicker">${esc(model.tournament.name)} (${esc(model.tournament.code)})</div>
       <h1>${esc(L.documentTitle)}</h1>
-      <div class="doc-sub">${esc(L.documentSubtitle)}</div>
+      ${categoryLine}
     </div>
     <div class="doc-meta">
       <div class="doc-mode">${esc(modeLabel(opts.mode))}</div>
@@ -293,10 +304,11 @@ export function buildSemiPrestasiCompactSheetHtml(
   const single = categories.length === 1 && categoryId !== null ? categories[0] : undefined;
   const qualitySummary = categoryId === null ? qualitySummaryLabel(model.quality) : null;
   const qualityLine = qualitySummary ? `<div class="quality-line">${esc(qualitySummary)}</div>` : '';
+  const singleCategoryTitle = single ? formatOperatorCategoryTitle(single) : null;
   const title = single
-    ? `${L.documentTitle} — ${formatOperatorCategoryTitle(single)}`
-    : `${L.documentTitle} — ${model.tournament.name}`;
-  const body = `${docHeader(model, opts)}${qualityLine}${categories.map(categorySection).join('')}`;
+    ? `${L.documentTitle} · ${singleCategoryTitle}`
+    : `${L.documentTitle} · ${model.tournament.name}`;
+  const body = `${docHeader(model, opts, singleCategoryTitle)}${qualityLine}${categories.map((c) => categorySection(c, !single)).join('')}`;
   const html = `<!doctype html>
 <html lang="id">
 <head>
@@ -313,8 +325,8 @@ ${body}
     title,
     html,
     headerTitle: single
-      ? `${model.tournament.name} — ${L.documentTitle} — ${formatOperatorCategoryTitle(single)}`
-      : `${model.tournament.name} — ${L.documentTitle}`,
+      ? `${model.tournament.name} · ${L.documentTitle} · ${formatOperatorCategoryTitle(single)}`
+      : `${model.tournament.name} · ${L.documentTitle}`,
   };
 }
 

@@ -51,7 +51,7 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
       'Status: Diterbitkan',
       'Dibuat:',
       'Kode verifikasi: abc123def456',
-      'PREVIEW — BUKAN UNTUK PENGGUNAAN RESMI',
+      'PREVIEW · BUKAN UNTUK PENGGUNAAN RESMI',
     ]) {
       expect(html).toContain(label);
     }
@@ -65,10 +65,14 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     expect(build().html).toContain('class="watermark"');
   });
 
-  it('headings use the canonical display name with middle dots and a human weight-class label, never the raw category key or em-dash chain', () => {
+  it('REVISION scope headings use the canonical display name with middle dots and a human weight-class label, never the raw category key or em-dash chain', () => {
     const { html } = build();
-    expect(html).toContain('<h2>Kyorugi Semi Prestasi · Pra Cadet C Putra · Under 41 kg</h2>');
-    expect(html).toContain('<h2>Poomsae Semi Prestasi · Pra Cadet C Putra · Taegeuk 1</h2>');
+    expect(html).toContain(
+      '<div class="cat-heading">Kyorugi Semi Prestasi · Pra Cadet C Putra · Under 41 kg</div>',
+    );
+    expect(html).toContain(
+      '<div class="cat-heading">Poomsae Semi Prestasi · Pra Cadet C Putra · Taegeuk 1</div>',
+    );
     expect(html).not.toContain('K-RAW-KEY');
     expect(html).not.toContain('P-RAW-KEY');
     expect(html).not.toContain('STREAM=');
@@ -78,30 +82,35 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
   it('only semi-prestasi categories appear (REVISION scope)', () => {
     const { html } = build();
     expect(html).not.toContain('-99 kg');
-    expect(html.match(/<div class="cat-head">/g)).toHaveLength(4);
+    expect(html.match(/<div class="cat-heading">/g)).toHaveLength(4);
   });
 
-  it('does not repeat the category name inside individual pool cards (final polish §3) — it appears once, in the page-level category header', () => {
+  it('does not repeat the category name inside individual pool cards (final polish §3) — it appears once, in the per-category heading', () => {
     const { html } = build();
     expect(html).not.toContain('class="card-cat"');
-    // the category header text still appears exactly once per category (the cat-head block), never again per pool card
-    const perCategory = html.match(/<h2>Kyorugi Semi Prestasi · Pra Cadet C Putra · Under 41 kg<\/h2>/g);
+    // the category heading text appears exactly once per category, never again per pool card
+    const perCategory = html.match(
+      /<div class="cat-heading">Kyorugi Semi Prestasi · Pra Cadet C Putra · Under 41 kg<\/div>/g,
+    );
     expect(perCategory).toHaveLength(1);
   });
 
-  it('CATEGORY scope covers just that category and refuses a non-semi-prestasi one', () => {
+  it('CATEGORY scope integrates the one category title into the main doc header instead of a separate heading, and refuses a non-semi-prestasi category', () => {
     const one = build({}, idOf('K-MISSING'));
-    expect(one.html.match(/<div class="cat-head">/g)).toHaveLength(1);
-    expect(one.html).toContain('Kyorugi Semi Prestasi · Pra Cadet C Putra · Under 30 kg');
+    expect(one.html.match(/<div class="cat-heading">/g)).toBeNull();
+    expect(one.html).toContain(
+      '<div class="doc-category">Kyorugi Semi Prestasi · Pra Cadet C Putra · Under 30 kg</div>',
+    );
     expect(one.headerTitle).toContain('Under 30 kg');
     expect(() => build({}, idOf('X-PRESTASI'))).toThrow(/not a semi-prestasi category/);
   });
 
-  it('prints "—" for a missing belt/height/weight and flags the gap in Indonesian', () => {
+  it('prints an en dash (never an em dash) for a missing belt/height/weight and flags the gap in Indonesian', () => {
     const { html } = build({}, idOf('K-MISSING'));
-    expect(html.match(/<td class="num na">—<\/td>/g)).toHaveLength(4); // 2 participants x height/weight
-    expect(html.match(/<td class="num na"><div class="clamp2">—<\/div><\/td>/g)).toHaveLength(2); // 2 participants x belt
+    expect(html.match(/<td class="num na">–<\/td>/g)).toHaveLength(4); // 2 participants x height/weight
+    expect(html.match(/<td class="num na"><div class="clamp2">–<\/div><\/td>/g)).toHaveLength(2); // 2 participants x belt
     expect(html).toContain('Data belum lengkap: sabuk, tinggi badan, berat badan.');
+    expect(html).not.toContain('—');
   });
 
   it('prints present values converted to cm/kg with the belt COLOR (never the raw code or rank prefix)', () => {
@@ -192,11 +201,14 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     }
   });
 
-  it('a 16-slot bracket gets a wide card; a 4-slot one does not', () => {
+  it('every pool row is uniformly full width regardless of bracket size — there is no adaptive wide/compact card distinction (layout correction)', () => {
     const m = makeSemiPrestasiFixtureModel([{ key: 'W', discipline: 'KYORUGI', poolSizes: [16, 4] }]);
     const { html } = buildSemiPrestasiCompactSheetHtml(m, opts, null);
-    expect(html.match(/class="card wide"/g)).toHaveLength(1);
-    expect(html.match(/class="card"/g)).toHaveLength(1);
+    expect(html).not.toContain('wide');
+    expect(html.match(/class="card"/g)).toHaveLength(2);
+    // both pools' brackets are drawn from the same nominal area config (POOL_BRACKET_AREA) — the
+    // 16-slot bracket's viewBox is simply larger, not styled differently
+    expect(html.match(/viewBox="0 0 \d+ \d+" style="width:\d+(\.\d+)?%/g)).toHaveLength(2);
   });
 
   it('escapes participant text, so a hostile name cannot inject markup', () => {
