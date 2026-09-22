@@ -1,6 +1,6 @@
 import type { ExportAthleteDisplay, ExportCategory, ExportEntry, ExportModel, ExportPool } from '../model.js';
 import {
-  beltLabel,
+  beltDisplay,
   disciplineLabel,
   formatCategoryDisplayName,
   formatHeightCm,
@@ -10,10 +10,10 @@ import {
   MISSING_VALUE,
   participantCountLabel,
   poolLabel,
+  qualitySummaryLabel,
   readinessLabel,
   revisionLifecycleLabel,
   SEMI_PRESTASI_COMPACT_LABEL as L,
-  warningLabel,
 } from '../presentation.js';
 import { selectSemiPrestasiCategories } from '../semi-prestasi.js';
 import { compactBracketFits, renderCompactBracketSvg } from './compact-bracket-svg.js';
@@ -29,17 +29,25 @@ import {
 import { renderHtmlToPdf } from './render.js';
 
 /**
- * AUD-012 — the compact semi-prestasi tournament-desk sheet. A dense, print-first document for the
- * drawing committee, complaint review and the tournament desk: one card per pool (participants with
- * belt/height/weight/contingent + a small bracket with printed match codes), two cards across an A4
- * page. Rendering only — every value is read from the canonical `ExportModel` exactly as Phase 3/4
- * persisted it; nothing here draws, seeds, pools or re-checks quality, and a value that is not
- * persisted prints as "—", never a guess. There is no NIK anywhere in the model, hence none here.
+ * AUD-012 — the compact semi-prestasi tournament-desk sheet, the PRIMARY operational document for
+ * semi-prestasi. A dense, print-first document for the drawing committee, complaint review and the
+ * tournament desk: one card per pool (participants with belt/height/weight/contingent + a small
+ * bracket with printed match codes). Rendering only — every value is read from the canonical
+ * `ExportModel` exactly as Phase 3/4 persisted it; nothing here draws, seeds, pools or re-checks
+ * quality, and a value that is not persisted prints as "—", never a guess. There is no NIK anywhere
+ * in the model, hence none here. Detailed engine reason codes belong in the audit-oriented
+ * `CATEGORY_DRAW` document (category-draw.ts), never here — this sheet only ever shows a plain
+ * "data belum lengkap" gap note, never a POOL_* code (PDF Presentation Remediation).
+ *
+ * Landscape, 2 columns: since semi-prestasi pools are almost always 1–4 participants, EVERY card
+ * (not only the large-bracket "wide" ones) places its table and bracket side by side rather than
+ * stacked — that is what makes a card only as tall as its roster, so a 2×4 grid (~8 pools/page) is
+ * reachable without shrinking text; a category with longer rosters/names simply fits fewer per page.
  */
 
-/** Bracket drawing area (CSS px, ~ the card's inner width) for a normal (half-page) card vs a wide (full-width) card. */
-const HALF_CARD_BRACKET = { width: 330, leafWidth: 100, nameChars: 22 } as const;
-const WIDE_CARD_BRACKET = { width: 390, leafWidth: 108, nameChars: 24 } as const;
+/** Bracket drawing area (CSS px, ~ the card's inner width) for a normal (2-column) card vs a wide (full-width) card. */
+const HALF_CARD_BRACKET = { width: 270, leafWidth: 66, nameChars: 15 } as const;
+const WIDE_CARD_BRACKET = { width: 560, leafWidth: 108, nameChars: 26 } as const;
 
 /**
  * A pool whose table is roughly a page tall (>= ~30 participants) may fragment across pages; keeping it in
@@ -75,10 +83,10 @@ const COMPACT_CSS = `
   .card-count { font-size: 6.5pt; color: #333; white-space: nowrap; }
   .card-cat { font-size: 6.2pt; color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card-poomsae { font-size: 6.5pt; color: #222; }
-  .card-body { padding: 0; }
-  .card.wide .card-body { display: flex; gap: 2mm; align-items: flex-start; }
-  .card.wide .card-body .col-table { width: 44%; flex: none; }
-  .card.wide .card-body .col-bracket { flex: 1; min-width: 0; }
+  .card-body { padding: 0; display: flex; gap: 2mm; align-items: flex-start; }
+  .card-body .col-table { width: 44%; flex: none; min-width: 0; }
+  .card-body .col-bracket { flex: 1; min-width: 0; }
+  .card.wide .card-body .col-table { width: 46%; }
   table.pt { margin: 0; width: 100%; table-layout: fixed; }
   table.pt th, table.pt td { font-size: 7pt; padding: 0.3mm 1mm; border: 0.3pt solid #bbb; line-height: 1.15; }
   table.pt th { font-size: 6.2pt; background: #e8e8e8; padding: 0.3mm 0.4mm; white-space: nowrap; }
@@ -122,7 +130,7 @@ function participantRow(pool: ExportPool, e: ExportEntry, index: number): string
   return `<tr>
     <td class="num">${positionOf(pool, e, index)}</td>
     <td><div class="nm">${esc(e.displayName)}</div><div class="ct">${e.contingent ? esc(e.contingent) : MISSING_VALUE}</div></td>
-    ${valueCell(perAthlete(e, (a) => beltLabel(a.beltCode)))}${valueCell(perAthlete(e, (a) => formatHeightCm(a.heightMm)))}${valueCell(perAthlete(e, (a) => formatWeightKg(a.weightG)))}
+    ${valueCell(perAthlete(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}${valueCell(perAthlete(e, (a) => formatHeightCm(a.heightMm)))}${valueCell(perAthlete(e, (a) => formatWeightKg(a.weightG)))}
   </tr>`;
 }
 
@@ -130,7 +138,7 @@ function participantTable(pool: ExportPool): string {
   const rows = pool.members.map((e, i) => participantRow(pool, e, i)).join('');
   return `<table class="pt">
     <colgroup><col style="width:${NUMBER_COL}"><col><col style="width:12mm"><col style="width:11mm"><col style="width:11mm"></colgroup>
-    <thead><tr><th class="num">${esc(L.number)}</th><th>${esc(L.participantName)} / ${esc(L.contingent)}</th><th class="num">${esc(L.belt)}</th><th class="num">${esc(L.heightCm)}</th><th class="num">${esc(L.weightKg)}</th></tr></thead>
+    <thead><tr><th class="num">${esc(L.number)}</th><th>${esc(L.participant)}</th><th class="num">${esc(L.belt)}</th><th class="num">${esc(L.heightCm)}</th><th class="num">${esc(L.weightKg)}</th></tr></thead>
     <tbody>${rows || `<tr><td colspan="5">${esc(L.noParticipants)}</td></tr>`}</tbody>
   </table>`;
 }
@@ -155,15 +163,17 @@ function missingFields(pool: ExportPool): string[] {
   return out;
 }
 
+/**
+ * Operational footer: a plain "data not on file" note only — never an engine reason code
+ * (POOL_SIZE_PREFERENCE, POOL_RANGE, POOL_CONTINGENT_MIX, ...). Those explanations are not deleted;
+ * they remain exactly as persisted in `pool.warnings` and are shown, in full, by the audit-oriented
+ * `CATEGORY_DRAW` document (category-draw.ts) instead.
+ */
 function cardFooter(pool: ExportPool): string {
-  const items: string[] = [];
-  for (const code of [...new Set(pool.warnings)].filter((w) => w.length > 0)) {
-    items.push(`<span>${esc(warningLabel(code))} <span class="code-tag">(${esc(code)})</span></span>`);
-  }
   const gaps = missingFields(pool);
-  if (gaps.length > 0)
-    items.push(`<span class="gap">${esc(L.incompleteData)}: ${esc(gaps.join(', '))}.</span>`);
-  return items.length > 0 ? `<div class="card-foot">${items.join(' &middot; ')}</div>` : '';
+  return gaps.length > 0
+    ? `<div class="card-foot"><span class="gap">${esc(L.incompleteData)}: ${esc(gaps.join(', '))}.</span></div>`
+    : '';
 }
 
 function poolCard(category: ExportCategory, pool: ExportPool): string {
@@ -178,9 +188,9 @@ function poolCard(category: ExportCategory, pool: ExportPool): string {
   const poomsaeLine = isPoomsae
     ? `<div class="card-poomsae">${esc(L.movement)}: ${esc(category.movement ? humanizeCode(category.movement) : MISSING_VALUE)} &middot; ${esc(L.format)}: ${esc(formatLabel(category.format))}</div>`
     : '';
-  const body = wide
-    ? `<div class="card-body"><div class="col-table">${participantTable(pool)}</div><div class="col-bracket">${bracketHtml(pool, area)}</div></div>`
-    : `<div class="card-body">${participantTable(pool)}${bracketHtml(pool, area)}</div>`;
+  // Always side by side (never table-then-bracket stacked): that is what keeps a card as short as
+  // its roster, so the landscape 2-column grid can fit several pool cards per page.
+  const body = `<div class="card-body"><div class="col-table">${participantTable(pool)}</div><div class="col-bracket">${bracketHtml(pool, area)}</div></div>`;
   return `<div class="card${wide ? ' wide' : ''}${tall ? ' tall' : ''}">
     <div class="card-head">
       <div class="row"><span><span class="pool-no">${esc(poolLabel(pool.ordinal))}</span>${pool.isWalkover ? `<span class="pool-flag">${esc(L.walkover.toUpperCase())}</span>` : ''}</span><span class="card-count">${esc(participantCountLabel(pool.members.length))}${bracketBits}</span></div>
@@ -255,11 +265,8 @@ export function buildSemiPrestasiCompactSheetHtml(
 ): SemiPrestasiCompactSheetHtml {
   const categories = selectSemiPrestasiCategories(model, categoryId);
   const single = categories.length === 1 && categoryId !== null ? categories[0] : undefined;
-  const q = model.quality;
-  const qualityLine =
-    categoryId === null && (q.errorCount > 0 || q.warningCount > 0)
-      ? `<div class="quality-line">Kualitas draw: ${q.errorCount} error, ${q.warningCount} peringatan</div>`
-      : '';
+  const qualitySummary = categoryId === null ? qualitySummaryLabel(model.quality) : null;
+  const qualityLine = qualitySummary ? `<div class="quality-line">${esc(qualitySummary)}</div>` : '';
   const title = single
     ? `${L.documentTitle} — ${formatCategoryDisplayName(single)}`
     : `${L.documentTitle} — ${model.tournament.name}`;
@@ -294,5 +301,6 @@ export async function renderSemiPrestasiCompactDrawSheetPdf(
   return renderHtmlToPdf(html, {
     headerTemplate: headerTemplate(headerTitle),
     footerTemplate: footerTemplate(),
+    landscape: true,
   });
 }

@@ -1,7 +1,7 @@
 import type { ExportBracket, ExportBracketSlot, ExportFeeder, ExportMatch, ExportModel } from '../model.js';
 import { formatCategoryDisplayName, matchStatusLabel } from '../presentation.js';
 import { renderBracketSvg } from './bracket-svg.js';
-import { tileBracketMatches } from './bracket-tiling.js';
+import { tileBracketMatches, type BracketTile } from './bracket-tiling.js';
 import {
   esc,
   footerTemplate,
@@ -58,11 +58,17 @@ function roundHtml(round: number, matches: readonly ExportMatch[]): string {
   `;
 }
 
-function daftarPertandinganHtml(bracket: ExportBracket): string {
+/**
+ * `forceNewPage`: only a bracket large enough to need multiple visual tiles gets its round-by-round
+ * list pushed to a fresh page — a small semi-prestasi bracket (1 tile, e.g. a 3- or 4-person pool)
+ * keeps both on the same page (PDF Presentation Remediation §11: never make the operator turn a page
+ * merely to understand a 3-person bracket).
+ */
+function daftarPertandinganHtml(bracket: ExportBracket, forceNewPage: boolean): string {
   const rounds = [...new Set(bracket.matches.map((m) => m.round))].sort((a, b) => a - b);
   const byRound = (r: number) => bracket.matches.filter((m) => m.round === r);
   return `
-    <div class="page-break">
+    <div class="${forceNewPage ? 'page-break' : 'section'}">
       <h2>Daftar Pertandingan</h2>
       ${roundOneHtml(bracket.slots)}
       ${rounds.map((r) => roundHtml(r, byRound(r))).join('')}
@@ -77,8 +83,7 @@ function daftarPertandinganHtml(bracket: ExportBracket): string {
  * whom. The round-by-round table remains afterward as the existing, already-tested "Daftar
  * Pertandingan" reference list.
  */
-function visualBracketHtml(bracket: ExportBracket): string {
-  const tiles = tileBracketMatches(bracket);
+function visualBracketHtml(tiles: readonly BracketTile[], bracket: ExportBracket): string {
   const sections = tiles.map((tile, i) => {
     const svg = renderBracketSvg(tile, bracket.rounds);
     const label = tile.label ? `<h3>${esc(tile.label)}</h3>` : '';
@@ -101,6 +106,7 @@ export async function renderBracketSheetPdf(
   if (!category || !pool) throw new Error(`pool ${poolId} not found in export model`);
   if (!pool.bracket) throw new Error(`pool ${poolId} has no bracket (walkover pools have none)`);
 
+  const tiles = tileBracketMatches(pool.bracket);
   const displayName = formatCategoryDisplayName(category);
   const title = `Bagan Pertandingan — ${displayName} — Pool ${pool.ordinal}`;
   const body = `
@@ -108,9 +114,8 @@ export async function renderBracketSheetPdf(
     <h1>${esc(displayName)}</h1>
     ${metaBlockHtml(model, opts)}
     <div class="meta">Pool ${pool.ordinal}</div>
-    ${visualBracketHtml(pool.bracket)}
-    ${daftarPertandinganHtml(pool.bracket)}
-    <div class="tech-meta">Kunci kategori (teknis): ${esc(category.categoryKey)}</div>
+    ${visualBracketHtml(tiles, pool.bracket)}
+    ${daftarPertandinganHtml(pool.bracket, tiles.length > 1)}
   `;
   return renderHtmlToPdf(pageShell(title, body, opts), {
     headerTemplate: headerTemplate(`${model.tournament.name} — ${displayName} — Pool ${pool.ordinal}`),

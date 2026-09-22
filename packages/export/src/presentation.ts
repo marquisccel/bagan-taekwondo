@@ -1,4 +1,4 @@
-import type { ExportCategory } from './model.js';
+import type { ExportCategory, ExportQuality } from './model.js';
 
 /**
  * Presentation-only Indonesian localization for export documents (final polish pass — the export
@@ -211,9 +211,21 @@ export const SEMI_PRESTASI_COMPACT_LABEL = {
   incompleteData: 'Data belum lengkap',
 } as const;
 
-/** "GEUP_9" -> "Geup 9", "HITAM" -> "Hitam"; null -> "—". The rule set's own longer label is not part of the export model. */
-export function beltLabel(code: string | null): string {
-  return code && code.trim().length > 0 ? humanizeCode(code.trim()) : MISSING_VALUE;
+/** "geup 9 (kuning)" -> "Geup 9 (Kuning)" — capitalizes every word, including inside parentheses. */
+function titleCaseWords(s: string): string {
+  return s.replace(/\p{L}[\p{L}'-]*/gu, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+}
+
+/**
+ * The operator-facing belt label. Never a raw persisted code such as `GEUP_6` (ACCEPTANCE §6):
+ * when the rule set's own curated label is available (`rule_belt.label`, e.g. "Geup 9 (kuning)") it
+ * is used, title-cased for consistent display — this is real tournament/rule data, never an invented
+ * color mapping. Absent that (older snapshots, synthetic fixtures), degrades gracefully to a plain
+ * humanized rendering of the code ("GEUP_9" -> "Geup 9"), and to "—" when there is no code at all.
+ */
+export function beltDisplay(beltCode: string | null, beltLabel?: string | null): string {
+  if (beltLabel && beltLabel.trim().length > 0) return titleCaseWords(beltLabel.trim());
+  return beltCode && beltCode.trim().length > 0 ? humanizeCode(beltCode.trim()) : MISSING_VALUE;
 }
 
 const decimalId = (value: number, digits: number): string =>
@@ -235,4 +247,18 @@ export function poolLabel(ordinal: number): string {
 
 export function participantCountLabel(count: number): string {
   return `${count} peserta`;
+}
+
+/**
+ * One shared "N error, M peringatan[, K info]" line for a revision's draw quality — used by every
+ * audit-oriented document (Laporan Analisis Drawing, the compact sheet's revision-scope summary) so
+ * it is never worded two different ways. Zero-count levels are omitted; returns `null` when there is
+ * nothing to report at all, so a caller can skip the line entirely rather than print "0 error".
+ */
+export function qualitySummaryLabel(quality: ExportQuality): string | null {
+  const parts: string[] = [];
+  if (quality.errorCount > 0) parts.push(`${quality.errorCount} error`);
+  if (quality.warningCount > 0) parts.push(`${quality.warningCount} peringatan`);
+  if (quality.infoCount > 0) parts.push(`${quality.infoCount} info`);
+  return parts.length > 0 ? `Kualitas draw: ${parts.join(', ')}` : null;
 }

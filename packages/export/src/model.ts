@@ -14,6 +14,12 @@ export interface ExportAthleteDisplay {
   readonly weightG: number | null;
   readonly heightMm: number | null;
   readonly beltCode: string | null;
+  /**
+   * The rule set's own curated human label for this belt (e.g. "Geup 9 (kuning)") — already curated
+   * domain data (`rule_belt.label`), not invented here. Optional: absent for synthetic fixtures and
+   * any snapshot taken before this field existed; renderers fall back to humanizing `beltCode`.
+   */
+  readonly beltLabel?: string | null;
 }
 
 /** Never includes NIK or any other athlete identity field beyond what's needed to print a roster. */

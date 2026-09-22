@@ -1,10 +1,14 @@
 import type { ExportEntry, ExportModel, ExportPool } from '../model.js';
 import {
+  beltDisplay,
   formatCategoryDisplayName,
+  formatHeightCm,
   formatLabel,
+  formatWeightKg,
   genderLabel,
   humanizeCode,
-  warningLabel,
+  MISSING_VALUE,
+  SEMI_PRESTASI_COMPACT_LABEL as L,
 } from '../presentation.js';
 import {
   esc,
@@ -16,15 +20,14 @@ import {
 } from './layout.js';
 import { renderHtmlToPdf } from './render.js';
 
-const DASH = '—';
-const joinAthleteField = (
-  e: ExportEntry,
-  pick: (a: ExportEntry['athletes'][number]) => string | number | null,
-): string =>
-  e.athletes
-    .map((a) => pick(a))
-    .filter((v): v is string | number => v !== null)
-    .join(' / ') || DASH;
+/**
+ * POOL_SHEET is an OPERATIONAL document (tournament desk / competition area, PDF Presentation
+ * Remediation §11): participant identity, contingent, belt, height, weight and Poomsae movement
+ * only. It never shows a raw engine reason code or the raw category key — those belong to the
+ * audit-oriented CATEGORY_DRAW document (category-draw.ts), which still carries them in full.
+ */
+const joinAthleteField = (e: ExportEntry, pick: (a: ExportEntry['athletes'][number]) => string): string =>
+  e.athletes.length === 0 ? MISSING_VALUE : e.athletes.map(pick).join(' / ');
 
 /** Position within the pool: the bracket slot position when a bracket exists, else 1-based list order. */
 function positionOf(pool: ExportPool, entry: ExportEntry, index: number): number {
@@ -37,9 +40,9 @@ function kyorugiRow(pool: ExportPool, e: ExportEntry, index: number): string {
     <td>${positionOf(pool, e, index)}</td>
     <td>${esc(e.displayName)}</td>
     <td>${esc(e.contingent)}</td>
-    <td>${esc(joinAthleteField(e, (a) => (a.weightG !== null ? `${(a.weightG / 1000).toFixed(1)} kg` : null)))}</td>
-    <td>${esc(joinAthleteField(e, (a) => (a.heightMm !== null ? `${a.heightMm} mm` : null)))}</td>
-    <td>${esc(joinAthleteField(e, (a) => a.beltCode))}</td>
+    <td>${esc(joinAthleteField(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}</td>
+    <td>${esc(joinAthleteField(e, (a) => formatHeightCm(a.heightMm)))}</td>
+    <td>${esc(joinAthleteField(e, (a) => formatWeightKg(a.weightG)))}</td>
   </tr>`;
 }
 
@@ -53,18 +56,11 @@ function poomsaeRow(
     <td>${positionOf(pool, e, index)}</td>
     <td>${esc(e.displayName)}</td>
     <td>${esc(e.contingent)}</td>
-    <td>${esc(category.movement ? humanizeCode(category.movement) : DASH)}</td>
+    <td>${esc(category.movement ? humanizeCode(category.movement) : MISSING_VALUE)}</td>
     <td>${esc(formatLabel(category.format))}</td>
     <td>${esc(genderLabel(category.gender))}</td>
-    <td>${esc(joinAthleteField(e, (a) => a.beltCode))}</td>
+    <td>${esc(joinAthleteField(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}</td>
   </tr>`;
-}
-
-function warningsHtml(warnings: readonly string[]): string {
-  if (warnings.length === 0) return '';
-  return `<div class="warn">${warnings
-    .map((code) => `${esc(warningLabel(code))} <span class="code-tag">(${esc(code)})</span>`)
-    .join('<br>')}</div>`;
 }
 
 export async function renderPoolSheetPdf(
@@ -78,8 +74,8 @@ export async function renderPoolSheetPdf(
 
   const isKyorugi = category.discipline === 'KYORUGI';
   const headCols = isKyorugi
-    ? ['Posisi', 'Peserta', 'Kontingen', 'Berat', 'Tinggi', 'Sabuk']
-    : ['Posisi', 'Peserta', 'Kontingen', 'Movement', 'Format', 'Jenis Kelamin', 'Sabuk'];
+    ? ['Posisi', L.participant, L.contingent, L.belt, L.heightCm, L.weightKg]
+    : ['Posisi', L.participant, L.contingent, L.movement, L.format, 'Jenis Kelamin', L.belt];
   const rows = pool.members
     .map((e, i) => (isKyorugi ? kyorugiRow(pool, e, i) : poomsaeRow(pool, category, e, i)))
     .join('');
@@ -91,12 +87,10 @@ export async function renderPoolSheetPdf(
     <h1>${esc(displayName)}</h1>
     ${metaBlockHtml(model, opts)}
     <div class="meta">Pool ${pool.ordinal}${pool.isWalkover ? ' (Walkover)' : ''}</div>
-    ${warningsHtml(pool.warnings)}
     <table>
       <thead><tr>${headCols.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead>
-      <tbody>${rows || `<tr><td colspan="${headCols.length}">Tidak ada peserta</td></tr>`}</tbody>
+      <tbody>${rows || `<tr><td colspan="${headCols.length}">${esc(L.noParticipants)}</td></tr>`}</tbody>
     </table>
-    <div class="tech-meta">Kunci kategori (teknis): ${esc(category.categoryKey)}</div>
   `;
   return renderHtmlToPdf(pageShell(title, body, opts), {
     headerTemplate: headerTemplate(`${model.tournament.name} — ${displayName} — Pool ${pool.ordinal}`),

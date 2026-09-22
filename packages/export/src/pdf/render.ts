@@ -9,7 +9,12 @@ import { chromium } from 'playwright';
  */
 export async function renderHtmlToPdf(
   html: string,
-  options: { readonly headerTemplate?: string; readonly footerTemplate?: string } = {},
+  options: {
+    readonly headerTemplate?: string;
+    readonly footerTemplate?: string;
+    /** Landscape A4 — used only by documents that need it (the compact semi-prestasi sheet's 2-column pool grid). */
+    readonly landscape?: boolean;
+  } = {},
 ): Promise<Uint8Array> {
   const browser = await chromium.launch({ headless: true });
   try {
@@ -18,6 +23,7 @@ export async function renderHtmlToPdf(
     const displayHeaderFooter = Boolean(options.headerTemplate || options.footerTemplate);
     const pdf = await page.pdf({
       format: 'A4',
+      landscape: options.landscape ?? false,
       printBackground: true,
       margin: {
         top: displayHeaderFooter ? '18mm' : '14mm',

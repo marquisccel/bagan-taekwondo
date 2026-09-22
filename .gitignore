@@ -26,6 +26,9 @@ apps/web/blob-report/
 var/exports/
 apps/web/var/
 
+# Locally generated review PDFs (visual acceptance / manual review) — never committed
+artifacts/
+
 # OS / editor
 .DS_Store
 Thumbs.db

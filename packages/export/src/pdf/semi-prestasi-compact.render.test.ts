@@ -82,7 +82,10 @@ describe('SEMI_PRESTASI_COMPACT_DRAW_SHEET rendering (headless Chromium)', () =>
     ]);
     const pdf = await renderSemiPrestasiCompactDrawSheetPdf(model, opts, null);
     expect(isWellFormedPdf(pdf)).toBe(true);
-    expect(pageCount(pdf)).toBeLessThanOrEqual(4);
+    // Landscape (PDF Presentation Remediation §3) trades page height for width: a page fits fewer
+    // rows of the largest cards (this fixture deliberately includes an unusually large 16-slot
+    // bracket and a long-name stress case), so the safe upper bound is one page more than before.
+    expect(pageCount(pdf)).toBeLessThanOrEqual(5);
   });
 
   it('a bracket too large for a card still renders (a note defers to the bracket sheet)', async () => {

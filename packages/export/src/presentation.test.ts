@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  beltLabel,
+  beltDisplay,
   formatCategoryDisplayName,
   formatHeightCm,
   formatWeightKg,
@@ -10,6 +10,7 @@ import {
   MISSING_VALUE,
   participantCountLabel,
   poolLabel,
+  qualitySummaryLabel,
   readinessLabel,
   SEMI_PRESTASI_COMPACT_LABEL,
   warningLabel,
@@ -102,16 +103,35 @@ describe('presentation labels (final polish pass)', () => {
 describe('compact semi-prestasi sheet labels (AUD-012)', () => {
   it('shows "—" for a missing belt/height/weight, never a guessed value', () => {
     expect(MISSING_VALUE).toBe('—');
-    expect(beltLabel(null)).toBe('—');
-    expect(beltLabel('   ')).toBe('—');
+    expect(beltDisplay(null)).toBe('—');
+    expect(beltDisplay('   ')).toBe('—');
     expect(formatHeightCm(null)).toBe('—');
     expect(formatWeightKg(null)).toBe('—');
   });
 
-  it('turns belt codes into readable Indonesian-friendly labels without inventing colors', () => {
-    expect(beltLabel('GEUP_9')).toBe('Geup 9');
-    expect(beltLabel('GEUP_10')).toBe('Geup 10');
-    expect(beltLabel('HITAM')).toBe('Hitam');
+  it('falls back to a humanized code (never a guessed color) when no curated rule-set label is on file', () => {
+    expect(beltDisplay('GEUP_9')).toBe('Geup 9');
+    expect(beltDisplay('GEUP_9', null)).toBe('Geup 9');
+    expect(beltDisplay('GEUP_10')).toBe('Geup 10');
+    expect(beltDisplay('HITAM')).toBe('Hitam');
+  });
+
+  it("uses the rule set's own curated belt label when available, title-cased (ACCEPTANCE §6) — never a raw GEUP_N code", () => {
+    expect(beltDisplay('GEUP_9', 'Geup 9 (kuning)')).toBe('Geup 9 (Kuning)');
+    expect(beltDisplay('GEUP_6', 'Geup 6 (hijau strip biru)')).toBe('Geup 6 (Hijau Strip Biru)');
+    expect(beltDisplay('DAN_1', 'Dan 1 (hitam)')).toBe('Dan 1 (Hitam)');
+    expect(beltDisplay('GEUP_9', 'Geup 9 (kuning)')).not.toContain('GEUP_9');
+    expect(beltDisplay('GEUP_9', '  ')).toBe('Geup 9'); // blank label degrades to the code, not blank text
+  });
+
+  it('has one shared "N error, M peringatan" line for draw quality, omitting zero-count levels', () => {
+    expect(qualitySummaryLabel({ errorCount: 0, warningCount: 0, infoCount: 0, findings: [] })).toBeNull();
+    expect(qualitySummaryLabel({ errorCount: 1, warningCount: 3, infoCount: 0, findings: [] })).toBe(
+      'Kualitas draw: 1 error, 3 peringatan',
+    );
+    expect(qualitySummaryLabel({ errorCount: 0, warningCount: 0, infoCount: 5, findings: [] })).toBe(
+      'Kualitas draw: 5 info',
+    );
   });
 
   it('converts persisted mm/g to cm/kg with an Indonesian decimal comma', () => {

@@ -41,7 +41,7 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     expect(title).toContain('Lembar Drawing Ringkas Semi Prestasi');
     expect(html).toContain('<html lang="id">');
     for (const label of [
-      'Nama peserta',
+      '>Peserta<',
       'Sabuk',
       'TB (cm)',
       'BB (kg)',
@@ -102,11 +102,36 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     expect(html).toContain('35,5');
   });
 
-  it('warnings use the Indonesian label with the code only as small secondary text', () => {
+  it("uses the rule set's own curated belt label when the model carries one, never the raw GEUP_N code", () => {
+    const base = makeSemiPrestasiFixtureModel([{ key: 'BL', discipline: 'KYORUGI', poolSizes: [2] }]);
+    const labelled = {
+      ...base,
+      categories: base.categories.map((c) => ({
+        ...c,
+        pools: c.pools.map((p) => ({
+          ...p,
+          members: p.members.map((e) => ({
+            ...e,
+            athletes: e.athletes.map((a) => ({ ...a, beltLabel: 'Geup 9 (kuning)' })),
+          })),
+        })),
+      })),
+    };
+    const { html } = buildSemiPrestasiCompactSheetHtml(labelled, opts, null);
+    expect(html).toContain('Geup 9 (Kuning)');
+    expect(html).not.toContain('GEUP_9');
+  });
+
+  it('never shows a raw engine reason code — pool warnings are an audit (CATEGORY_DRAW) concern, not operational', () => {
     const { html } = build();
-    expect(html).toContain('Pool ditutup karena mencapai batas ukuran maksimum.');
-    expect(html).toContain('<span class="code-tag">(POOL_CLOSED_BY_SIZE_LIMIT)</span>');
-    expect(html).not.toContain('>POOL_CLOSED_BY_SIZE_LIMIT<');
+    expect(html).not.toContain('POOL_CLOSED_BY_SIZE_LIMIT');
+    expect(html).not.toContain('POOL_SIZE_PREFERENCE');
+    expect(html).not.toContain('POOL_RANGE');
+    expect(html).not.toContain('POOL_CONTINGENT_MIX');
+    expect(html).not.toContain('class="code-tag"');
+    // the persisted warning itself is untouched on the model — only this operational document hides it
+    const raw = model.categories.find((c) => c.categoryKey === 'K-RAW-KEY-|-STREAM=SEMI');
+    expect(raw?.pools[0]?.warnings).toContain('POOL_CLOSED_BY_SIZE_LIMIT');
   });
 
   it('Kyorugi cards show no movement/format line; Poomsae cards show Gerakan and Format', () => {

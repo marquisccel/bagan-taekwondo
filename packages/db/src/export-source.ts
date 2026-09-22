@@ -39,6 +39,12 @@ export async function loadExportModel(db: Db, revisionId: string): Promise<Expor
   );
   if (!revision) throw new DomainError('REVISION_NOT_FOUND', { revisionId });
 
+  const [drawRun] = await db.query<{ rule_set_id: string }>(
+    `select rule_set_id from draw_run where id = $1`,
+    [revision.draw_run_id],
+  );
+  const ruleSetId = drawRun?.rule_set_id ?? null;
+
   const [tournament] = await db.query<{
     id: string;
     code: string;
@@ -141,7 +147,7 @@ export async function loadExportModel(db: Db, revisionId: string): Promise<Expor
   }));
 
   const entryIds = [...new Set(poolMemberRows.map((m) => m.entry_id))];
-  const entries: RawEntryRow[] = entryIds.length ? await loadEntryDisplays(db, entryIds) : [];
+  const entries: RawEntryRow[] = entryIds.length ? await loadEntryDisplays(db, entryIds, ruleSetId) : [];
 
   const bracketRows = poolIds.length
     ? await db.query<{
@@ -255,7 +261,11 @@ export async function loadExportModel(db: Db, revisionId: string): Promise<Expor
   });
 }
 
-async function loadEntryDisplays(db: Db, entryIds: readonly string[]): Promise<RawEntryRow[]> {
+async function loadEntryDisplays(
+  db: Db,
+  entryIds: readonly string[],
+  ruleSetId: string | null,
+): Promise<RawEntryRow[]> {
   const entries = await db.query<{ id: string; external_ref: string | null; contingent_id: string }>(
     `select id, external_ref, contingent_id from entry where id = any($1::uuid[])`,
     [entryIds],
@@ -289,6 +299,19 @@ async function loadEntryDisplays(db: Db, entryIds: readonly string[]): Promise<R
     : [];
   const athleteById = new Map(athletes.map((a) => [a.id, a]));
 
+  const beltCodes = [...new Set(athletes.map((a) => a.registered_belt_code).filter((c): c is string => !!c))];
+  const beltLabelByCode =
+    ruleSetId && beltCodes.length
+      ? new Map(
+          (
+            await db.query<{ code: string; label: string }>(
+              `select code, label from rule_belt where rule_set_id = $1 and code = any($2::text[])`,
+              [ruleSetId, beltCodes],
+            )
+          ).map((b) => [b.code, b.label]),
+        )
+      : new Map<string, string>();
+
   return entries.map((e) => {
     const memberAthletes = members
       .filter((m) => m.entry_id === e.id)
@@ -300,6 +323,7 @@ async function loadEntryDisplays(db: Db, entryIds: readonly string[]): Promise<R
         weightG: a.registered_weight_g,
         heightMm: a.registered_height_mm,
         beltCode: a.registered_belt_code,
+        beltLabel: a.registered_belt_code ? (beltLabelByCode.get(a.registered_belt_code) ?? null) : null,
       }));
     return {
       id: e.id,

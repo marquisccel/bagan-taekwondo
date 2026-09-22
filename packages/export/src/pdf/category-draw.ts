@@ -4,6 +4,7 @@ import {
   formatLabel,
   genderLabel,
   humanizeCode,
+  qualitySummaryLabel,
   readinessLabel,
   streamLabel,
   warningLabel,
@@ -63,6 +64,13 @@ function poolSummaryHtml(p: ExportPool): string {
   `;
 }
 
+/**
+ * CATEGORY_DRAW is the AUDIT/ANALYSIS document for one category (PDF Presentation Remediation §10):
+ * "Laporan Analisis Drawing". Unlike the operational documents (the compact semi-prestasi sheet,
+ * POOL_SHEET, BRACKET_SHEET), this is where engine reason codes, pool-quality warnings and technical
+ * identifiers (the raw category key) genuinely belong and remain fully visible — nothing here was
+ * deleted, only the operational documents had it moved out.
+ */
 export async function renderCategoryDrawPdf(
   model: ExportModel,
   categoryId: string,
@@ -72,10 +80,12 @@ export async function renderCategoryDrawPdf(
   if (!category) throw new Error(`category ${categoryId} not found in export model`);
 
   const displayName = formatCategoryDisplayName(category);
+  const qualitySummary = qualitySummaryLabel(model.quality);
   const body = `
-    <div class="doc-kicker">Bagan Kategori</div>
+    <div class="doc-kicker">Laporan Analisis Drawing</div>
     <h1>${esc(displayName)}</h1>
     ${metaBlockHtml(model, opts)}
+    ${qualitySummary ? `<div class="warn">${esc(qualitySummary)}</div>` : ''}
     <table>${categoryInfoRows(category)}</table>
     ${category.pools.map(poolSummaryHtml).join('')}
     <div class="tech-meta">Kunci kategori (teknis): ${esc(category.categoryKey)}</div>
