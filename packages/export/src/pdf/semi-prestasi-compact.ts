@@ -76,7 +76,9 @@ const COMPACT_CSS = `
   .card { border: 0.5pt solid #555; break-inside: avoid; page-break-inside: avoid; overflow: hidden;
     margin-bottom: 2.5mm; }
   .card.tall { break-inside: auto; page-break-inside: auto; }
-  .card-head { background: #fff; border-bottom: 0.5pt solid #555; padding: 1mm 2mm; }
+  /* Left padding matches the table's own first-cell inset (0.3pt border + 1mm padding) so "Pool N"
+     starts flush with the "No" column below it, instead of noticeably further right (visual polish). */
+  .card-head { background: #fff; border-bottom: 0.5pt solid #555; padding: 1mm 2mm 1mm 1.1mm; }
   .card-head .row { display: flex; justify-content: space-between; align-items: center; gap: 2mm; }
   .pool-no { font-size: 9pt; font-weight: 700; }
   .pool-flag { font-size: 6.5pt; font-weight: 700; color: #a33; margin-left: 1.5mm; }
@@ -84,8 +86,11 @@ const COMPACT_CSS = `
   /* One pool per row, spanning the full page width (table refinement -- layout correction): the
      participant table gets a modest, fixed share and the bracket -- now substantially larger since
      its container is the full page width, not half of a 2-column grid -- gets the rest. */
-  .card-body { padding: 0; display: flex; gap: 4mm; align-items: flex-start; }
-  .card-body .col-table { width: 34%; flex: none; min-width: 0; }
+  /* Vertically centered (visual polish pass): the participant table is usually the taller of the
+     two (multi-row roster vs. a compact diagram), so a top-aligned bracket used to sit flush with
+     the table's first row, leaving blank space below it instead of being centered in the row. */
+  .card-body { padding: 0; display: flex; gap: 4mm; align-items: center; }
+  .card-body .col-table { width: 42%; flex: none; min-width: 0; }
   .card-body .col-bracket { flex: 1; min-width: 0; }
   table.pt { margin: 0; width: 100%; table-layout: fixed; }
   /* Header and body share the same font size/padding (visual polish pass) -- only the background and
@@ -115,16 +120,15 @@ const COMPACT_CSS = `
 `;
 
 const NUMBER_COL = '5.5mm';
-const HEIGHT_COL = '11mm';
-const WEIGHT_COL = '11mm';
-/** Percentages of the whole table (not the remainder): wide enough that a two-word belt color
- * ("Kuning Strip", "Hijau Strip") fits on one line, so a three-word compound name ("Kuning Strip
- * Hijau") breaks after "Strip" — two full lines, never a truncated/ellipsized one — with `.clamp2`
- * (below) as a deterministic backstop regardless of exact width, so it is never three either way.
- * Kontingen is bounded narrower than Peserta, which is left as the sole unset column and so takes
- * whatever remains — the widest textual column, as required. */
-const BELT_COL = '23%';
-const CONTINGENT_COL = '21%';
+/** Percentages of the whole table (not the remainder), widened again alongside col-table (visual
+ * polish pass) so even the longest compound belt color ("Kuning Strip Hijau") and a unit-suffixed
+ * measurement ("146,4 cm") fit on ONE line -- no more 2-line wrap for these, only `.clamp2` as a
+ * backstop for a pathological value. Kontingen is bounded narrower than Peserta, which is left as
+ * the sole unset column and so takes whatever remains -- the widest textual column, as required. */
+const BELT_COL = '28%';
+const CONTINGENT_COL = '19%';
+const HEIGHT_COL = '13%';
+const WEIGHT_COL = '13%';
 
 interface BracketArea {
   readonly width: number;
@@ -150,10 +154,12 @@ function valueCell(values: readonly string[]): string {
 
 /** Same per-athlete stacking as `valueCell`, but each value gets its own 2-line clamp box — used for
  * the belt column, where a two/three-word color name (never the participant/contingent columns'
- * business) must never grow to a third line even for a pair/team entry's several stacked athletes. */
+ * business) must never grow to a third line even for a pair/team entry's several stacked athletes.
+ * Left-aligned like Peserta/Kontingen, not centered like the numeric columns (visual polish pass):
+ * a belt color is a text value, not a number, so it follows the text-column convention. */
 function beltCell(values: readonly string[]): string {
   const absent = values.every((v) => v === MISSING_VALUE);
-  return `<td class="num${absent ? ' na' : ''}">${values.map((v) => `<div class="clamp2">${esc(v)}</div>`).join('')}</td>`;
+  return `<td${absent ? ' class="na"' : ''}>${values.map((v) => `<div class="clamp2">${esc(v)}</div>`).join('')}</td>`;
 }
 
 function participantRow(pool: ExportPool, e: ExportEntry, index: number): string {
@@ -169,7 +175,7 @@ function participantTable(pool: ExportPool): string {
   const rows = pool.members.map((e, i) => participantRow(pool, e, i)).join('');
   return `<table class="pt">
     <colgroup><col style="width:${NUMBER_COL}"><col><col style="width:${CONTINGENT_COL}"><col style="width:${BELT_COL}"><col style="width:${HEIGHT_COL}"><col style="width:${WEIGHT_COL}"></colgroup>
-    <thead><tr><th class="num">${esc(L.number)}</th><th>${esc(L.participant)}</th><th>${esc(L.contingent)}</th><th class="num">${esc(L.belt)}</th><th class="num wrap-ok">${esc(L.heightCm)}</th><th class="num wrap-ok">${esc(L.weightKg)}</th></tr></thead>
+    <thead><tr><th class="num">${esc(L.number)}</th><th>${esc(L.participant)}</th><th>${esc(L.contingent)}</th><th>${esc(L.belt)}</th><th class="num wrap-ok">${esc(L.heightCm)}</th><th class="num wrap-ok">${esc(L.weightKg)}</th></tr></thead>
     <tbody>${rows || `<tr><td colspan="6">${esc(L.noParticipants)}</td></tr>`}</tbody>
   </table>`;
 }

@@ -108,7 +108,7 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
   it('prints an en dash (never an em dash) for a missing belt/height/weight and flags the gap in Indonesian', () => {
     const { html } = build({}, idOf('K-MISSING'));
     expect(html.match(/<td class="num na">–<\/td>/g)).toHaveLength(4); // 2 participants x height/weight
-    expect(html.match(/<td class="num na"><div class="clamp2">–<\/div><\/td>/g)).toHaveLength(2); // 2 participants x belt
+    expect(html.match(/<td class="na"><div class="clamp2">–<\/div><\/td>/g)).toHaveLength(2); // 2 participants x belt (left-aligned, not "num")
     expect(html).toContain('Data belum lengkap: sabuk, tinggi badan, berat badan.');
     expect(html).not.toContain('—');
   });
