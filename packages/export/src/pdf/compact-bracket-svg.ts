@@ -137,10 +137,12 @@ export function renderCompactBracketSvg(bracket: ExportBracket, opts: CompactBra
     }
   }
 
-  // Always 100% of the container's width (visual polish pass) -- a small bracket (few rounds) used
-  // to render at a fraction of its available space instead of filling it, since its natural geometry
-  // is narrower than `opts.width`. The viewBox preserves the aspect ratio, so the whole diagram (text,
-  // connectors, spacing) scales up together rather than distorting -- it is simply bigger, using the
-  // blank space that would otherwise sit unused beside it.
-  return `<svg viewBox="0 0 ${num(width)} ${num(height)}" style="width:100%;height:auto;display:block" xmlns="http://www.w3.org/2000/svg" role="img">${parts.join('')}</svg>`;
+  // Rendered at its own natural size, never stretched to fill the container (visual polish pass,
+  // reverting an earlier "always 100% width" change): a 2-person pool's 1-round bracket has a much
+  // narrower natural geometry than a 4+-person one's, so stretching both to the same container width
+  // blew the 1-round bracket's text, row pitch and line weight up far more -- it no longer looked
+  // like the same diagram at a different size, it looked outright oversized. A bracket with fewer
+  // rounds now simply occupies less horizontal space (leaving blank room beside it in the row) so
+  // that every pool's bracket reads at one consistent visual size.
+  return `<svg width="${num(width)}" height="${num(height)}" viewBox="0 0 ${num(width)} ${num(height)}" style="display:block" xmlns="http://www.w3.org/2000/svg" role="img">${parts.join('')}</svg>`;
 }

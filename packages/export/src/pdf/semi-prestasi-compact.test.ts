@@ -43,8 +43,8 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     for (const label of [
       '>Peserta<',
       'Sabuk',
-      'Tinggi Badan',
-      'Berat Badan',
+      'TB (cm)',
+      'BB (kg)',
       'Kontingen',
       'Pool 1',
       'Revisi 3',
@@ -118,9 +118,10 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     expect(html).toContain('Kuning');
     expect(html).not.toContain('Geup');
     expect(html).not.toContain('GEUP_9');
-    expect(html).toContain('>142 cm<'); // 1420 mm -> 142 cm
-    expect(html).toContain('>34 kg<'); // 34000 g -> 34 kg
-    expect(html).toContain('35,5 kg');
+    // The unit lives in the header ("TB (cm)"/"BB (kg)") now, not repeated on every value.
+    expect(html).toContain('>142</td>'); // 1420 mm -> 142 cm
+    expect(html).toContain('>34</td>'); // 34000 g -> 34 kg
+    expect(html).toContain('>35,5</td>');
   });
 
   it("uses the rule set's own curated belt label when the model carries one, showing only the color — never the raw GEUP_N code or the rank prefix", () => {
@@ -172,20 +173,22 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     expect(html).not.toContain('class="card-poomsae"');
   });
 
-  it('height/weight headers are the full Indonesian words, with the unit stated per value instead of only in the header (visual polish pass)', () => {
+  it('height/weight headers are short and carry the unit ("TB (cm)"/"BB (kg)"), values are plain numbers (visual polish pass, reverting the prior full-word-header/per-value-unit design after it was reported as too wide)', () => {
     const { html } = build();
-    expect(html).toContain('>Tinggi Badan<');
-    expect(html).toContain('>Berat Badan<');
-    expect(html).not.toContain('TB (cm)');
-    expect(html).not.toContain('BB (kg)');
-    expect(html).toMatch(/<td class="num">142 cm<\/td>/);
-    expect(html).toMatch(/<td class="num">34 kg<\/td>/);
+    expect(html).toContain('>TB (cm)<');
+    expect(html).toContain('>BB (kg)<');
+    expect(html).not.toContain('>Tinggi Badan<');
+    expect(html).not.toContain('>Berat Badan<');
+    expect(html).toMatch(/<td class="num">142<\/td>/);
+    expect(html).toMatch(/<td class="num">34<\/td>/);
+    expect(html).not.toContain('142 cm');
+    expect(html).not.toContain('34 kg');
   });
 
   it('a pair entry stacks one belt/height/weight line per athlete', () => {
     const html = build({}, idOf('P-PAIR')).html;
     expect(html).toMatch(/<div class="clamp2">Kuning<\/div><div class="clamp2">Kuning<\/div>/);
-    expect(html).toMatch(/>142 cm<br>142 cm</);
+    expect(html).toMatch(/>142<br>142</);
   });
 
   it('shows the compact bracket with the persisted match codes, BYEs and the final', () => {
@@ -225,8 +228,11 @@ describe('semi-prestasi compact sheet HTML (AUD-012)', () => {
     expect(html).not.toContain('wide');
     expect(html.match(/class="card"/g)).toHaveLength(2);
     // both pools' brackets are drawn from the same nominal area config (POOL_BRACKET_AREA) — the
-    // 16-slot bracket's viewBox is simply larger, not styled differently
-    expect(html.match(/viewBox="0 0 \d+ \d+" style="width:\d+(\.\d+)?%/g)).toHaveLength(2);
+    // 16-slot bracket's own width/height are simply larger, never stretched to fill the container
+    // (that used to inflate a small bracket far more than a large one — visual polish pass)
+    expect(
+      html.match(/<svg width="[\d.]+" height="[\d.]+" viewBox="0 0 [\d.]+ [\d.]+" style="display:block"/g),
+    ).toHaveLength(2);
   });
 
   it('escapes participant text, so a hostile name cannot inject markup', () => {

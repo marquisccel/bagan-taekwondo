@@ -2,9 +2,10 @@ import type { ExportAthleteDisplay, ExportCategory, ExportEntry, ExportModel, Ex
 import {
   beltDisplay,
   disciplineLabel,
+  formatHeightCm,
   formatLabel,
   formatOperatorCategoryTitle,
-  heightCmDisplay,
+  formatWeightKg,
   humanizeCode,
   MISSING_VALUE,
   participantCountLabel,
@@ -13,7 +14,6 @@ import {
   readinessLabel,
   revisionLifecycleLabel,
   SEMI_PRESTASI_COMPACT_LABEL as L,
-  weightKgDisplay,
 } from '../presentation.js';
 import { selectSemiPrestasiCategories } from '../semi-prestasi.js';
 import { compactBracketFits, renderCompactBracketSvg } from './compact-bracket-svg.js';
@@ -120,15 +120,25 @@ const COMPACT_CSS = `
 `;
 
 const NUMBER_COL = '5.5mm';
-/** Percentages of the whole table (not the remainder), widened again alongside col-table (visual
- * polish pass) so even the longest compound belt color ("Kuning Strip Hijau") and a unit-suffixed
- * measurement ("146,4 cm") fit on ONE line -- no more 2-line wrap for these, only `.clamp2` as a
- * backstop for a pathological value. Kontingen is bounded narrower than Peserta, which is left as
- * the sole unset column and so takes whatever remains -- the widest textual column, as required. */
-const BELT_COL = '28%';
+/** Percentages of the whole table (not the remainder). Kontingen is bounded narrower than Peserta,
+ * which is left as the sole unset column and so takes whatever remains -- the widest textual
+ * column, as required. Belt was widened once already to stop "Kuning Strip Hijau" wrapping to a
+ * second line, then reported as now leaving visible blank space -- trimmed back down to the
+ * narrowest width that still keeps that same longest compound color on one line. Height/weight
+ * shrank once their headers took the unit ("TB (cm)"/"BB (kg)", see HEIGHT_HEADER/WEIGHT_HEADER
+ * below) and their cell values dropped the per-value unit suffix -- "146,4"/"34,75" needs far less
+ * room than "146,4 cm"/"34,75 kg" did. */
+const BELT_COL = '22%';
 const CONTINGENT_COL = '19%';
-const HEIGHT_COL = '13%';
-const WEIGHT_COL = '13%';
+const HEIGHT_COL = '10%';
+const WEIGHT_COL = '10%';
+/** Short, unit-bearing headers (visual polish pass) -- the unit now lives in the header once instead
+ * of being repeated in every cell value, freeing width previously spent on "Tinggi Badan"/"Berat
+ * Badan" plus a per-value " cm"/" kg" suffix. Local to this sheet only: POOL_SHEET (pool-sheet.ts)
+ * keeps the full-word `L.heightCm`/`L.weightKg` headers and per-value units, since it isn't under
+ * the same per-pool-card width pressure. */
+const HEIGHT_HEADER = 'TB (cm)';
+const WEIGHT_HEADER = 'BB (kg)';
 
 interface BracketArea {
   readonly width: number;
@@ -167,7 +177,7 @@ function participantRow(pool: ExportPool, e: ExportEntry, index: number): string
     <td class="num">${positionOf(pool, e, index)}</td>
     <td><div class="nm clamp2">${esc(e.displayName)}</div></td>
     <td><div class="ct clamp2">${e.contingent ? esc(e.contingent) : MISSING_VALUE}</div></td>
-    ${beltCell(perAthlete(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}${valueCell(perAthlete(e, (a) => heightCmDisplay(a.heightMm)))}${valueCell(perAthlete(e, (a) => weightKgDisplay(a.weightG)))}
+    ${beltCell(perAthlete(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}${valueCell(perAthlete(e, (a) => formatHeightCm(a.heightMm)))}${valueCell(perAthlete(e, (a) => formatWeightKg(a.weightG)))}
   </tr>`;
 }
 
@@ -175,7 +185,7 @@ function participantTable(pool: ExportPool): string {
   const rows = pool.members.map((e, i) => participantRow(pool, e, i)).join('');
   return `<table class="pt">
     <colgroup><col style="width:${NUMBER_COL}"><col><col style="width:${CONTINGENT_COL}"><col style="width:${BELT_COL}"><col style="width:${HEIGHT_COL}"><col style="width:${WEIGHT_COL}"></colgroup>
-    <thead><tr><th class="num">${esc(L.number)}</th><th>${esc(L.participant)}</th><th>${esc(L.contingent)}</th><th>${esc(L.belt)}</th><th class="num wrap-ok">${esc(L.heightCm)}</th><th class="num wrap-ok">${esc(L.weightKg)}</th></tr></thead>
+    <thead><tr><th class="num">${esc(L.number)}</th><th>${esc(L.participant)}</th><th>${esc(L.contingent)}</th><th>${esc(L.belt)}</th><th class="num">${esc(HEIGHT_HEADER)}</th><th class="num">${esc(WEIGHT_HEADER)}</th></tr></thead>
     <tbody>${rows || `<tr><td colspan="6">${esc(L.noParticipants)}</td></tr>`}</tbody>
   </table>`;
 }
