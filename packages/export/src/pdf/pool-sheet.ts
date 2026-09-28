@@ -35,14 +35,20 @@ function positionOf(pool: ExportPool, entry: ExportEntry, index: number): number
   return slot ? slot.position + 1 : index + 1;
 }
 
-function kyorugiRow(pool: ExportPool, e: ExportEntry, index: number): string {
+/** Belt/height/weight are drawing inputs, not opponent-facing information (PDF Presentation
+ * Remediation, official privacy) — omitted entirely for OFFICIAL; PREVIEW keeps them for panitia
+ * review. Presentation-only: `ExportModel` itself is untouched. */
+function kyorugiRow(pool: ExportPool, e: ExportEntry, index: number, official: boolean): string {
+  const measurementCells = official
+    ? ''
+    : `<td>${esc(joinAthleteField(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}</td>
+    <td>${esc(joinAthleteField(e, (a) => heightCmDisplay(a.heightMm)))}</td>
+    <td>${esc(joinAthleteField(e, (a) => weightKgDisplay(a.weightG)))}</td>`;
   return `<tr>
     <td class="num">${positionOf(pool, e, index)}</td>
     <td>${esc(e.displayName)}</td>
     <td>${esc(e.contingent)}</td>
-    <td>${esc(joinAthleteField(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}</td>
-    <td>${esc(joinAthleteField(e, (a) => heightCmDisplay(a.heightMm)))}</td>
-    <td>${esc(joinAthleteField(e, (a) => weightKgDisplay(a.weightG)))}</td>
+    ${measurementCells}
   </tr>`;
 }
 
@@ -51,7 +57,11 @@ function poomsaeRow(
   category: ExportModel['categories'][number],
   e: ExportEntry,
   index: number,
+  official: boolean,
 ): string {
+  const beltCell = official
+    ? ''
+    : `<td>${esc(joinAthleteField(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}</td>`;
   return `<tr>
     <td class="num">${positionOf(pool, e, index)}</td>
     <td>${esc(e.displayName)}</td>
@@ -59,32 +69,47 @@ function poomsaeRow(
     <td>${esc(category.movement ? humanizeCode(category.movement) : MISSING_VALUE)}</td>
     <td>${esc(formatLabel(category.format))}</td>
     <td>${esc(genderLabel(category.gender))}</td>
-    <td>${esc(joinAthleteField(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}</td>
+    ${beltCell}
   </tr>`;
 }
 
-export async function renderPoolSheetPdf(
-  model: ExportModel,
-  poolId: string,
-  opts: RenderOptions,
-): Promise<Uint8Array> {
+export interface PoolSheetHtml {
+  readonly title: string;
+  readonly html: string;
+  readonly headerTitle: string;
+}
+
+/** Split out from `renderPoolSheetPdf` so tests can assert on the HTML directly instead of a
+ * rendered PDF's bytes (fast, no headless Chromium needed for content-level checks). */
+export function buildPoolSheetHtml(model: ExportModel, poolId: string, opts: RenderOptions): PoolSheetHtml {
   const category = model.categories.find((c) => c.pools.some((p) => p.id === poolId));
   const pool = category?.pools.find((p) => p.id === poolId);
   if (!category || !pool) throw new Error(`pool ${poolId} not found in export model`);
 
   const isKyorugi = category.discipline === 'KYORUGI';
+  const official = opts.mode === 'OFFICIAL';
   const headCols = isKyorugi
-    ? ['Posisi', L.participant, L.contingent, L.belt, L.heightCm, L.weightKg]
-    : ['Posisi', L.participant, L.contingent, L.movement, L.format, 'Jenis Kelamin', L.belt];
+    ? official
+      ? ['Posisi', L.participant, L.contingent]
+      : ['Posisi', L.participant, L.contingent, L.belt, L.heightCm, L.weightKg]
+    : official
+      ? ['Posisi', L.participant, L.contingent, L.movement, L.format, 'Jenis Kelamin']
+      : ['Posisi', L.participant, L.contingent, L.movement, L.format, 'Jenis Kelamin', L.belt];
   // Explicit, fixed proportional column widths (visual polish pass): an auto-sized table left the
   // last column's right border a fraction of a pixel narrower than the others, visible as a
   // noticeably thinner line at print resolution. Posisi is centered like the compact sheet's; Peserta
   // is the sole unset column, so it gets whatever remains (the widest, as intended).
   const colWidths = isKyorugi
-    ? ['18mm', null, '23%', '15%', '15%', '15%']
-    : ['18mm', null, '21%', '13%', '12%', '12%', '13%'];
+    ? official
+      ? ['18mm', null, '30%']
+      : ['18mm', null, '23%', '15%', '15%', '15%']
+    : official
+      ? ['18mm', null, '25%', '15%', '14%', '14%']
+      : ['18mm', null, '21%', '13%', '12%', '12%', '13%'];
   const rows = pool.members
-    .map((e, i) => (isKyorugi ? kyorugiRow(pool, e, i) : poomsaeRow(pool, category, e, i)))
+    .map((e, i) =>
+      isKyorugi ? kyorugiRow(pool, e, i, official) : poomsaeRow(pool, category, e, i, official),
+    )
     .join('');
 
   const displayName = formatOperatorCategoryTitle(category);
@@ -100,8 +125,21 @@ export async function renderPoolSheetPdf(
       <tbody>${rows || `<tr><td colspan="${headCols.length}">${esc(L.noParticipants)}</td></tr>`}</tbody>
     </table>
   `;
-  return renderHtmlToPdf(pageShell(title, body, opts), {
-    headerTemplate: headerTemplate(`${model.tournament.name} · ${displayName} · Pool ${pool.ordinal}`),
+  return {
+    title,
+    html: pageShell(title, body, opts),
+    headerTitle: `${model.tournament.name} · ${displayName} · Pool ${pool.ordinal}`,
+  };
+}
+
+export async function renderPoolSheetPdf(
+  model: ExportModel,
+  poolId: string,
+  opts: RenderOptions,
+): Promise<Uint8Array> {
+  const { html, headerTitle } = buildPoolSheetHtml(model, poolId, opts);
+  return renderHtmlToPdf(html, {
+    headerTemplate: headerTemplate(headerTitle),
     footerTemplate: footerTemplate(),
   });
 }

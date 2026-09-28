@@ -1,11 +1,13 @@
 import type { ExportAthleteDisplay, ExportCategory, ExportEntry, ExportModel, ExportPool } from '../model.js';
 import {
+  ageDivisionCodeLabel,
   beltDisplay,
   disciplineLabel,
   formatHeightCm,
   formatLabel,
   formatOperatorCategoryTitle,
   formatWeightKg,
+  genderLongLabel,
   humanizeCode,
   MISSING_VALUE,
   participantCountLabel,
@@ -13,10 +15,12 @@ import {
   qualitySummaryLabel,
   readinessLabel,
   revisionLifecycleLabel,
+  streamLabel,
   SEMI_PRESTASI_COMPACT_LABEL as L,
 } from '../presentation.js';
+import { categoriesForSlot, type ScheduleSlot } from '../schedule.js';
 import { selectSemiPrestasiCategories } from '../semi-prestasi.js';
-import { compactBracketFits, renderCompactBracketSvg } from './compact-bracket-svg.js';
+import { compactBracketFits, documentMatchNumbers, renderCompactBracketSvg } from './compact-bracket-svg.js';
 import {
   esc,
   footerTemplate,
@@ -26,6 +30,8 @@ import {
   watermarkHtml,
   type RenderOptions,
 } from './layout.js';
+
+type ExportMode = RenderOptions['mode'];
 import { renderHtmlToPdf } from './render.js';
 
 /**
@@ -52,6 +58,10 @@ import { renderHtmlToPdf } from './render.js';
  * bracket look larger on the page, since the SVG always scales to fill its container. */
 const POOL_BRACKET_AREA = { width: 640, leafWidth: 130, nameChars: 30 } as const;
 
+/** FINAL/OFFICIAL: the bracket IS the participant list (name + contingent on each leaf), so it spans the
+ * whole card width -- nominal 1000 user units, scaled to 100% of the container by the SVG viewBox. */
+const OFFICIAL_BRACKET_AREA = { width: 1400, leafWidth: 740, nameChars: 50, integrated: true } as const;
+
 /**
  * A pool whose table is roughly a page tall (>= ~30 participants) may fragment across pages; keeping it in
  * one piece would push it to a fresh page and leave the category heading stranded on a blank one.
@@ -76,6 +86,11 @@ const COMPACT_CSS = `
   .card { border: 0.5pt solid #555; break-inside: avoid; page-break-inside: avoid; overflow: hidden;
     margin-bottom: 2.5mm; }
   .card.tall { break-inside: auto; page-break-inside: auto; }
+  /* FINAL/OFFICIAL: a continuous list, not a boxed table per pool (structural reference: the legacy
+     manually-produced bracket sheet) -- pools/brackets are separated by plain whitespace only, no
+     border, no rule line and no "Pool N"/peserta-count heading (poolCard() renders no card-head at
+     all for OFFICIAL). */
+  .card.official { border: none; margin-bottom: 2mm; }
   /* Left padding matches the table's own first-cell inset (0.3pt border + 1mm padding) so "Pool N"
      starts flush with the "No" column below it, instead of noticeably further right (visual polish). */
   .card-head { background: #fff; border-bottom: 0.5pt solid #555; padding: 1mm 2mm 1mm 1.1mm; }
@@ -114,6 +129,16 @@ const COMPACT_CSS = `
   table.pt .na { color: #666; }
   .col-bracket, .bk { padding: 0.5mm 1.2mm 0.3mm; }
   .bk-note { font-size: 6.5pt; color: #555; font-style: italic; padding: 0.8mm 1.5mm; }
+  /* FINAL/OFFICIAL: no participant table, the bracket spans the full card width. */
+  .card-body.official { display: block; }
+  /* Right padding 0 (structural reference): the bracket's final stub line reaches the SVG's own full
+     width (compact-bracket-svg.ts), so it must reach the card's own right edge too, to line up with
+     the page-number footer, which is inset to the same body-content right margin. */
+  .card-body.official .col-bracket { padding: 1.5mm 0 1mm 2mm; }
+  .pl { padding: 1mm 2mm; }
+  .pl-row { display: flex; gap: 4mm; align-items: baseline; padding: 0.3mm 0; }
+  .pl-row .nm { font-size: 9pt; font-weight: 700; }
+  .pl-row .ct { font-size: 7.5pt; color: #444; }
   .card-foot { border-top: 0.3pt solid #bbb; padding: 0.5mm 1.5mm; font-size: 6.3pt; color: #7a4b00; line-height: 1.25; }
   .card-foot .code-tag { font-size: 5.5pt; color: #8a7a60; }
   .card-foot .gap { color: #555; }
@@ -144,6 +169,7 @@ interface BracketArea {
   readonly width: number;
   readonly leafWidth: number;
   readonly nameChars: number;
+  readonly integrated?: boolean;
 }
 
 /** Slot number a participant sits on within the pool's bracket (the same "Posisi" the pool sheet prints), else 1-based order. */
@@ -172,34 +198,101 @@ function beltCell(values: readonly string[]): string {
   return `<td${absent ? ' class="na"' : ''}>${values.map((v) => `<div class="clamp2">${esc(v)}</div>`).join('')}</td>`;
 }
 
-function participantRow(pool: ExportPool, e: ExportEntry, index: number): string {
+/**
+ * Belt/height/weight are drawing inputs, not opponent-facing information (PDF Presentation
+ * Remediation, official privacy): OFFICIAL is the document distributed to contingents/opponents, so
+ * those three columns are omitted entirely there. PREVIEW keeps them -- panitia still needs them to
+ * review grouping quality before publishing. This is presentation-only: nothing is removed from
+ * `ExportModel`, only what this one renderer paints for OFFICIAL mode.
+ */
+function participantRow(pool: ExportPool, e: ExportEntry, index: number, mode: ExportMode): string {
+  const measurementCells =
+    mode === 'OFFICIAL'
+      ? ''
+      : `${beltCell(perAthlete(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}${valueCell(perAthlete(e, (a) => formatHeightCm(a.heightMm)))}${valueCell(perAthlete(e, (a) => formatWeightKg(a.weightG)))}`;
   return `<tr>
     <td class="num">${positionOf(pool, e, index)}</td>
     <td><div class="nm clamp2">${esc(e.displayName)}</div></td>
     <td><div class="ct clamp2">${e.contingent ? esc(e.contingent) : MISSING_VALUE}</div></td>
-    ${beltCell(perAthlete(e, (a) => beltDisplay(a.beltCode, a.beltLabel)))}${valueCell(perAthlete(e, (a) => formatHeightCm(a.heightMm)))}${valueCell(perAthlete(e, (a) => formatWeightKg(a.weightG)))}
+    ${measurementCells}
   </tr>`;
 }
 
-function participantTable(pool: ExportPool): string {
-  const rows = pool.members.map((e, i) => participantRow(pool, e, i)).join('');
+function participantTable(pool: ExportPool, mode: ExportMode): string {
+  const rows = pool.members.map((e, i) => participantRow(pool, e, i, mode)).join('');
+  const official = mode === 'OFFICIAL';
+  const measurementCols = official
+    ? ''
+    : `<col style="width:${BELT_COL}"><col style="width:${HEIGHT_COL}"><col style="width:${WEIGHT_COL}">`;
+  const measurementHeaders = official
+    ? ''
+    : `<th>${esc(L.belt)}</th><th class="num">${esc(HEIGHT_HEADER)}</th><th class="num">${esc(WEIGHT_HEADER)}</th>`;
+  const colCount = official ? 3 : 6;
   return `<table class="pt">
-    <colgroup><col style="width:${NUMBER_COL}"><col><col style="width:${CONTINGENT_COL}"><col style="width:${BELT_COL}"><col style="width:${HEIGHT_COL}"><col style="width:${WEIGHT_COL}"></colgroup>
-    <thead><tr><th class="num">${esc(L.number)}</th><th>${esc(L.participant)}</th><th>${esc(L.contingent)}</th><th>${esc(L.belt)}</th><th class="num">${esc(HEIGHT_HEADER)}</th><th class="num">${esc(WEIGHT_HEADER)}</th></tr></thead>
-    <tbody>${rows || `<tr><td colspan="6">${esc(L.noParticipants)}</td></tr>`}</tbody>
+    <colgroup><col style="width:${NUMBER_COL}"><col><col style="width:${CONTINGENT_COL}">${measurementCols}</colgroup>
+    <thead><tr><th class="num">${esc(L.number)}</th><th>${esc(L.participant)}</th><th>${esc(L.contingent)}</th>${measurementHeaders}</tr></thead>
+    <tbody>${rows || `<tr><td colspan="${colCount}">${esc(L.noParticipants)}</td></tr>`}</tbody>
   </table>`;
 }
 
-function bracketHtml(pool: ExportPool, area: BracketArea): string {
-  const bracket = pool.bracket;
-  if (!bracket || bracket.matches.length === 0) return `<div class="bk-note">${esc(L.noBracket)}</div>`;
-  if (!compactBracketFits(bracket)) return `<div class="bk-note">${esc(L.bracketTooLarge)}</div>`;
-  const svg = renderCompactBracketSvg(bracket, area);
-  return svg ? `<div class="bk">${svg}</div>` : `<div class="bk-note">${esc(L.noBracket)}</div>`;
+/** FINAL/OFFICIAL leaf columns (structural reference: the legacy sheet) -- gender/division/weight
+ * class are the same for every entry of one category, so they're computed once per pool; only the
+ * per-entry external registration id varies. Weight class is blank when the category has none
+ * (Poomsae), never a guessed value. */
+function officialColumns(category: ExportCategory, pool: ExportPool) {
+  // Same source the category heading itself uses (formatOperatorCategoryTitle): ageDivisionLabel when
+  // present, else the raw code -- so a leaf's "division" column can never say something different
+  // from the category heading shown just above it.
+  const division =
+    category.ageDivisionLabel ??
+    (category.ageDivisionCode ? ageDivisionCodeLabel(category.ageDivisionCode) : '');
+  return {
+    genderLabel: genderLongLabel(category.gender),
+    divisionLabel: division.toUpperCase(),
+    weightClassLabel: category.weightClassCode ?? '',
+    idByEntryId: new Map(pool.members.map((e) => [e.id, e.externalRef ?? ''])),
+  };
 }
 
-/** Which of the printed values are absent for at least one participant — a plain "what is not on file" note. */
-function missingFields(pool: ExportPool): string[] {
+/** FINAL/OFFICIAL only: a pool with no drawable bracket (a lone walkover participant, or a bracket too
+ * large for the card) would otherwise lose its participants entirely now that no table exists, so
+ * they are listed here -- name and contingent only, each participant once. */
+function participantList(pool: ExportPool): string {
+  const rows = pool.members
+    .map(
+      (e) =>
+        `<div class="pl-row"><span class="nm">${esc(e.displayName)}</span><span class="ct">${e.contingent ? esc(e.contingent) : MISSING_VALUE}</span></div>`,
+    )
+    .join('');
+  return `<div class="pl">${rows || esc(L.noParticipants)}</div>`;
+}
+
+function bracketHtml(
+  category: ExportCategory,
+  pool: ExportPool,
+  area: BracketArea,
+  official: boolean,
+  matchNumbers: ReadonlyMap<string, number>,
+): string {
+  const bracket = pool.bracket;
+  const fallback = (note: string): string =>
+    official
+      ? `${participantList(pool)}<div class="bk-note">${esc(note)}</div>`
+      : `<div class="bk-note">${esc(note)}</div>`;
+  if (!bracket || bracket.matches.length === 0) return fallback(L.noBracket);
+  if (!compactBracketFits(bracket)) return fallback(L.bracketTooLarge);
+  const svg = renderCompactBracketSvg(
+    bracket,
+    official ? { ...area, matchNumbers, columns: officialColumns(category, pool) } : area,
+  );
+  return svg ? `<div class="bk">${svg}</div>` : fallback(L.noBracket);
+}
+
+/** Which of the printed values are absent for at least one participant — a plain "what is not on file"
+ * note. OFFICIAL doesn't print belt/height/weight at all, so flagging a gap in a column the reader
+ * can't even see would be confusing; only checked for PREVIEW. */
+function missingFields(pool: ExportPool, mode: ExportMode): string[] {
+  if (mode === 'OFFICIAL') return [];
   const athletes = pool.members.flatMap((e): (ExportAthleteDisplay | null)[] =>
     e.athletes.length > 0 ? [...e.athletes] : [null],
   );
@@ -216,20 +309,40 @@ function missingFields(pool: ExportPool): string[] {
  * they remain exactly as persisted in `pool.warnings` and are shown, in full, by the audit-oriented
  * `CATEGORY_DRAW` document (category-draw.ts) instead.
  */
-function cardFooter(pool: ExportPool): string {
-  const gaps = missingFields(pool);
+function cardFooter(pool: ExportPool, mode: ExportMode): string {
+  const gaps = missingFields(pool, mode);
   return gaps.length > 0
     ? `<div class="card-foot"><span class="gap">${esc(L.incompleteData)}: ${esc(gaps.join(', '))}.</span></div>`
     : '';
 }
 
-function poolCard(category: ExportCategory, pool: ExportPool): string {
+/**
+ * FINAL/OFFICIAL (structural reference: the legacy manually-produced bracket sheet): no "Pool N"
+ * label, no peserta count, no bracket-size wording, no walkover flag -- pools are separated by
+ * whitespace only. That per-pool metadata was operational chrome for the drawing committee's own
+ * working copy; a category's Poomsae movement/format now lives once on the category heading
+ * (`categoryInfoLine`) instead of being repeated per pool. PREVIEW is unaffected: it keeps the full
+ * "Pool N · N peserta · Bagan N slot · ..." header row and the walkover flag.
+ */
+function poolCard(
+  category: ExportCategory,
+  pool: ExportPool,
+  mode: ExportMode,
+  matchNumbers: ReadonlyMap<string, number>,
+): string {
   const isPoomsae = category.discipline === 'POOMSAE';
   const tableLines = pool.members.reduce((n, e) => n + Math.max(2, e.athletes.length), 0);
   const tall = tableLines > TALL_CARD_MIN_LINES;
-  const bracketBits = pool.bracket
-    ? ` &middot; Bagan ${pool.bracket.size} slot${pool.bracket.byes > 0 ? ` &middot; ${pool.bracket.byes} ${L.bye}` : ''}`
-    : '';
+  const official = mode === 'OFFICIAL';
+  if (official) {
+    const body = `<div class="card-body official"><div class="col-bracket">${bracketHtml(category, pool, OFFICIAL_BRACKET_AREA, true, matchNumbers)}</div></div>`;
+    return `<div class="card official">${body}${cardFooter(pool, mode)}</div>`;
+  }
+  // The bye count is deliberately never mentioned here (PDF Presentation Remediation, official
+  // bracket structure): a WALKOVER pairing is never drawn in the bracket itself either (the
+  // advancing participant's line simply runs straight to the match it actually plays), so a "1 BYE"
+  // text mention right next to a diagram that shows no such thing would be a confusing leftover.
+  const bracketBits = pool.bracket ? ` &middot; Bagan ${pool.bracket.size} slot` : '';
   // Movement/format sit on the same line as the pool's own metadata, to the right of "Pool N"
   // (visual polish pass) -- no longer a separate line below it.
   const poomsaeBits = isPoomsae
@@ -237,17 +350,31 @@ function poolCard(category: ExportCategory, pool: ExportPool): string {
     : '';
   // One pool per row, full page width (layout correction): table on the left, bracket on the right.
   // A pool's row is only as tall as its own content -- never stretched to fill the page.
-  const body = `<div class="card-body"><div class="col-table">${participantTable(pool)}</div><div class="col-bracket">${bracketHtml(pool, POOL_BRACKET_AREA)}</div></div>`;
+  const body = `<div class="card-body"><div class="col-table">${participantTable(pool, mode)}</div><div class="col-bracket">${bracketHtml(category, pool, POOL_BRACKET_AREA, false, matchNumbers)}</div></div>`;
   return `<div class="card${tall ? ' tall' : ''}">
     <div class="card-head">
       <div class="row"><span><span class="pool-no">${esc(poolLabel(pool.ordinal))}</span>${pool.isWalkover ? `<span class="pool-flag">${esc(L.walkover.toUpperCase())}</span>` : ''}</span><span class="card-count">${esc(participantCountLabel(pool.members.length))}${bracketBits}${poomsaeBits}</span></div>
     </div>
     ${body}
-    ${cardFooter(pool)}
+    ${cardFooter(pool, mode)}
   </div>`;
 }
 
-function categoryInfoLine(c: ExportCategory): string {
+/**
+ * FINAL/OFFICIAL keeps only the two facts a public reader needs (structural reference: the legacy
+ * sheet never showed a discipline label or readiness state per category, since one document is
+ * always a single discipline and is never generated before it's ready). PREVIEW keeps the fuller
+ * operator-facing line -- discipline, Poomsae movement/format and readiness still matter for review.
+ */
+function categoryInfoLine(c: ExportCategory, mode: ExportMode): string {
+  if (mode === 'OFFICIAL') {
+    const bits = [esc(participantCountLabel(c.participantCount)), `${c.pools.length} pool`];
+    if (c.discipline === 'POOMSAE') {
+      bits.push(`${esc(L.movement)}: ${esc(c.movement ? humanizeCode(c.movement) : MISSING_VALUE)}`);
+      bits.push(`${esc(L.format)}: ${esc(formatLabel(c.format))}`);
+    }
+    return bits.join(' &middot; ');
+  }
   const bits = [
     esc(disciplineLabel(c.discipline)),
     esc(participantCountLabel(c.participantCount)),
@@ -267,10 +394,15 @@ function categoryInfoLine(c: ExportCategory): string {
  * here. A REVISION-scoped document has several categories, so each still needs a plain heading (no
  * boxed/backgrounded banner) to mark where one category's pools end and the next begin.
  */
-function categorySection(c: ExportCategory, showHeading: boolean): string {
-  const cards = c.pools.map((p) => poolCard(c, p)).join('');
+function categorySection(
+  c: ExportCategory,
+  showHeading: boolean,
+  mode: ExportMode,
+  matchNumbers: ReadonlyMap<string, number>,
+): string {
+  const cards = c.pools.map((p) => poolCard(c, p, mode, matchNumbers)).join('');
   const heading = showHeading
-    ? `<div class="cat-heading">${esc(formatOperatorCategoryTitle(c))}</div><div class="cat-info">${categoryInfoLine(c)}</div>`
+    ? `<div class="cat-heading">${esc(formatOperatorCategoryTitle(c))}</div><div class="cat-info">${categoryInfoLine(c, mode)}</div>`
     : '';
   return `${heading}${cards || `<div class="bk-note">${esc(L.noPools)}</div>`}`;
 }
@@ -282,24 +414,65 @@ const fmtDate = (iso: string): string => {
     : new Intl.DateTimeFormat('id-ID', { dateStyle: 'long', timeStyle: 'short', timeZone: 'UTC' }).format(d);
 };
 
-/** `categoryTitle`: for a CATEGORY-scoped document, its one category's title is shown directly under
+/**
+ * `categoryTitle`: for a CATEGORY-scoped document, its one category's title is shown directly under
  * the main document title (table refinement -- layout correction) instead of a separate banner
  * further down the page; `null` for a REVISION-scoped document (there is no single category to name
- * here, and the old generic descriptive sentence is not replaced with anything). */
+ * here, and the old generic descriptive sentence is not replaced with anything).
+ *
+ * FINAL/OFFICIAL (structural reference: the legacy manually-produced bracket sheet): the revision/
+ * status/generated-at/verification metadata block is dropped entirely -- it is an internal working
+ * detail, not something a contingent reading their own bracket needs. PREVIEW is unaffected: it keeps
+ * the full metadata block, since panitia still uses it for internal review/audit trail.
+ */
 function docHeader(model: ExportModel, opts: RenderOptions, categoryTitle: string | null): string {
   const categoryLine = categoryTitle ? `<div class="doc-category">${esc(categoryTitle)}</div>` : '';
+  const metaBlock = metaBlockOrEmpty(model, opts);
   return `<div class="doc-head">
     <div>
       <div class="doc-kicker">${esc(model.tournament.name)} (${esc(model.tournament.code)})</div>
       <h1>${esc(L.documentTitle)}</h1>
       ${categoryLine}
     </div>
-    <div class="doc-meta">
+    ${metaBlock}
+  </div>`;
+}
+
+/** Shared by `docHeader` and `sessionHeader` -- FINAL/OFFICIAL drops it, PREVIEW keeps it. */
+function metaBlockOrEmpty(model: ExportModel, opts: RenderOptions): string {
+  if (opts.mode === 'OFFICIAL') return '';
+  return `<div class="doc-meta">
       <div class="doc-mode">${esc(modeLabel(opts.mode))}</div>
       <div>Revisi ${model.revision.revisionNo} &middot; Status: ${esc(revisionLifecycleLabel(model.revision.lifecycle))}</div>
       <div>Dibuat: ${esc(fmtDate(opts.generatedAt))}</div>
       <div>Kode verifikasi: ${esc(opts.verificationCode)}</div>
+    </div>`;
+}
+
+/**
+ * The header of an arena/day SESSION document (buildSemiPrestasiSessionSheetHtml): "DAY 1 · ARENA A ·
+ * Kyorugi Semi Prestasi" as the main heading, with the weekday/date underneath. The classification
+ * (discipline + stream) is read from the slot's own scheduled categories -- an arena/day slot fields
+ * one classification in practice (the committee's own "Jadwal FIX" convention), so the first category
+ * is authoritative; never fabricated when the slot has no categories at all.
+ */
+function sessionHeader(
+  model: ExportModel,
+  opts: RenderOptions,
+  slot: ScheduleSlot,
+  categories: readonly ExportCategory[],
+): string {
+  const first = categories[0];
+  const classification = first
+    ? ` &middot; ${esc(disciplineLabel(first.discipline))} ${esc(streamLabel(first.stream))}`
+    : '';
+  return `<div class="doc-head">
+    <div>
+      <div class="doc-kicker">${esc(model.tournament.name)} (${esc(model.tournament.code)})</div>
+      <h1>DAY ${slot.dayNumber} &middot; ${esc(slot.arena)}${classification}</h1>
+      <div class="doc-category">${esc(slot.dayLabel)}</div>
     </div>
+    ${metaBlockOrEmpty(model, opts)}
   </div>`;
 }
 
@@ -327,7 +500,9 @@ export function buildSemiPrestasiCompactSheetHtml(
   const title = single
     ? `${L.documentTitle} · ${singleCategoryTitle}`
     : `${L.documentTitle} · ${model.tournament.name}`;
-  const body = `${docHeader(model, opts, singleCategoryTitle)}${qualityLine}${categories.map((c) => categorySection(c, !single)).join('')}`;
+  // FINAL/OFFICIAL match numbers run 1, 2, 3, ... across the WHOLE document, in its category/pool order.
+  const matchNumbers = documentMatchNumbers(categories.flatMap((c) => c.pools.map((p) => p.bracket)));
+  const body = `${docHeader(model, opts, singleCategoryTitle)}${qualityLine}${categories.map((c) => categorySection(c, !single, opts.mode, matchNumbers)).join('')}`;
   const html = `<!doctype html>
 <html lang="id">
 <head>
@@ -355,9 +530,74 @@ export async function renderSemiPrestasiCompactDrawSheetPdf(
   categoryId: string | null = null,
 ): Promise<Uint8Array> {
   const { html, headerTitle } = buildSemiPrestasiCompactSheetHtml(model, opts, categoryId);
+  const official = opts.mode === 'OFFICIAL';
   return renderHtmlToPdf(html, {
-    headerTemplate: headerTemplate(headerTitle),
-    footerTemplate: footerTemplate(),
+    // FINAL/OFFICIAL (structural reference: the legacy sheet): no running page-header breadcrumb and
+    // no "bagan-tkd" branding footer -- only the page number, right-aligned with the bracket's own
+    // right edge. The footer's page numbers are kept for both modes.
+    ...(official ? {} : { headerTemplate: headerTemplate(headerTitle) }),
+    footerTemplate: footerTemplate({ bare: official }),
+    landscape: true,
+  });
+}
+
+export interface SemiPrestasiSessionSheetHtml {
+  readonly title: string;
+  readonly html: string;
+  /** Text for the (fixed, document-wide) Chromium page header; only used in PREVIEW. */
+  readonly headerTitle: string;
+}
+
+/**
+ * The full HTML of one arena/day SESSION document: every semi-prestasi category the committee's own
+ * schedule (schedule.ts) places in `slot`, in the schedule's own row order -- a whole arena/day's
+ * worth of brackets, KYORUGI and POOMSAE and every weight class alike, not one category at a time.
+ * Throws if the schedule places no (drawn) semi-prestasi category in this slot at all, since an empty
+ * arena/day document is never useful.
+ */
+export function buildSemiPrestasiSessionSheetHtml(
+  model: ExportModel,
+  opts: RenderOptions,
+  slot: ScheduleSlot,
+): SemiPrestasiSessionSheetHtml {
+  const categories = categoriesForSlot(selectSemiPrestasiCategories(model, null), slot);
+  if (categories.length === 0) {
+    throw new Error(`no semi-prestasi categories scheduled for DAY ${slot.dayNumber} ${slot.arena}`);
+  }
+  const title = `${L.documentTitle} · DAY ${slot.dayNumber} · ${slot.arena}`;
+  // FINAL/OFFICIAL match numbers run 1, 2, 3, ... across the WHOLE arena/day document.
+  const matchNumbers = documentMatchNumbers(categories.flatMap((c) => c.pools.map((p) => p.bracket)));
+  // FINAL/OFFICIAL (structural reference: the legacy sheet): no per-category heading between weight
+  // classes either -- the row's own division/weight-class columns already say which category a leaf
+  // belongs to, and the arena/day heading already names the shared classification. PREVIEW keeps the
+  // heading: it is a detailed working document, not a print-ready public sheet.
+  const showCategoryHeading = opts.mode !== 'OFFICIAL';
+  const body = `${sessionHeader(model, opts, slot, categories)}${categories.map((c) => categorySection(c, showCategoryHeading, opts.mode, matchNumbers)).join('')}`;
+  const html = `<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>${esc(title)}</title>
+<style>${PDF_BASE_CSS}${COMPACT_CSS}</style>
+</head>
+<body>
+${watermarkHtml(opts.mode)}
+${body}
+</body>
+</html>`;
+  return { title, html, headerTitle: `${model.tournament.name} · DAY ${slot.dayNumber} · ${slot.arena}` };
+}
+
+export async function renderSemiPrestasiSessionDrawSheetPdf(
+  model: ExportModel,
+  opts: RenderOptions,
+  slot: ScheduleSlot,
+): Promise<Uint8Array> {
+  const { html, headerTitle } = buildSemiPrestasiSessionSheetHtml(model, opts, slot);
+  const official = opts.mode === 'OFFICIAL';
+  return renderHtmlToPdf(html, {
+    ...(official ? {} : { headerTemplate: headerTemplate(headerTitle) }),
+    footerTemplate: footerTemplate({ bare: official }),
     landscape: true,
   });
 }

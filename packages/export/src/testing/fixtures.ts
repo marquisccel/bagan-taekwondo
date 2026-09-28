@@ -51,12 +51,19 @@ export function makeFixtureModel(opts: FixtureOptions): ExportModel {
     ],
   }));
 
-  const slots: RawBracketSlotRow[] = Array.from({ length: size }, (_, position) => ({
-    bracketId: 'b1',
-    position,
-    seedNo: position < n ? position + 1 : null,
-    entryId: position < n ? `e${position}` : null,
-  }));
+  // One bye per round-1 pair, taken from the last `byes` pairs (INV-04: no bye-vs-bye first-round
+  // pair, always guaranteed by the real engine) -- naively clustering all byes at the tail positions
+  // would put two byes in the same pair whenever byes >= 2, which the real engine never produces.
+  const byes = size - n;
+  const numPairs = size / 2;
+  const isByePosition = (position: number): boolean =>
+    position % 2 === 1 && Math.floor(position / 2) >= numPairs - byes;
+  let nextEntry = 0;
+  const slots: RawBracketSlotRow[] = Array.from({ length: size }, (_, position) => {
+    if (isByePosition(position)) return { bracketId: 'b1', position, seedNo: null, entryId: null };
+    const entryIndex = nextEntry++;
+    return { bracketId: 'b1', position, seedNo: entryIndex + 1, entryId: `e${entryIndex}` };
+  });
 
   const matches: RawMatchRow[] = [];
   let idCounter = 0;
@@ -71,6 +78,10 @@ export function makeFixtureModel(opts: FixtureOptions): ExportModel {
       const feederBSlot = round === 1 ? (position - 1) * 2 + 1 : null;
       const feederAMatchId = round === 1 ? null : (prevRoundMatchIds[(position - 1) * 2] ?? null);
       const feederBMatchId = round === 1 ? null : (prevRoundMatchIds[(position - 1) * 2 + 1] ?? null);
+      // Mirrors the real engine/repository (packages/db/src/draw-run-repository.ts,
+      // command-repository.ts: `m.real ? 'PENDING' : 'WALKOVER'`): a round-1 pairing where either
+      // slot is a bye is a walkover, not a contest.
+      const isByeSlot = (slot: number | null): boolean => slot !== null && isByePosition(slot);
       matches.push({
         id,
         bracketId: 'b1',
@@ -78,7 +89,7 @@ export function makeFixtureModel(opts: FixtureOptions): ExportModel {
         publicCode: `A-1-R${round}-${position}`,
         round,
         position,
-        status: 'PENDING',
+        status: round === 1 && (isByeSlot(feederASlot) || isByeSlot(feederBSlot)) ? 'WALKOVER' : 'PENDING',
         feederASlot,
         feederAMatchId,
         feederBSlot,

@@ -97,8 +97,19 @@ export const headerTemplate = (title: string): string =>
   `<div style="font-size:8pt; width:100%; padding:0 10mm; color:#555; box-sizing:border-box;
      overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${esc(title)}</div>`;
 
-export const footerTemplate = (): string =>
-  `<div style="font-size:8pt; width:100%; padding:0 10mm; color:#555; display:flex; justify-content:space-between;">
+/**
+ * `bare`: no "bagan-tkd" branding, page number right-aligned flush with the body's own right margin
+ * (12mm, matching `renderHtmlToPdf`'s page margin) so it lines up with a full-width bracket's own
+ * right edge -- used by the FINAL/OFFICIAL semi-prestasi sheet (structural reference: the legacy
+ * manually-produced bracket sheet carried no branding footer). Every other document keeps the
+ * original two-sided footer.
+ */
+export const footerTemplate = (opts: { readonly bare?: boolean } = {}): string =>
+  opts.bare
+    ? `<div style="font-size:8pt; width:100%; padding:0 12mm; color:#555; text-align:right; box-sizing:border-box;">
+    <span>Hal. <span class="pageNumber"></span> / <span class="totalPages"></span></span>
+  </div>`
+    : `<div style="font-size:8pt; width:100%; padding:0 10mm; color:#555; display:flex; justify-content:space-between;">
     <span>bagan-tkd</span>
     <span>Hal. <span class="pageNumber"></span> / <span class="totalPages"></span></span>
   </div>`;

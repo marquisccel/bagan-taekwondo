@@ -26,6 +26,8 @@ export interface GeometryLeaf {
   readonly isBye: boolean;
   /** True when this leaf stands in for a match rendered on a different tile, not a real participant slot. */
   readonly isVirtual: boolean;
+  /** The underlying `ExportEntry.id`, for callers that need to join more participant fields; `null` for a BYE or virtual leaf. */
+  readonly entryId: string | null;
 }
 
 export interface GeometryMatchNode {
@@ -82,6 +84,7 @@ export function computeBracketGeometry(
         sublabel: s && !s.isBye ? (s.entry?.contingent ?? null) : null,
         isBye: s?.isBye ?? false,
         isVirtual: false,
+        entryId: s && !s.isBye ? (s.entry?.id ?? null) : null,
       }));
     }
     if (matchByUid.has(feeder.matchUid)) {
@@ -96,11 +99,27 @@ export function computeBracketGeometry(
       sublabel: null,
       isBye: false,
       isVirtual: true,
+      entryId: null,
     }));
   }
 
   const nodes: GeometryMatchNode[] = [];
   for (const m of sorted) {
+    // A WALKOVER match (INV-04: `real: false`) is a bye pairing, not a contest -- the persisted engine
+    // output still records it (one feeder is a bye slot) so the bracket's shape stays a clean power of
+    // two internally, but nothing was ever "played" here. Drawing it as an ordinary boxed match would
+    // show a fake empty slot merely to fill out the graphical bracket (PDF Presentation Remediation,
+    // official bracket structure). Instead, the surviving (non-bye) feeder's own row simply becomes
+    // what the next round sees as this match's result -- no leaf is registered for the bye side, and
+    // no box/connector is drawn for this match at all, so the advancing participant's line runs
+    // straight through to the match it actually plays.
+    if (m.status === 'WALKOVER') {
+      const byeSide =
+        m.feederA.kind === 'slot' && slotByPos.get(m.feederA.slot)?.isBye ? m.feederA : m.feederB;
+      const advancing = byeSide === m.feederA ? m.feederB : m.feederA;
+      yByKey.set(`match:${m.matchUid}`, feederY(advancing));
+      continue;
+    }
     const ay = feederY(m.feederA);
     const by = feederY(m.feederB);
     const y = (ay + by) / 2;

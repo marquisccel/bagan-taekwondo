@@ -11,13 +11,19 @@ function bracketFor(n: number) {
 }
 
 describe('computeBracketGeometry (visual bracket — ACCEPTANCE §4)', () => {
-  it('contains every persisted match, not a recomputed subset', () => {
+  it('contains every persisted REAL match, not a recomputed subset (official bracket structure) -- a WALKOVER pairing is never drawn as a match box', () => {
     for (const n of [1, 2, 3, 4, 8, 16, 32, 64, 128]) {
       const bracket = bracketFor(n);
       const geometry = computeBracketGeometry(bracket.matches, bracket.slots);
-      expect(geometry.matches).toHaveLength(bracket.matches.length);
+      const realMatches = bracket.matches.filter((m) => m.status !== 'WALKOVER');
+      expect(geometry.matches).toHaveLength(realMatches.length);
       const uids = new Set(geometry.matches.map((m) => m.match.matchUid));
-      expect(uids.size).toBe(bracket.matches.length);
+      expect(uids.size).toBe(realMatches.length);
+      // Every WALKOVER match still resolves to a y (the advancing feeder's own row), so a downstream
+      // real match that references it lines up correctly -- it's just never its own drawn node.
+      for (const m of bracket.matches.filter((m) => m.status === 'WALKOVER')) {
+        expect(uids.has(m.matchUid)).toBe(false);
+      }
     }
   });
 
@@ -44,12 +50,48 @@ describe('computeBracketGeometry (visual bracket — ACCEPTANCE §4)', () => {
     }
   });
 
-  it('marks an empty round-1 slot as BYE, never a fabricated participant', () => {
-    const bracket = bracketFor(5); // size 8, 3 BYEs
+  it('never creates a leaf for a bye slot (official bracket structure) -- a WALKOVER match is collapsed away entirely, so the advancing participant is the only thing ever drawn in its place', () => {
+    // n=1 has no matches at all (size 1, nothing to feed a leaf), so it's excluded from the "one
+    // leaf per real entry" check but still trivially has zero BYE leaves.
+    for (const n of [1, 2, 3, 4, 5, 8]) {
+      const bracket = bracketFor(n);
+      const geometry = computeBracketGeometry(bracket.matches, bracket.slots);
+      expect(geometry.leaves.filter((l) => l.isBye)).toHaveLength(0);
+      if (n > 1) expect(geometry.leaves).toHaveLength(n);
+    }
+  });
+
+  it('a WALKOVER match resolves to exactly the advancing (non-bye) feeder — it is never re-derived from position or seed order', () => {
+    const bracket = bracketFor(3); // size 4, 1 BYE, 1 WALKOVER match in round 1
+    const walkover = bracket.matches.find((m) => m.status === 'WALKOVER');
+    expect(walkover).toBeDefined();
+    if (!walkover) return;
+    const realSlot = bracket.slots.find(
+      (s) =>
+        !s.isBye &&
+        ((walkover.feederA.kind === 'slot' && walkover.feederA.slot === s.position) ||
+          (walkover.feederB.kind === 'slot' && walkover.feederB.slot === s.position)),
+    );
+    expect(realSlot).toBeDefined();
     const geometry = computeBracketGeometry(bracket.matches, bracket.slots);
-    const byeLeaves = geometry.leaves.filter((l) => l.isBye);
-    expect(byeLeaves).toHaveLength(3);
-    for (const l of byeLeaves) expect(l.label).toBe('BYE');
+    const advancingLeaf = geometry.leaves.find((l) => l.key === `slot:${realSlot?.position}`);
+    expect(advancingLeaf).toBeDefined();
+    expect(advancingLeaf?.label).toBe(realSlot?.entry?.displayName);
+    // Any real match feeding from this WALKOVER's uid must land on exactly that leaf's y.
+    const final = bracket.matches.find(
+      (m) =>
+        m.status !== 'WALKOVER' &&
+        ((m.feederA.kind === 'match' && m.feederA.matchUid === walkover.matchUid) ||
+          (m.feederB.kind === 'match' && m.feederB.matchUid === walkover.matchUid)),
+    );
+    expect(final).toBeDefined();
+    const finalNode = geometry.matches.find((m) => m.match.matchUid === final?.matchUid);
+    expect(finalNode).toBeDefined();
+    const feederYUsed =
+      final?.feederA.kind === 'match' && final.feederA.matchUid === walkover.matchUid
+        ? finalNode?.feederAY
+        : finalNode?.feederBY;
+    expect(feederYUsed).toBe(advancingLeaf?.y);
   });
 
   it('is a pure function: identical input produces identical geometry', () => {

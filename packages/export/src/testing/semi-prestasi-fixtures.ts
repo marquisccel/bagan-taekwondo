@@ -137,12 +137,26 @@ export function makeSemiPrestasiFixtureModel(
       const size = sizeFor(n);
       const rounds = Math.log2(size);
       brackets.push({ id: bracketId, poolId, size, rounds, entries: n, byes: size - n });
+      // One bye per round-1 pair, taken from the last `byes` pairs (INV-04: no bye-vs-bye first-round
+      // pair, always guaranteed by the real engine) -- naively clustering all byes at the tail
+      // positions would put two byes in the same pair whenever byes >= 2, which the real engine never
+      // produces.
+      const byes = size - n;
+      const numPairs = size / 2;
+      const isByePosition = (position: number): boolean =>
+        position % 2 === 1 && Math.floor(position / 2) >= numPairs - byes;
+      let nextEntry = 0;
       for (let position = 0; position < size; position++) {
+        if (isByePosition(position)) {
+          bracketSlots.push({ bracketId, position, seedNo: null, entryId: null });
+          continue;
+        }
+        const entryIndex = nextEntry++;
         bracketSlots.push({
           bracketId,
           position,
-          seedNo: position < n ? position + 1 : null,
-          entryId: position < n ? (poolEntryIds[position] ?? null) : null,
+          seedNo: entryIndex + 1,
+          entryId: poolEntryIds[entryIndex] ?? null,
         });
       }
       let prev: string[] = [];
@@ -152,6 +166,13 @@ export function makeSemiPrestasiFixtureModel(
         for (let position = 1; position <= inRound; position++) {
           const id = `${bracketId}-m${round}-${position}`;
           ids.push(id);
+          const feederASlot = round === 1 ? (position - 1) * 2 : null;
+          const feederBSlot = round === 1 ? (position - 1) * 2 + 1 : null;
+          // Mirrors the real engine/repository (packages/db/src/draw-run-repository.ts,
+          // command-repository.ts: `m.real ? 'PENDING' : 'WALKOVER'`): a round-1 pairing where either
+          // slot is a bye is a walkover, not a contest, so the renderer must never draw it as a real
+          // match.
+          const isByeSlot = (slot: number | null): boolean => slot !== null && isByePosition(slot);
           matches.push({
             id,
             bracketId,
@@ -159,9 +180,10 @@ export function makeSemiPrestasiFixtureModel(
             publicCode: `${String.fromCharCode(65 + ci)}${pi + 1}-R${round}-${position}`,
             round,
             position,
-            status: 'PENDING',
-            feederASlot: round === 1 ? (position - 1) * 2 : null,
-            feederBSlot: round === 1 ? (position - 1) * 2 + 1 : null,
+            status:
+              round === 1 && (isByeSlot(feederASlot) || isByeSlot(feederBSlot)) ? 'WALKOVER' : 'PENDING',
+            feederASlot,
+            feederBSlot,
             feederAMatchId: round === 1 ? null : (prev[(position - 1) * 2] ?? null),
             feederBMatchId: round === 1 ? null : (prev[(position - 1) * 2 + 1] ?? null),
           });

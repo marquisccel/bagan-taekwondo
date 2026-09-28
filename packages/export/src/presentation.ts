@@ -18,6 +18,17 @@ export const GENDER_LABEL: Readonly<Record<string, string>> = {
   MIXED: 'Campuran',
 };
 
+/**
+ * The long-form wording ("Laki-laki"/"Perempuan") — structural reference: the legacy manually-produced
+ * bracket sheet uses this form per participant row, distinct from `GENDER_LABEL`'s "Putra"/"Putri"
+ * used in category titles/headings. Only the FINAL/OFFICIAL integrated bracket leaf uses this.
+ */
+export const GENDER_LONG_LABEL: Readonly<Record<string, string>> = {
+  MALE: 'Laki-laki',
+  FEMALE: 'Perempuan',
+  MIXED: 'Campuran',
+};
+
 export const FORMAT_LABEL: Readonly<Record<string, string>> = {
   INDIVIDUAL: 'Individu',
   PAIR: 'Pasangan',
@@ -111,6 +122,16 @@ export function warningLabel(code: string): string {
 
 export function genderLabel(value: string): string {
   return GENDER_LABEL[value] ?? humanizeCode(value);
+}
+
+export function genderLongLabel(value: string): string {
+  return GENDER_LONG_LABEL[value] ?? humanizeCode(value);
+}
+
+/** "PRA_CADET_C" -> "PRA CADET C" (structural reference: the legacy sheet's own ALL-CAPS division
+ * wording, distinct from `ageDivisionLabel`'s curated title case used in category headings). */
+export function ageDivisionCodeLabel(code: string): string {
+  return code.replace(/_/g, ' ');
 }
 
 export function formatLabel(value: string): string {
