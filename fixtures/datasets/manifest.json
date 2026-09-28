@@ -52,6 +52,9 @@
     },
     "0.3.0": {
       "REAL_2026": "sha256:9625825c368b7682b8ea3b89b4eb246c12b810f9b38da41c6ea0fa9df956e5f2"
+    },
+    "0.4.0": {
+      "REAL_2026": "sha256:f72a99e7eba4bd2d5cf49c688baa0a9ca72da168abbe7fd9d9a8b710803e6213"
     }
   }
 }

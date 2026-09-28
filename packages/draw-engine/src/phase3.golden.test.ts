@@ -120,12 +120,15 @@ describe.skipIf(!available)('Phase 3 gate — REAL_2026', () => {
       const cands = buildCandidates(pe, policy, parseDrawSeed(manifest.goldenSeed), c.categoryKey);
       const best = rankCandidates(cands)[0];
       const tier1Phase = Math.min(...cands.map((k) => k.tier1PhaseCost[1]));
+      // exhaustivePartition's tuple is [tier0, singleton, twoPerson, tier1, tier2] (2026-09
+      // pool-size preference, matching dpPartition's own priority order) -- tier1/tier2 moved from
+      // indices 1/2 to 3/4.
       const opt = exhaustivePartition(pe, policy).best;
       rows.push({
         n: pe.length,
-        tier1Gap: tier1Phase - opt[1],
+        tier1Gap: tier1Phase - opt[3],
         slackUsed: (best?.cost[1] ?? 0) - tier1Phase,
-        tier2Gain: opt[2] - (best?.cost[2] ?? 0),
+        tier2Gain: opt[4] - (best?.cost[2] ?? 0),
       });
     }
     const gaps = rows.filter((r) => r.tier1Gap !== 0);

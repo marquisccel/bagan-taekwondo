@@ -159,6 +159,7 @@ describe('AUD-004 — contingent spread tie-break (soft, deterministic)', () => 
         cost,
         dpCost: cost,
         tier1PhaseCost: cost,
+        sizeShape: [0, 0],
         spread,
         search: {} as never,
       }) as PoolingCandidate;
@@ -178,6 +179,7 @@ describe('AUD-004 — contingent spread tie-break (soft, deterministic)', () => 
         cost: [0, 0, 0],
         dpCost: [0, 0, 0],
         tier1PhaseCost: [0, 0, 0],
+        sizeShape: [0, 0],
         spread: 8,
         search: {} as never,
       }) as PoolingCandidate;

@@ -120,23 +120,33 @@ describe('pool cost (ADR-0008 Tier 1)', () => {
 });
 
 describe('strategies and optimization', () => {
-  it('DP is optimal over contiguous partitions of its ordering (brute force, n ≤ 10)', () => {
+  it('DP is optimal over contiguous partitions of its ordering under the pool-size-shape priority (brute force, n ≤ 10)', () => {
+    // (tier0, singleton, twoPerson, tier1) -- matching dpPartition's own Cost5 ordering (2026-09
+    // pool-size preference: minimizing singletons, then 2-person pools, always outranks physical
+    // tolerance). tier2 is intentionally excluded here, same as dpPartition's non-contingentInDp path.
     fc.assert(
       fc.property(categoryArb(1, 10), (es) => {
         const dp = dpPartition(es, KYORUGI, false);
         const cost = (pools: readonly (readonly PoolEntry[])[]) =>
-          pools.reduce<[number, number]>(
+          pools.reduce<[number, number, number, number]>(
             (acc, p) => {
               const c = poolCost(p, KYORUGI);
-              return [acc[0] + c.tier0, acc[1] + c.tier1];
+              return [acc[0] + c.tier0, acc[1] + c.singleton, acc[2] + c.twoPerson, acc[3] + c.tier1];
             },
-            [0, 0],
+            [0, 0, 0, 0],
           );
-        let best: [number, number] = [Infinity, Infinity];
+        let best: [number, number, number, number] = [Infinity, Infinity, Infinity, Infinity];
         const rec = (i: number, acc: PoolEntry[][]) => {
           if (i === es.length) {
             const c = cost(acc);
-            if (c[0] < best[0] || (c[0] === best[0] && c[1] < best[1])) best = c;
+            for (let k = 0; k < c.length; k += 1) {
+              const ck = c[k] as number;
+              const bk = best[k] as number;
+              if (ck !== bk) {
+                if (ck < bk) best = c;
+                break;
+              }
+            }
             return;
           }
           for (let k = 1; k <= Math.min(KYORUGI.poolMax, es.length - i); k += 1)
@@ -281,7 +291,9 @@ describe('exhaustive pooling comparison, n ≤ 10 (ACCEPTANCE §4)', () => {
         const heuristic = Math.min(
           ...buildCandidates(es, p, parseDrawSeed(String(c)), `c${c}`).map((x) => x.tier1PhaseCost[1]),
         );
-        const optimum = exhaustivePartition(es, p).best[1];
+        // exhaustivePartition's tuple is [tier0, singleton, twoPerson, tier1, tier2] (2026-09
+        // pool-size preference, matching dpPartition's own priority order) -- tier1 moved to index 3.
+        const optimum = exhaustivePartition(es, p).best[3];
         expect(heuristic).toBeGreaterThanOrEqual(optimum);
         if (heuristic > optimum) {
           gaps += 1;

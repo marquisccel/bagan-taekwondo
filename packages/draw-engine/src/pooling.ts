@@ -103,6 +103,15 @@ export function resolvePolicy(rs: RuleSet, policy: PoolPolicy, ageDivisionCode: 
 
 export interface PoolCost {
   readonly tier0: number;
+  /**
+   * Pool-size shape (tournament policy, 2026-09 pool-size preference): 1 for a singleton pool, else
+   * 0. A pure structural fact about `members.length`, independent of any rule-set config — unlike
+   * `sizePenaltyFp` (a per-tournament tunable tier1 cost), this is an engine-level priority that
+   * always outranks physical tolerance (see `dpPartition`'s cost ordering).
+   */
+  readonly singleton: number;
+  /** Same idea as `singleton`, for a 2-participant pool: 1 if `members.length === 2`, else 0. */
+  readonly twoPerson: number;
   readonly tier1: number;
   readonly tier2: number;
   /** Range per active dimension, in its unit (g, mm, belt ranks). */
@@ -231,7 +240,18 @@ export function poolCost(members: readonly PoolEntry[], p: ResolvedPolicy): Pool
   const tier2 =
     (p.bracketWeightPermille * minSameRound1 + p.contingentWeightPermille * contingentExcess) *
     (FP_SCALE / 1000);
-  return { tier0, tier1, tier2, ranges, minSameRound1, contingentExcess, spread, members: k };
+  return {
+    tier0,
+    singleton: k === 1 ? 1 : 0,
+    twoPerson: k === 2 ? 1 : 0,
+    tier1,
+    tier2,
+    ranges,
+    minSameRound1,
+    contingentExcess,
+    spread,
+    members: k,
+  };
 }
 
 /**
@@ -311,27 +331,56 @@ function orderingFor(
 }
 
 type Cost3 = readonly [number, number, number];
-const lexLess = (a: Cost3, b: Cost3) =>
-  a[0] < b[0] || (a[0] === b[0] && (a[1] < b[1] || (a[1] === b[1] && a[2] < b[2])));
+/**
+ * [tier0, singleton, twoPerson, tier1(+tier2 when contingentInDp), tier2]. Pool-size shape
+ * (singleton/twoPerson counts) sits right after tier0 and before tier1 (2026-09 pool-size
+ * preference): minimizing singletons, then 2-person pools, always outranks physical
+ * tolerance/contingent cost, so the DP never trades a 4+3+3 for a 4+4+2 merely because the smaller
+ * pool happens to have a tighter range. Priority 5 (prefer more 4s over 3s once no 1s/2s remain) is
+ * left entirely to the existing `sizePenaltyFp` tier1 cost, which already prices a 4-pool cheaper
+ * than a 3-pool — no rule-set change was needed for that half of the policy.
+ */
+type Cost5 = readonly [number, number, number, number, number];
+const lexLess = (a: Cost5, b: Cost5): boolean => {
+  for (let i = 0; i < a.length; i += 1) {
+    const av = a[i] ?? 0;
+    const bv = b[i] ?? 0;
+    if (av !== bv) return av < bv;
+  }
+  return false;
+};
 
-/** Optimal contiguous partition of `ordered` under (tier0, tier1[, tier2 when contingentInDp]). */
+/** Optimal contiguous partition of `ordered` under (tier0, singleton, twoPerson, tier1[, tier2 when
+ * contingentInDp]) — see `Cost5` above for why size shape is its own priority level. */
 export function dpPartition(
   ordered: readonly PoolEntry[],
   p: ResolvedPolicy,
   contingentInDp: boolean,
 ): PoolEntry[][] {
   const n = ordered.length;
-  const best: (Cost3 | null)[] = Array.from({ length: n + 1 }, () => null);
+  const best: (Cost5 | null)[] = Array.from({ length: n + 1 }, () => null);
   const cut: number[] = new Array<number>(n + 1).fill(0);
-  best[0] = [0, 0, 0];
+  best[0] = [0, 0, 0, 0, 0];
   for (let i = 1; i <= n; i += 1) {
     for (let k = 1; k <= Math.min(p.poolMax, i); k += 1) {
       const prev = best[i - k];
       if (!prev) continue;
       const c = poolCost(ordered.slice(i - k, i), p);
-      const cand: Cost3 = contingentInDp
-        ? [prev[0] + c.tier0, prev[1] + c.tier1 + c.tier2, prev[2]]
-        : [prev[0] + c.tier0, prev[1] + c.tier1, prev[2] + c.tier2];
+      const cand: Cost5 = contingentInDp
+        ? [
+            prev[0] + c.tier0,
+            prev[1] + c.singleton,
+            prev[2] + c.twoPerson,
+            prev[3] + c.tier1 + c.tier2,
+            prev[4],
+          ]
+        : [
+            prev[0] + c.tier0,
+            prev[1] + c.singleton,
+            prev[2] + c.twoPerson,
+            prev[3] + c.tier1,
+            prev[4] + c.tier2,
+          ];
       const cur = best[i];
       if (!cur || lexLess(cand, cur)) {
         best[i] = cand;
@@ -356,7 +405,8 @@ export type RejectionReason =
   | 'TIER1_SLACK_EXCEEDED'
   | 'SINGLETON_CREATION'
   | 'NO_TIER3_GAIN'
-  | 'TIER_REGRESSION';
+  | 'TIER_REGRESSION'
+  | 'SIZE_SHAPE_REGRESSION';
 
 export interface SearchStats {
   evaluated: number;
@@ -382,6 +432,7 @@ export const newStats = (workCap = Number.MAX_SAFE_INTEGER): SearchStats => ({
     SINGLETON_CREATION: 0,
     NO_TIER3_GAIN: 0,
     TIER_REGRESSION: 0,
+    SIZE_SHAPE_REGRESSION: 0,
   },
   budgetExhausted: false,
   work: 0,
@@ -418,6 +469,10 @@ function physicallyWorse(
 
 const within = (c: PoolCost, p: ResolvedPolicy) => c.ranges.map((r, i) => r <= (p.dimensions[i]?.ideal ?? 0));
 
+/** Unchanged shape [tier0, tier1, tier2] — this is the stable public contract `draw.ts` reads by
+ * index (`cost[0]/[1]/[2]` as `tier0Violations`/`tier1CostFp`/`tier2CostFp`, persisted per
+ * candidate); the new pool-size-shape priority is tracked separately (`sumSizeShape` below), never
+ * folded into this tuple's positions. */
 function sumCosts(pools: readonly PoolEntry[][], p: ResolvedPolicy): Cost3 {
   let t0 = 0;
   let t1 = 0;
@@ -429,6 +484,19 @@ function sumCosts(pools: readonly PoolEntry[][], p: ResolvedPolicy): Cost3 {
     t2 += c.tier2;
   }
   return [t0, t1, t2];
+}
+
+/** [singleton, twoPerson] counts across the whole category — the same pool-size-shape priority used
+ * inside `dpPartition`, computed here for `rankCandidates` to apply across strategies too. */
+function sumSizeShape(pools: readonly PoolEntry[][], p: ResolvedPolicy): readonly [number, number] {
+  let single = 0;
+  let two = 0;
+  for (const pool of pools) {
+    const c = poolCost(pool, p);
+    single += c.singleton;
+    two += c.twoPerson;
+  }
+  return [single, two];
 }
 
 /**
@@ -512,6 +580,18 @@ export function localSearch(
       return { i, next, old, c };
     });
     if (d0 > 0) return reject(stats, 'TIER0_VIOLATION');
+    // Pool-size shape (2026-09 pool-size preference) is decided once, by the DP's initial partition
+    // (see `dpPartition`'s Cost5 ordering); local search only refines composition for physical
+    // tolerance/contingent reasons afterward and must never re-litigate it for a marginal gain --
+    // unless the change is fixing a genuine hard-constraint violation (d0 < 0), it may not turn a
+    // pool that wasn't already a singleton or a 2-person pool into one.
+    if (
+      d0 >= 0 &&
+      evaluated.some(
+        (x) => (x.next.length === 1 || x.next.length === 2) && x.next.length !== (x.old?.members ?? -1),
+      )
+    )
+      return reject(stats, 'SIZE_SHAPE_REGRESSION');
     if (phase === 'tier1') {
       if (!(d0 < 0 || d1 < 0)) return reject(stats, 'NO_TIER1_GAIN');
     } else if (phase === 'tier3') {
@@ -694,6 +774,13 @@ export interface PoolingCandidate {
   readonly dpCost: Cost3;
   /** Cost after the Tier-1 local search, before Tier-2 spends slack (exhaustive comparisons use it). */
   readonly tier1PhaseCost: Cost3;
+  /**
+   * [singleton, twoPerson] pool counts (2026-09 pool-size preference) — outranks `cost`'s own tier1
+   * in `rankCandidates`, same priority order as inside `dpPartition`. Kept as its own field rather
+   * than folded into `cost` so `cost[0]/[1]/[2]` keep meaning exactly `tier0Violations`/
+   * `tier1CostFp`/`tier2CostFp` for every existing reader (`draw.ts`, persisted candidate rows).
+   */
+  readonly sizeShape: readonly [number, number];
   /** Tier 3 contingent spread of the final pools (lower = more spread); breaks Tier 0–2 ties. */
   readonly spread: number;
   readonly search: SearchStats;
@@ -757,6 +844,7 @@ export function buildCandidates(
       cost: sumCosts(pools, p),
       dpCost: sumCosts(dp, p),
       tier1PhaseCost: sumCosts(afterTier1, p),
+      sizeShape: sumSizeShape(pools, p),
       spread: sumSpread(pools, p),
       search,
     });
@@ -766,10 +854,18 @@ export function buildCandidates(
   return out;
 }
 
-/** Lowest (tier0, tier1, tier2), then lowest contingent spread (Tier 3); ties break by strategy order (ADR-0008). */
+/** Lowest tier0, then pool-size shape (singleton count, then 2-person count — 2026-09 pool-size
+ * preference, outranks physical cost the same way it does inside `dpPartition`), then lowest
+ * (tier1, tier2), then lowest contingent spread (Tier 3); ties break by strategy order (ADR-0008). */
 export function rankCandidates(cands: readonly PoolingCandidate[]): PoolingCandidate[] {
   return [...cands].sort((a, b) => {
-    for (let i = 0; i < 3; i += 1) {
+    const tier0 = compareNumbers(a.cost[0] ?? 0, b.cost[0] ?? 0);
+    if (tier0 !== 0) return tier0;
+    const single = compareNumbers(a.sizeShape[0], b.sizeShape[0]);
+    if (single !== 0) return single;
+    const two = compareNumbers(a.sizeShape[1], b.sizeShape[1]);
+    if (two !== 0) return two;
+    for (let i = 1; i < 3; i += 1) {
       const c = compareNumbers(a.cost[i] ?? 0, b.cost[i] ?? 0);
       if (c !== 0) return c;
     }

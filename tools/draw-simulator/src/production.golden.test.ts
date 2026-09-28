@@ -55,8 +55,10 @@ describe.skipIf(!available)('REAL_2026 production readiness', { timeout: 300_000
         blockedByReason: { DRAW_FORMAT_NOT_IMPLEMENTED: 6, ENTRIES_WITHHELD: 31, NO_ELIGIBLE_ENTRIES: 12 },
       },
       placedEntries: 2654,
-      pools: 660,
-      walkoverPools: 24,
+      // 2026-09 pool-size preference (engine 0.4.0): fewer singleton/2-person pools means fewer
+      // pools overall for the same entries, and one fewer forced walkover.
+      pools: 641,
+      walkoverPools: 23,
       notPlaced: {
         total: 461,
         entryNotEligible: 49,
@@ -126,13 +128,15 @@ describe.skipIf(!available)('REAL_2026 production readiness', { timeout: 300_000
           'NO_TIER2_GAIN',
           'NO_TIER3_GAIN', // AUD-004: the contingent-spread tie-break phase (engine 0.3.0)
           'SINGLETON_CREATION',
+          'SIZE_SHAPE_REGRESSION', // 2026-09 pool-size preference (engine 0.4.0)
           'TIER0_VIOLATION',
           'TIER1_SLACK_EXCEEDED',
           'TIER_REGRESSION', // AUD-004
         ]);
       }
     }
-    expect(singletons).toBe(24);
+    // 2026-09 pool-size preference (engine 0.4.0): one fewer forced-singleton walkover pool.
+    expect(singletons).toBe(23);
   });
 
   it('PII: no real NIK or name in any committable file, report, summary, CLI text or benchmark artifact', () => {
