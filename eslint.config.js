@@ -25,6 +25,7 @@ export default tseslint.config(
       'out/**',
       '**/*.js',
       '**/*.cjs',
+      '**/*.mjs',
       '**/next-env.d.ts',
       'apps/web/e2e/**',
       'apps/web/playwright.config.ts',

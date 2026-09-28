@@ -1,9 +1,27 @@
 # BaganTKD — Taekwondo Tournament Draw System
 
 Deterministic, auditable, explainable draw system for Taekwondo tournaments (prestasi and
-semi-prestasi, Kyorugi and Poomsae). Current state: **Phase 3 — draw engine, production-ready**
-(intake, validation, pooling, brackets, byes, seeds, contingent separation, explainability). No UI
-yet. Start with `docs/PHASE3_RUNBOOK.md` and `docs/ENGINE_CONTRACT.md`.
+semi-prestasi, Kyorugi and Poomsae): intake, validation, pooling, brackets, byes, seeds, contingent
+separation, explainability, a review/editing web UI, and PDF/XLSX export. Start with
+`docs/PHASE3_RUNBOOK.md` and `docs/ENGINE_CONTRACT.md` for the draw engine specifically.
+
+## Quick start (local machine)
+
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) running and
+[Node.js](https://nodejs.org/) installed. One command starts everything — PostgreSQL, the API, the
+background worker, and the web app — in a single terminal:
+
+```bash
+pnpm dev
+```
+
+Wait about 10-15 seconds, then open **http://localhost:3001** in your browser. Press **Ctrl+C once**
+to stop all three services. First run installs dependencies and builds the API/worker, so it takes a
+little longer; later runs are quick. See `scripts/dev.mjs` for what each step does.
+
+Prefer three separate windows (one per service, e.g. to `Ctrl+C` just one of them) instead of one
+merged terminal? On Windows, run `powershell -ExecutionPolicy Bypass -File scripts/start-all.ps1`
+instead (stop with `scripts/stop-all.ps1`).
 
 ## Documents
 

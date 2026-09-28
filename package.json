@@ -7,6 +7,7 @@
     "node": ">=22.12"
   },
   "scripts": {
+    "dev": "node scripts/dev.mjs",
     "build": "tsc -b tsconfig.build.json",
     "typecheck": "tsc -b tsconfig.build.json && tsc -p tsconfig.lint.json && tsc -p apps/api/tsconfig.lint.json && pnpm --filter @bagantkd/web typecheck",
     "lint": "eslint .",
