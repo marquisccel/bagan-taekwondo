@@ -72,6 +72,12 @@ if (-not (Test-Path (Join-Path $RepoRoot 'node_modules'))) {
   Write-Host '[3/5] First run: installing dependencies (this can take a few minutes)...' -ForegroundColor Cyan
   & npx -y pnpm@10.34.5 install
   if ($LASTEXITCODE -ne 0) { Write-Host 'pnpm install failed.' -ForegroundColor Red; exit 1 }
+
+  # PDF export renders through headless Chromium (Playwright), which `pnpm install` does not
+  # download on its own -- without this, the first PDF export fails with EXPORT_GENERATION_FAILED.
+  Write-Host '[3/5] First run: downloading Chromium for PDF export...' -ForegroundColor Cyan
+  & npx -y pnpm@10.34.5 --filter @bagantkd/export exec playwright install chromium
+  if ($LASTEXITCODE -ne 0) { Write-Host 'Chromium download failed.' -ForegroundColor Red; exit 1 }
 } else {
   Write-Host '[3/5] Dependencies already installed, skipping.' -ForegroundColor Cyan
 }

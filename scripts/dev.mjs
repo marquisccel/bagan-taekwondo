@@ -123,6 +123,20 @@ spawnSync('docker', ['compose', 'exec', '-T', 'postgres', 'createdb', '-U', 'bag
 
 if (!existsSync(join(repoRoot, 'node_modules'))) {
   step('install dependencies (first run only)', 'npx', ['-y', 'pnpm@10.34.5', 'install']);
+  // PDF export renders through headless Chromium (Playwright), which `pnpm install` does not
+  // download on its own -- without this, the first PDF export a teammate tries fails with
+  // EXPORT_GENERATION_FAILED, days after they set the project up, with no obvious connection back
+  // to "did you install anything else?". Doing it here keeps `pnpm dev` a genuine one-command setup.
+  step('download Chromium for PDF export (first run only)', 'npx', [
+    '-y',
+    'pnpm@10.34.5',
+    '--filter',
+    '@bagantkd/export',
+    'exec',
+    'playwright',
+    'install',
+    'chromium',
+  ]);
 }
 
 step('build API and worker', 'npx', ['-y', 'pnpm@10.34.5', 'build']);
