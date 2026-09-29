@@ -384,7 +384,12 @@ export async function loadScheduleSlotForDrawRun(
   tournamentId: string,
   drawRunId: string,
 ): Promise<ScheduleSlot | null> {
-  const categoryRows = await db.query<{ category_key: string; stream: string; discipline: string; gender: string }>(
+  const categoryRows = await db.query<{
+    category_key: string;
+    stream: string;
+    discipline: string;
+    gender: string;
+  }>(
     `select c.category_key, c.stream, c.discipline, c.gender
      from draw_run_category rc join category c on c.id = rc.category_id
      where rc.draw_run_id = $1`,

@@ -73,9 +73,8 @@ export function EntryCorrectionDialog({
     data: vocabulary,
     error: vocabularyError,
     isLoading: vocabularyLoading,
-  } = useApiSWR(
-    actorId && tournamentId ? ['rule-set-vocabulary', tournamentId, actorId] : null,
-    () => api.ruleSetVocabulary(actorId, tournamentId),
+  } = useApiSWR(actorId && tournamentId ? ['rule-set-vocabulary', tournamentId, actorId] : null, () =>
+    api.ruleSetVocabulary(actorId, tournamentId),
   );
   const vocabularyLoaded = !!vocabulary;
 
@@ -103,7 +102,10 @@ export function EntryCorrectionDialog({
     const table = (vocabulary?.weightClassTables ?? []).find(
       (t) => t.ageDivisionCode === ageDivision && t.stream === entry.declared.stream && t.gender === gender,
     );
-    const options = (table?.classes ?? []).map((c) => ({ code: c.code, label: weightClassDisplayLabel(c.code) }));
+    const options = (table?.classes ?? []).map((c) => ({
+      code: c.code,
+      label: weightClassDisplayLabel(c.code),
+    }));
     return withCurrent(options, weightClass, vocabularyLoaded);
   }, [vocabulary, vocabularyLoaded, ageDivision, gender, entry.declared.stream, weightClass]);
 

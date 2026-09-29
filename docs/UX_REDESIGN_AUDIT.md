@@ -2,10 +2,10 @@
 
 |              |                                                                              |
 | ------------ | ---------------------------------------------------------------------------- |
-| Status       | Draft for review — audit + specification only, nothing implemented          |
-| Scope        | `apps/web` (operator UI) and the `apps/api` surface it calls                |
+| Status       | Draft for review — audit + specification only, nothing implemented           |
+| Scope        | `apps/web` (operator UI) and the `apps/api` surface it calls                 |
 | Out of scope | Draw engine, business rules, PDF/export rendering, DB schema, authentication |
-| Method       | Direct source inspection (file:line citations throughout); no assumptions   |
+| Method       | Direct source inspection (file:line citations throughout); no assumptions    |
 
 This document does not propose changing the draw engine, business rules, PDF rendering, database
 schema, or authentication. It audits the current operator-facing web application and specifies how
@@ -51,18 +51,18 @@ import), and give the whole thing one consistent operator-grade visual language.
 Confirmed: Next.js **App Router** (`apps/web/app/**`). No `pages/` directory exists. No routes live
 under `apps/web/src`.
 
-| # | Route | File |
-|---|---|---|
-| 1 | `/` | `apps/web/app/page.tsx` |
-| 2 | `/tournaments` | `apps/web/app/tournaments/page.tsx` |
-| 3 | `/tournaments/[id]` (layout) | `apps/web/app/tournaments/[id]/layout.tsx` |
-| 4 | `/tournaments/[id]` | `apps/web/app/tournaments/[id]/page.tsx` |
-| 5 | `/tournaments/[id]/peserta` | `apps/web/app/tournaments/[id]/peserta/page.tsx` |
-| 6 | `/tournaments/[id]/categories` | `apps/web/app/tournaments/[id]/categories/page.tsx` |
-| 7 | `/tournaments/[id]/categories/[categoryId]` | `apps/web/app/tournaments/[id]/categories/[categoryId]/page.tsx` |
-| 8 | `/tournaments/[id]/drawing` | `apps/web/app/tournaments/[id]/drawing/page.tsx` |
-| 9 | `/tournaments/[id]/draws/[drawRunId]` | `apps/web/app/tournaments/[id]/draws/[drawRunId]/page.tsx` |
-| 10 | `/tournaments/[id]/audit` | `apps/web/app/tournaments/[id]/audit/page.tsx` |
+| #   | Route                                       | File                                                             |
+| --- | ------------------------------------------- | ---------------------------------------------------------------- |
+| 1   | `/`                                         | `apps/web/app/page.tsx`                                          |
+| 2   | `/tournaments`                              | `apps/web/app/tournaments/page.tsx`                              |
+| 3   | `/tournaments/[id]` (layout)                | `apps/web/app/tournaments/[id]/layout.tsx`                       |
+| 4   | `/tournaments/[id]`                         | `apps/web/app/tournaments/[id]/page.tsx`                         |
+| 5   | `/tournaments/[id]/peserta`                 | `apps/web/app/tournaments/[id]/peserta/page.tsx`                 |
+| 6   | `/tournaments/[id]/categories`              | `apps/web/app/tournaments/[id]/categories/page.tsx`              |
+| 7   | `/tournaments/[id]/categories/[categoryId]` | `apps/web/app/tournaments/[id]/categories/[categoryId]/page.tsx` |
+| 8   | `/tournaments/[id]/drawing`                 | `apps/web/app/tournaments/[id]/drawing/page.tsx`                 |
+| 9   | `/tournaments/[id]/draws/[drawRunId]`       | `apps/web/app/tournaments/[id]/draws/[drawRunId]/page.tsx`       |
+| 10  | `/tournaments/[id]/audit`                   | `apps/web/app/tournaments/[id]/audit/page.tsx`                   |
 
 **7 routes audited** (excluding the shared layouts at #3). No route exists for tournament creation
 or participant import — see §6.
@@ -70,6 +70,7 @@ or participant import — see §6.
 ### Per-route detail
 
 #### 1. `/` — entry point
+
 - **Purpose today:** paste a Tournament ID and a User ID to "connect."
 - **What the operator sees:** a banner "DEV AUTH ONLY — not a production login system"
   (`apps/web/app/layout.tsx:12`, shown on every page in the app), two plain text inputs with UUID
@@ -89,6 +90,7 @@ or participant import — see §6.
   abstraction (§4) removes the need to paste IDs.
 
 #### 2. `/tournaments`
+
 - **Purpose:** list tournaments the current actor belongs to.
 - **Sees:** a list (`tournaments/page.tsx:17-19`), each row linking to `/tournaments/{id}`.
 - **Primary action:** "Buka" (open) per row.
@@ -100,6 +102,7 @@ or participant import — see §6.
 - **Verdict: REDESIGN** (keep the list-not-cards instinct; add create + states — see §5).
 
 #### 3–4. `/tournaments/[id]` (layout + overview)
+
 - **Purpose:** tournament home; tabs for Overview/Categories/Audit; a `PersonaSwitcher`.
 - **Sees:** draw run status, revision status, category counts, warnings
   (`tournaments/[id]/page.tsx:13-19`), raw `run.status`, `rev.lifecycle`, `run.kind` printed directly
@@ -118,6 +121,7 @@ or participant import — see §6.
 - **Verdict: REDESIGN** → becomes **Ringkasan** (§8).
 
 #### 5. `/tournaments/[id]/peserta`
+
 - **Purpose:** read-only participant inspection (explicitly documented as such,
   `peserta/page.tsx:146`).
 - **Sees:** paginated table — Peserta, Kontingen, Disiplin, Kategori, Status pendaftaran, Kelayakan,
@@ -138,6 +142,7 @@ or participant import — see §6.
   Peserta" action once import UI exists; visual polish to match the rest of the app).
 
 #### 6–7. `/tournaments/[id]/categories` and `/categories/[categoryId]`
+
 - **Purpose:** browse categories; inspect/operate one category's pools and brackets.
 - **Sees (list):** table — Category (raw `category_key`), Discipline, Gender, Format, Entries,
   Pools, Readiness, Quality (`categories/page.tsx:90-100,115,117`); `LifecycleBar`.
@@ -160,6 +165,7 @@ or participant import — see §6.
 - **Verdict: REDESIGN** (list → **Kategori**; detail → folded into the **Drawing Workspace**, §14).
 
 #### 8. `/tournaments/[id]/drawing`
+
 - **Purpose:** preflight + "Buat Drawing" action (explicitly `AUD-010`, `drawing/page.tsx:229`).
 - **Sees:** eligible/blocked counts, rule-set/lock status, blockers; a "Jenis drawing" select
   (Kandidat/Simulasi — English `CANDIDATE`/`SIMULATION` internally); a raw numeric "Seed" text
@@ -178,6 +184,7 @@ or participant import — see §6.
   "opsi lanjutan" (advanced options) disclosure, not a primary field.
 
 #### 9. `/tournaments/[id]/draws/[drawRunId]`
+
 - **Purpose:** show one draw run's status and quality.
 - **Sees:** `run` + `quality`; raw SHA-256 fingerprints printed as text
   (`draws/[drawRunId]/page.tsx:69-77`).
@@ -193,6 +200,7 @@ or participant import — see §6.
   primary flow.
 
 #### 10. `/tournaments/[id]/audit`
+
 - **Purpose:** append-only history of every mutation.
 - **Sees:** When, Action, Subject, Reason, Detail, Hash; cursor pagination ("Load older events").
 - **Primary action:** Load older events.
@@ -244,23 +252,23 @@ Cross-cutting issues, not repeated per-route above:
 
 Concrete, cited instances of internal/English terms in operator-facing UI:
 
-| Term as shown | Where | File:line |
-|---|---|---|
-| Raw UUID input fields | Tournament ID / User ID | `apps/web/app/page.tsx:40-59` |
-| "DEV AUTH ONLY — not a production login system" | every page | `apps/web/app/layout.tsx:12` |
-| `DRAFT` `REVIEW` `APPROVED` `LOCKED` `PUBLISHED` `AMENDED` (raw) | lifecycle bar | `apps/web/components/LifecycleBar.tsx:60-62` |
-| Raw `rev.lifecycle`, raw `run.status`, raw `run.kind` | tournament overview | `apps/web/app/tournaments/[id]/page.tsx:42-47,89` |
-| "Requires TECHNICAL_DELEGATE+" (raw role) | lifecycle bar | `apps/web/components/LifecycleBar.tsx:101` |
-| "Submit for review" / "Approve" / "Lock" / "Publish" / "Amend" / "Dismiss" (English buttons) | lifecycle bar | `apps/web/lib/lifecycle.ts:21-25`, `LifecycleBar.tsx:69,89,97` |
-| "Amended — a child revision is in DRAFT." / "No further action from this state." (English, + raw DRAFT) | lifecycle bar | `LifecycleBar.tsx:107-108` |
-| `OK` / `Warning` / `Blocked` (English quality labels) | category list, quality badges | `apps/web/components/StatusBadge.tsx:8` |
-| Raw `{c.readiness}` value | category list | `apps/web/app/tournaments/[id]/categories/page.tsx:115` |
-| "Readiness" / "Quality" / "Discipline" / "Gender" / "Format" / "Entries" / "Pools" (English headers) | category list | `categories/page.tsx:90-100` |
-| "You do not have permission to do this." / "This revision is no longer editable (locked, published, or amended)." (English sentences) | command error mapping | `apps/web/lib/command-error.ts:44-47` |
-| `rules_fingerprint` / `input_fingerprint` / `output_fingerprint` raw SHA-256 | draw run page | `apps/web/app/tournaments/[id]/draws/[drawRunId]/page.tsx:69-77` |
-| "Load older events" (English button) | audit page | `apps/web/app/tournaments/[id]/audit/page.tsx` |
-| "Draw run status" / "Revision status" / "None" (English labels) | tournament overview | `tournaments/[id]/page.tsx:42-47` |
-| "Reason for amendment" placeholder, "Amendment reason" aria-label (English) | lifecycle bar | `LifecycleBar.tsx:78-79` |
+| Term as shown                                                                                                                         | Where                         | File:line                                                        |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ---------------------------------------------------------------- |
+| Raw UUID input fields                                                                                                                 | Tournament ID / User ID       | `apps/web/app/page.tsx:40-59`                                    |
+| "DEV AUTH ONLY — not a production login system"                                                                                       | every page                    | `apps/web/app/layout.tsx:12`                                     |
+| `DRAFT` `REVIEW` `APPROVED` `LOCKED` `PUBLISHED` `AMENDED` (raw)                                                                      | lifecycle bar                 | `apps/web/components/LifecycleBar.tsx:60-62`                     |
+| Raw `rev.lifecycle`, raw `run.status`, raw `run.kind`                                                                                 | tournament overview           | `apps/web/app/tournaments/[id]/page.tsx:42-47,89`                |
+| "Requires TECHNICAL_DELEGATE+" (raw role)                                                                                             | lifecycle bar                 | `apps/web/components/LifecycleBar.tsx:101`                       |
+| "Submit for review" / "Approve" / "Lock" / "Publish" / "Amend" / "Dismiss" (English buttons)                                          | lifecycle bar                 | `apps/web/lib/lifecycle.ts:21-25`, `LifecycleBar.tsx:69,89,97`   |
+| "Amended — a child revision is in DRAFT." / "No further action from this state." (English, + raw DRAFT)                               | lifecycle bar                 | `LifecycleBar.tsx:107-108`                                       |
+| `OK` / `Warning` / `Blocked` (English quality labels)                                                                                 | category list, quality badges | `apps/web/components/StatusBadge.tsx:8`                          |
+| Raw `{c.readiness}` value                                                                                                             | category list                 | `apps/web/app/tournaments/[id]/categories/page.tsx:115`          |
+| "Readiness" / "Quality" / "Discipline" / "Gender" / "Format" / "Entries" / "Pools" (English headers)                                  | category list                 | `categories/page.tsx:90-100`                                     |
+| "You do not have permission to do this." / "This revision is no longer editable (locked, published, or amended)." (English sentences) | command error mapping         | `apps/web/lib/command-error.ts:44-47`                            |
+| `rules_fingerprint` / `input_fingerprint` / `output_fingerprint` raw SHA-256                                                          | draw run page                 | `apps/web/app/tournaments/[id]/draws/[drawRunId]/page.tsx:69-77` |
+| "Load older events" (English button)                                                                                                  | audit page                    | `apps/web/app/tournaments/[id]/audit/page.tsx`                   |
+| "Draw run status" / "Revision status" / "None" (English labels)                                                                       | tournament overview           | `tournaments/[id]/page.tsx:42-47`                                |
+| "Reason for amendment" placeholder, "Amendment reason" aria-label (English)                                                           | lifecycle bar                 | `LifecycleBar.tsx:78-79`                                         |
 
 Already correctly translated (do not redo — replicate the pattern instead):
 
@@ -281,92 +289,92 @@ layer. **Internal enum/DB values are never renamed — this is a display mapping
 
 ### Lifecycle status (`packages/domain/src/revision-lifecycle.ts:19-40`)
 
-| Internal | Operator label | Help text |
-|---|---|---|
-| `DRAFT` | Draf | Masih dapat diubah bebas. |
-| `REVIEW` | Dalam Peninjauan | Menunggu persetujuan; perubahan pool masih dapat dilakukan sampai disetujui. |
-| `APPROVED` | Disetujui | Disetujui, siap dikunci. |
-| `LOCKED` | Dikunci | Susunan tidak dapat diubah lagi tanpa membuat revisi baru. |
-| `PUBLISHED` | Diterbitkan | Menjadi acuan dokumen resmi pertandingan. |
-| `AMENDED` | Sedang Direvisi | Ada revisi baru sedang dikerjakan berdasarkan drawing ini. |
-| `SUPERSEDED` | Digantikan Revisi Baru | Tidak lagi berlaku; lihat revisi penggantinya. |
+| Internal     | Operator label         | Help text                                                                    |
+| ------------ | ---------------------- | ---------------------------------------------------------------------------- |
+| `DRAFT`      | Draf                   | Masih dapat diubah bebas.                                                    |
+| `REVIEW`     | Dalam Peninjauan       | Menunggu persetujuan; perubahan pool masih dapat dilakukan sampai disetujui. |
+| `APPROVED`   | Disetujui              | Disetujui, siap dikunci.                                                     |
+| `LOCKED`     | Dikunci                | Susunan tidak dapat diubah lagi tanpa membuat revisi baru.                   |
+| `PUBLISHED`  | Diterbitkan            | Menjadi acuan dokumen resmi pertandingan.                                    |
+| `AMENDED`    | Sedang Direvisi        | Ada revisi baru sedang dikerjakan berdasarkan drawing ini.                   |
+| `SUPERSEDED` | Digantikan Revisi Baru | Tidak lagi berlaku; lihat revisi penggantinya.                               |
 
 ### Lifecycle actions (`packages/domain/src/revision-lifecycle.ts:19-29`; only 5 of 9 are wired to any API route — see §6)
 
-| Internal | Operator label |
-|---|---|
-| `SUBMIT` | Ajukan untuk Ditinjau |
-| `APPROVE` | Setujui |
-| `LOCK` | Kunci Drawing |
-| `PUBLISH` | Terbitkan |
-| `AMEND` | Buat Revisi |
-| `REJECT` *(not exposed via API — §6)* | Tolak, Kembalikan ke Draf |
-| `REOPEN` *(not exposed via API — §6)* | Buka Kembali |
-| `ABANDON_AMENDMENT` *(not exposed via API — §6)* | Batalkan Revisi |
-| `SUPERSEDE` *(not exposed via API — §6, applied automatically by the system, not an operator action)* | (system-applied; presented as "Digantikan oleh Revisi N", never an operator button) |
+| Internal                                                                                              | Operator label                                                                      |
+| ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `SUBMIT`                                                                                              | Ajukan untuk Ditinjau                                                               |
+| `APPROVE`                                                                                             | Setujui                                                                             |
+| `LOCK`                                                                                                | Kunci Drawing                                                                       |
+| `PUBLISH`                                                                                             | Terbitkan                                                                           |
+| `AMEND`                                                                                               | Buat Revisi                                                                         |
+| `REJECT` _(not exposed via API — §6)_                                                                 | Tolak, Kembalikan ke Draf                                                           |
+| `REOPEN` _(not exposed via API — §6)_                                                                 | Buka Kembali                                                                        |
+| `ABANDON_AMENDMENT` _(not exposed via API — §6)_                                                      | Batalkan Revisi                                                                     |
+| `SUPERSEDE` _(not exposed via API — §6, applied automatically by the system, not an operator action)_ | (system-applied; presented as "Digantikan oleh Revisi N", never an operator button) |
 
 ### Draw / command quality verdict (`GREEN`/`YELLOW`/`RED`, e.g. `apps/web/lib/api.ts` `CommandVerdict`)
 
-| Internal | Operator label | Help text |
-|---|---|---|
-| `GREEN` | Aman | Perpindahan tidak menimbulkan masalah baru. |
-| `YELLOW` | Perlu Perhatian | Perubahan ini menurunkan kualitas pengelompokan — alasan wajib diisi untuk melanjutkan. |
-| `RED` | Tidak Dapat Diterapkan | Perubahan melanggar ketentuan wajib kategori dan tidak dapat dilakukan. |
+| Internal | Operator label         | Help text                                                                               |
+| -------- | ---------------------- | --------------------------------------------------------------------------------------- |
+| `GREEN`  | Aman                   | Perpindahan tidak menimbulkan masalah baru.                                             |
+| `YELLOW` | Perlu Perhatian        | Perubahan ini menurunkan kualitas pengelompokan — alasan wajib diisi untuk melanjutkan. |
+| `RED`    | Tidak Dapat Diterapkan | Perubahan melanggar ketentuan wajib kategori dan tidak dapat dilakukan.                 |
 
 ### Category readiness
 
-| Internal | Operator label |
-|---|---|
-| `READY` | Siap |
-| `BLOCKED` | Diblokir |
+| Internal  | Operator label |
+| --------- | -------------- |
+| `READY`   | Siap           |
+| `BLOCKED` | Diblokir       |
 
 ### Impact/reason codes (already translated — `apps/web/lib/impact-labels.ts:7-20`; reproduced here for a single source of truth)
 
-| Internal | Operator label |
-|---|---|
-| `POOL_SIZE_EXCEEDED` | Jumlah peserta pool melebihi batas maksimum |
-| `MEASURE_MISSING` | Data tinggi/berat/sabuk peserta tidak lengkap |
-| `MAX_TOLERANCE_EXCEEDED` | Selisih tinggi/berat melebihi batas maksimum yang ditetapkan panitia |
-| `BELT_BAND_MISMATCH` | Sabuk peserta berbeda kelompok dalam satu pool |
-| `WEIGHT_TOLERANCE_WORSENED` | Selisih berat badan dalam pool melampaui toleransi ideal |
-| `HEIGHT_TOLERANCE_WORSENED` | Selisih tinggi badan dalam pool melampaui toleransi ideal |
-| `BELT_TOLERANCE_WORSENED` | Selisih tingkat sabuk dalam pool melampaui toleransi ideal |
-| `CONTINGENT_CONCENTRATION_WORSENED` | Peserta dari satu kontingen menjadi lebih menumpuk dalam pool |
-| `POOL_SIZE_WORSENED` | Ukuran pool menjauhi ukuran yang disarankan |
-| `SINGLETON_CREATED` | Terbentuk pool berisi satu peserta (walkover) |
+| Internal                            | Operator label                                                       |
+| ----------------------------------- | -------------------------------------------------------------------- |
+| `POOL_SIZE_EXCEEDED`                | Jumlah peserta pool melebihi batas maksimum                          |
+| `MEASURE_MISSING`                   | Data tinggi/berat/sabuk peserta tidak lengkap                        |
+| `MAX_TOLERANCE_EXCEEDED`            | Selisih tinggi/berat melebihi batas maksimum yang ditetapkan panitia |
+| `BELT_BAND_MISMATCH`                | Sabuk peserta berbeda kelompok dalam satu pool                       |
+| `WEIGHT_TOLERANCE_WORSENED`         | Selisih berat badan dalam pool melampaui toleransi ideal             |
+| `HEIGHT_TOLERANCE_WORSENED`         | Selisih tinggi badan dalam pool melampaui toleransi ideal            |
+| `BELT_TOLERANCE_WORSENED`           | Selisih tingkat sabuk dalam pool melampaui toleransi ideal           |
+| `CONTINGENT_CONCENTRATION_WORSENED` | Peserta dari satu kontingen menjadi lebih menumpuk dalam pool        |
+| `POOL_SIZE_WORSENED`                | Ukuran pool menjauhi ukuran yang disarankan                          |
+| `SINGLETON_CREATED`                 | Terbentuk pool berisi satu peserta (walkover)                        |
 
 ### Command/API error codes (`apps/web/lib/command-error.ts`)
 
-| Internal | Operator label |
-|---|---|
-| `HARD_CONSTRAINT_VIOLATED` | Perubahan tidak dapat dilakukan karena melanggar ketentuan kategori. |
-| `REASON_REQUIRED` | Perubahan ini menurunkan kualitas pengelompokan. Isi alasan untuk melanjutkan. |
-| `BRACKET_INVARIANT_VIOLATED` | Perubahan ditolak: susunan bagan yang dihasilkan tidak valid. |
-| `ENTRY_NOT_FOUND` | Peserta tidak ditemukan pada revisi ini. |
-| `POOL_NOT_FOUND` | Pool tujuan tidak ditemukan pada revisi ini. |
-| `REVISION_CONFLICT` | Drawing telah diperbarui oleh pengguna lain. |
-| `FORBIDDEN_COMMAND` / `UNAUTHORIZED_TOURNAMENT_ACCESS` | Anda tidak memiliki izin untuk melakukan tindakan ini. *(replaces the current English sentence, §4)* |
-| `REVISION_LOCKED` | Revisi ini sudah tidak dapat diubah (dikunci, diterbitkan, atau sedang direvisi). *(replaces the current English sentence, §4)* |
+| Internal                                               | Operator label                                                                                                                  |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| `HARD_CONSTRAINT_VIOLATED`                             | Perubahan tidak dapat dilakukan karena melanggar ketentuan kategori.                                                            |
+| `REASON_REQUIRED`                                      | Perubahan ini menurunkan kualitas pengelompokan. Isi alasan untuk melanjutkan.                                                  |
+| `BRACKET_INVARIANT_VIOLATED`                           | Perubahan ditolak: susunan bagan yang dihasilkan tidak valid.                                                                   |
+| `ENTRY_NOT_FOUND`                                      | Peserta tidak ditemukan pada revisi ini.                                                                                        |
+| `POOL_NOT_FOUND`                                       | Pool tujuan tidak ditemukan pada revisi ini.                                                                                    |
+| `REVISION_CONFLICT`                                    | Drawing telah diperbarui oleh pengguna lain.                                                                                    |
+| `FORBIDDEN_COMMAND` / `UNAUTHORIZED_TOURNAMENT_ACCESS` | Anda tidak memiliki izin untuk melakukan tindakan ini. _(replaces the current English sentence, §4)_                            |
+| `REVISION_LOCKED`                                      | Revisi ini sudah tidak dapat diubah (dikunci, diterbitkan, atau sedang direvisi). _(replaces the current English sentence, §4)_ |
 
 ### Export/document types (already translated — `apps/web/components/ExportPanel.tsx:17-24`)
 
-| Internal | Operator label |
-|---|---|
-| `TOURNAMENT_DRAW_BOOK` | Buku Bagan Turnamen (PDF) |
-| `CATEGORY_DRAW` | Bagan Kategori (PDF) |
-| `POOL_SHEET` | Lembar Pool (PDF) |
-| `BRACKET_SHEET` | Bagan Pertandingan (PDF) |
-| `XLSX_WORKBOOK` | Workbook (XLSX) |
+| Internal                           | Operator label                             |
+| ---------------------------------- | ------------------------------------------ |
+| `TOURNAMENT_DRAW_BOOK`             | Buku Bagan Turnamen (PDF)                  |
+| `CATEGORY_DRAW`                    | Bagan Kategori (PDF)                       |
+| `POOL_SHEET`                       | Lembar Pool (PDF)                          |
+| `BRACKET_SHEET`                    | Bagan Pertandingan (PDF)                   |
+| `XLSX_WORKBOOK`                    | Workbook (XLSX)                            |
 | `SEMI_PRESTASI_COMPACT_DRAW_SHEET` | Lembar Drawing Ringkas Semi Prestasi (PDF) |
 
 ### Roles (`apps/web/lib/lifecycle.ts:10`)
 
-| Internal | Operator label |
-|---|---|
-| `VIEWER` | Peninjau |
-| `DRAWING_OFFICER` | Petugas Drawing |
+| Internal             | Operator label  |
+| -------------------- | --------------- |
+| `VIEWER`             | Peninjau        |
+| `DRAWING_OFFICER`    | Petugas Drawing |
 | `TECHNICAL_DELEGATE` | Delegasi Teknis |
-| `ADMIN` | Admin |
+| `ADMIN`              | Admin           |
 
 ### Participant eligibility / issue status
 
@@ -379,30 +387,30 @@ implementation so there is exactly one dictionary, not two.
 
 ## 6. Current feature capability matrix
 
-| Feature | Classification | Evidence |
-|---|---|---|
-| Tournament creation | **MISSING** | No `POST /tournaments` anywhere in `apps/api/src` (confirmed by exhaustive search); no create form in `apps/web`. |
-| Tournament list | IMPLEMENTED | `GET /tournaments` (`tournament-list.controller.ts`) + `apps/web/app/tournaments/page.tsx`. |
-| Sign-in / session | **MISSING** (dev-only stand-in exists) | `x-actor-id` header pasted by hand; no login, no cookie/JWT (`dev-auth.tsx`, `actor.ts:6-9`). |
-| CSV import (browser) | **MISSING** | No multipart/file-upload controller in `apps/api`; parser exists (`packages/intake/src/csv.ts`) but is only invoked from `tools/draw-simulator/src/cli.ts` (a CLI). |
-| CSV import (CLI) | SCRIPT_ONLY | `tools/draw-simulator/src/cli.ts:78` etc. |
-| Import preview/validation UI | **MISSING** | No corresponding UI; validation *output* is viewable read-only on the Peserta page once data already exists in the DB. |
-| Participant list/inspection | IMPLEMENTED | `apps/web/app/tournaments/[id]/peserta/page.tsx`, fully wired, read-only by design. |
-| Participant correction (edit a value) | **MISSING** | Peserta page is explicitly read-only (`peserta/page.tsx:146`); no edit endpoint audited/found. |
-| Category browsing | IMPLEMENTED | `apps/web/app/tournaments/[id]/categories/page.tsx`. |
-| Category filters (discipline/prestasi/age/gender/readiness) | BACKEND_READY or IMPLEMENTED — **unconfirmed exact filter set**, see §29 | `CategoryFilters` component exists; exact filters not enumerated in this pass. |
-| Generate drawing (preflight + create) | IMPLEMENTED | `apps/web/app/tournaments/[id]/drawing/page.tsx` + `POST tournaments/:id/draw-runs` (`draw-run.controller.ts:29-87`). |
-| Drag-and-drop move | IMPLEMENTED | `PoolCard.tsx:38-50` → `api.moveEntry` → `POST revisions/:id/commands/move-entry` (`revision.controller.ts`). |
-| Keyboard move (non-drag alternative) | IMPLEMENTED | `MoveEntryDialog.tsx` calling the same `api.moveEntry`. |
-| Swap | IMPLEMENTED | `SwapEntryDialog.tsx` → `api.swapEntry`. |
-| Move pool (arena/order) | IMPLEMENTED | `PoolCard.tsx:62-100` → `api.movePool`. |
-| Bracket viewing | IMPLEMENTED (read-only) | `BracketView.tsx`. |
-| Submit / Approve / Lock / Publish / Amend | IMPLEMENTED | `revision.controller.ts:110-153` + `LifecycleBar.tsx`. |
-| Reject / Reopen / Abandon-amendment / Supersede | **MISSING at the API layer** (domain-only) | `RevisionController` has no route for these 4 of the 9 domain actions; exercised only in `packages/domain/src/state-machines.property.test.ts`. |
-| Export generation | IMPLEMENTED | `ExportPanel.tsx` → `apps/api/src/export/export.controller.ts`. |
-| Export download | IMPLEMENTED | `apps/web/lib/api.ts:435-449` (`downloadExportFile`). |
-| Audit history | IMPLEMENTED | `apps/web/app/tournaments/[id]/audit/page.tsx` + `audit.controller.ts:18-41`. |
-| Concurrency conflict handling | IMPLEMENTED (at least for lifecycle) | `LifecycleBar.tsx:48-49` handles `REVISION_CONFLICT`. |
+| Feature                                                     | Classification                                                           | Evidence                                                                                                                                                            |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tournament creation                                         | **MISSING**                                                              | No `POST /tournaments` anywhere in `apps/api/src` (confirmed by exhaustive search); no create form in `apps/web`.                                                   |
+| Tournament list                                             | IMPLEMENTED                                                              | `GET /tournaments` (`tournament-list.controller.ts`) + `apps/web/app/tournaments/page.tsx`.                                                                         |
+| Sign-in / session                                           | **MISSING** (dev-only stand-in exists)                                   | `x-actor-id` header pasted by hand; no login, no cookie/JWT (`dev-auth.tsx`, `actor.ts:6-9`).                                                                       |
+| CSV import (browser)                                        | **MISSING**                                                              | No multipart/file-upload controller in `apps/api`; parser exists (`packages/intake/src/csv.ts`) but is only invoked from `tools/draw-simulator/src/cli.ts` (a CLI). |
+| CSV import (CLI)                                            | SCRIPT_ONLY                                                              | `tools/draw-simulator/src/cli.ts:78` etc.                                                                                                                           |
+| Import preview/validation UI                                | **MISSING**                                                              | No corresponding UI; validation _output_ is viewable read-only on the Peserta page once data already exists in the DB.                                              |
+| Participant list/inspection                                 | IMPLEMENTED                                                              | `apps/web/app/tournaments/[id]/peserta/page.tsx`, fully wired, read-only by design.                                                                                 |
+| Participant correction (edit a value)                       | **MISSING**                                                              | Peserta page is explicitly read-only (`peserta/page.tsx:146`); no edit endpoint audited/found.                                                                      |
+| Category browsing                                           | IMPLEMENTED                                                              | `apps/web/app/tournaments/[id]/categories/page.tsx`.                                                                                                                |
+| Category filters (discipline/prestasi/age/gender/readiness) | BACKEND_READY or IMPLEMENTED — **unconfirmed exact filter set**, see §29 | `CategoryFilters` component exists; exact filters not enumerated in this pass.                                                                                      |
+| Generate drawing (preflight + create)                       | IMPLEMENTED                                                              | `apps/web/app/tournaments/[id]/drawing/page.tsx` + `POST tournaments/:id/draw-runs` (`draw-run.controller.ts:29-87`).                                               |
+| Drag-and-drop move                                          | IMPLEMENTED                                                              | `PoolCard.tsx:38-50` → `api.moveEntry` → `POST revisions/:id/commands/move-entry` (`revision.controller.ts`).                                                       |
+| Keyboard move (non-drag alternative)                        | IMPLEMENTED                                                              | `MoveEntryDialog.tsx` calling the same `api.moveEntry`.                                                                                                             |
+| Swap                                                        | IMPLEMENTED                                                              | `SwapEntryDialog.tsx` → `api.swapEntry`.                                                                                                                            |
+| Move pool (arena/order)                                     | IMPLEMENTED                                                              | `PoolCard.tsx:62-100` → `api.movePool`.                                                                                                                             |
+| Bracket viewing                                             | IMPLEMENTED (read-only)                                                  | `BracketView.tsx`.                                                                                                                                                  |
+| Submit / Approve / Lock / Publish / Amend                   | IMPLEMENTED                                                              | `revision.controller.ts:110-153` + `LifecycleBar.tsx`.                                                                                                              |
+| Reject / Reopen / Abandon-amendment / Supersede             | **MISSING at the API layer** (domain-only)                               | `RevisionController` has no route for these 4 of the 9 domain actions; exercised only in `packages/domain/src/state-machines.property.test.ts`.                     |
+| Export generation                                           | IMPLEMENTED                                                              | `ExportPanel.tsx` → `apps/api/src/export/export.controller.ts`.                                                                                                     |
+| Export download                                             | IMPLEMENTED                                                              | `apps/web/lib/api.ts:435-449` (`downloadExportFile`).                                                                                                               |
+| Audit history                                               | IMPLEMENTED                                                              | `apps/web/app/tournaments/[id]/audit/page.tsx` + `audit.controller.ts:18-41`.                                                                                       |
+| Concurrency conflict handling                               | IMPLEMENTED (at least for lifecycle)                                     | `LifecycleBar.tsx:48-49` handles `REVISION_CONFLICT`.                                                                                                               |
 
 **Do not design fiction**: tournament creation and browser-based CSV/XLSX import are the two
 capabilities this redesign cannot merely "make prettier" — they require new backend endpoints in
@@ -504,7 +512,7 @@ client-supplied role, only hiding the raw mechanism from the UI.
 
 1. On first load with no stored session, show a minimal **"Pilih Pengguna Pengembangan"** picker —
    not a raw ID paste box, but a dropdown/list populated from `GET /tournaments/:id/members` for a
-   *known* development tournament (seeded), or, if no tournament exists yet, a single obvious
+   _known_ development tournament (seeded), or, if no tournament exists yet, a single obvious
    **"Buat Turnamen"** call to action with a single implicit development actor already assigned
    (e.g. an actor auto-created by the seed script, never asked of the operator).
 2. Once a session exists, `x-actor-id` is set exactly as today, just never re-typed by a human —
@@ -521,7 +529,7 @@ mechanism that produced it.
 
 **Explicit functional gap:** none of this removes the need for `tournament_member` rows to exist
 before a "user" can be selected — seeding development actors remains a script-only concern until
-real auth exists; this document does not invent user *registration*.
+real auth exists; this document does not invent user _registration_.
 
 ---
 
@@ -535,12 +543,12 @@ not currently support."
 
 **Buat Turnamen**
 
-| Field | Required | Notes |
-|---|---|---|
-| Nama Turnamen | ya | free text |
-| Tanggal mulai / selesai | ya | date range |
-| Lokasi | ya | free text |
-| Kode singkat | tidak | only if the domain already has a concept of a short code (confirm against `tournament` schema before implementing — do not invent one) |
+| Field                   | Required | Notes                                                                                                                                  |
+| ----------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Nama Turnamen           | ya       | free text                                                                                                                              |
+| Tanggal mulai / selesai | ya       | date range                                                                                                                             |
+| Lokasi                  | ya       | free text                                                                                                                              |
+| Kode singkat            | tidak    | only if the domain already has a concept of a short code (confirm against `tournament` schema before implementing — do not invent one) |
 
 Flow: `Buat Turnamen` (button, from `/turnamen`) → form → `Simpan` → the new tournament opens
 directly at its **Ringkasan** page. The tournament's internal id is generated by the backend and
@@ -560,7 +568,7 @@ not a parsing-logic gap). Distinguishing the four categories from §9 of the tas
   is a way to hand it bytes from a browser.
 - **(C) development/import scripts only:** `tools/draw-simulator/src/cli.ts` — the only current way
   CSV data reaches the system.
-- **(D) completely missing:** XLSX *reading* (only XLSX *writing*, for export, exists —
+- **(D) completely missing:** XLSX _reading_ (only XLSX _writing_, for export, exists —
   `packages/export/src/xlsx.ts`). If XLSX upload is required, an XLSX parser must be added; this
   document does not assume one exists.
 
@@ -594,14 +602,14 @@ File: pendaftaran-piala-gubernur.xlsx
 
 ### Failure/edge cases
 
-| Case | Operator-facing behavior |
-|---|---|
-| Invalid file format | "Berkas tidak dapat dibaca. Pastikan file berformat CSV/XLSX sesuai templat." — never a parser stack trace. |
-| Required columns missing | "Kolom wajib tidak ditemukan: [nama kolom]." listing the specific missing column(s) using the template's own column names, never a schema/field identifier. |
-| Duplicate rows | Flagged per-row in the preview as "Kemungkinan duplikat", never silently merged or silently dropped. |
-| Suspicious values | Surfaced exactly as the existing issue codes already describe them (§13), never a new heuristic invented here. |
+| Case                     | Operator-facing behavior                                                                                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Invalid file format      | "Berkas tidak dapat dibaca. Pastikan file berformat CSV/XLSX sesuai templat." — never a parser stack trace.                                                                          |
+| Required columns missing | "Kolom wajib tidak ditemukan: [nama kolom]." listing the specific missing column(s) using the template's own column names, never a schema/field identifier.                          |
+| Duplicate rows           | Flagged per-row in the preview as "Kemungkinan duplikat", never silently merged or silently dropped.                                                                                 |
+| Suspicious values        | Surfaced exactly as the existing issue codes already describe them (§13), never a new heuristic invented here.                                                                       |
 | Mixed valid/invalid rows | The 3-bucket summary above (siap / perlu diperiksa / tidak dapat diproses) — valid rows are never blocked by invalid ones; the operator chooses to proceed with only the valid rows. |
-| Thousands of rows | Preview must be paginated/virtualized, not rendered as one giant table — reuse whatever pagination approach the Peserta list already uses. |
+| Thousands of rows        | Preview must be paginated/virtualized, not rendered as one giant table — reuse whatever pagination approach the Peserta list already uses.                                           |
 
 **Template question (open, §29):** does the importer expect one fixed column template, or does it
 need column mapping? This document does not invent a flexible mapper unless the intake pipeline
@@ -616,11 +624,11 @@ a flexible mapper unless it is actually needed").
 Severity presentation (color + text + icon, never color alone, matching the existing
 `StatusBadge` pattern of icon+text):
 
-| Severity | Presentation | Meaning |
-|---|---|---|
-| Merah | ✕ + red | Harus diperbaiki sebelum data ini dapat digunakan pada operasi terkait (mis. tidak dapat masuk kategori). |
-| Kuning | ⚠ + amber | Perlu diperiksa; dapat tetap diproses tapi operator harus sadar akan potensi masalah. |
-| Biru/abu | ℹ + gray | Informasi, tidak memerlukan tindakan. |
+| Severity | Presentation | Meaning                                                                                                   |
+| -------- | ------------ | --------------------------------------------------------------------------------------------------------- |
+| Merah    | ✕ + red      | Harus diperbaiki sebelum data ini dapat digunakan pada operasi terkait (mis. tidak dapat masuk kategori). |
+| Kuning   | ⚠ + amber    | Perlu diperiksa; dapat tetap diproses tapi operator harus sadar akan potensi masalah.                     |
+| Biru/abu | ℹ + gray     | Informasi, tidak memerlukan tindakan.                                                                     |
 
 Message format (translate, do not invent new validation behavior): a short bold headline plus one
 plain sentence of context, following the pattern already established in the task brief and
@@ -750,6 +758,7 @@ presentation per verdict, using the dictionary in §5:
 **GREEN (Aman):** apply immediately, toast: "Peserta berhasil dipindahkan."
 
 **YELLOW (Perlu Perhatian):**
+
 ```
 Perpindahan ini perlu diperiksa.
 
@@ -762,6 +771,7 @@ Alasan perubahan
 ```
 
 **RED (Tidak Dapat Diterapkan):**
+
 ```
 Peserta tidak dapat dipindahkan.
 
@@ -771,7 +781,7 @@ Peserta tidak dapat dipindahkan.
 ```
 
 No raw error code is ever the headline message — `impact-labels.ts` and `command-error.ts` already
-implement exactly this translation; the redesign's job is to make sure the *dialog chrome* around
+implement exactly this translation; the redesign's job is to make sure the _dialog chrome_ around
 these existing translated strings looks like the above, consistently, everywhere a verdict can
 occur (drag drop, Move dialog, Swap dialog — currently each may render this differently; needs
 direct visual confirmation, §29).
@@ -902,7 +912,7 @@ ordinary responsive layout, but this is not a design goal to actively pursue in 
 Carry forward what already exists and is correct — do not regress it during redesign:
 
 - Icon+text status (never color alone) — already the pattern in `StatusBadge.tsx`; just needs its
-  *labels* translated (§4), not its accessible structure changed.
+  _labels_ translated (§4), not its accessible structure changed.
 - Keyboard-reachable Move/Swap dialogs already exist alongside drag-and-drop — preserve both paths
   for every future drag interaction added during redesign, never drag-only.
 - Semantic buttons — already used in `LifecycleBar.tsx`/dialogs; keep.
@@ -919,13 +929,13 @@ Carry forward what already exists and is correct — do not regress it during re
 
 Define once, apply everywhere (no route audited today has a fully consistent set):
 
-| State | Presentation |
-|---|---|
-| Loading | skeleton rows matching the eventual table shape, not a generic spinner-only screen, for any list (Peserta, Kategori, Riwayat). |
-| Empty | a sentence explaining *why* it's empty and the one action that fixes it (e.g. Peserta empty → "Belum ada data peserta. [Impor Data Peserta]"), never a bare "No data." |
-| Success | inline toast/banner in Indonesian, dismissible, e.g. "Peserta berhasil dipindahkan." |
-| Warning (YELLOW) | modal/dialog per §18, never a silent partial success. |
-| Blocked/error (RED) | modal/dialog per §18, with the human explanation always present, technical code always available behind a details toggle, never as the headline. |
+| State                   | Presentation                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Loading                 | skeleton rows matching the eventual table shape, not a generic spinner-only screen, for any list (Peserta, Kategori, Riwayat).                                                                                                                                                                                                                     |
+| Empty                   | a sentence explaining _why_ it's empty and the one action that fixes it (e.g. Peserta empty → "Belum ada data peserta. [Impor Data Peserta]"), never a bare "No data."                                                                                                                                                                             |
+| Success                 | inline toast/banner in Indonesian, dismissible, e.g. "Peserta berhasil dipindahkan."                                                                                                                                                                                                                                                               |
+| Warning (YELLOW)        | modal/dialog per §18, never a silent partial success.                                                                                                                                                                                                                                                                                              |
+| Blocked/error (RED)     | modal/dialog per §18, with the human explanation always present, technical code always available behind a details toggle, never as the headline.                                                                                                                                                                                                   |
 | Stale/concurrent update | "Drawing telah diperbarui oleh pengguna lain. [ Muat Ulang Perubahan ]" — this exact pattern already exists for lifecycle actions (`LifecycleBar.tsx:48-49` handles `REVISION_CONFLICT`); extend it to every mutating action in the Drawing Workspace (move/swap/move-pool), which was not confirmed to have the same handling in this pass (§29). |
 
 ---
@@ -933,6 +943,7 @@ Define once, apply everywhere (no route audited today has a fully consistent set
 ## 27. Screen-by-screen specifications
 
 ### A. Tournament List (`/turnamen`)
+
 - Title: Turnamen
 - Purpose: entry point; choose or create a tournament.
 - Primary CTA: Buat Turnamen
@@ -945,6 +956,7 @@ Define once, apply everywhere (no route audited today has a fully consistent set
 - Next step: open a tournament → Ringkasan
 
 ### B. Create Tournament (`/turnamen/baru`)
+
 - Title: Buat Turnamen
 - Purpose: create a new tournament record (functional gap, §11)
 - Primary CTA: Simpan
@@ -954,6 +966,7 @@ Define once, apply everywhere (no route audited today has a fully consistent set
 - Next step: redirect to the new tournament's Ringkasan
 
 ### C. Tournament Summary — Ringkasan (`/turnamen/:id/ringkasan`)
+
 - Title: tournament name (always visible, never the id)
 - Purpose: "what do I do next" (§8 of the brief)
 - Primary CTA: contextual — "Periksa Data", "Buat Drawing", or "Lanjutkan Peninjauan" depending on
@@ -966,6 +979,7 @@ Define once, apply everywhere (no route audited today has a fully consistent set
 - Next step: whichever the primary CTA points to
 
 ### D. Participant Import (`/turnamen/:id/peserta` → Impor Data Peserta)
+
 - Title: Impor Data Peserta
 - Purpose: get a CSV/XLSX of registrations into the system (functional gap, §12)
 - Primary CTA: pilih berkas
@@ -976,6 +990,7 @@ Define once, apply everywhere (no route audited today has a fully consistent set
 - Next step: Import Preview (screen E)
 
 ### E. Import Preview / Validation
+
 - Title: Impor Data Peserta (continued)
 - Purpose: show what will happen before committing
 - Primary CTA: Lanjutkan Impor
@@ -988,6 +1003,7 @@ Define once, apply everywhere (no route audited today has a fully consistent set
 - Next step: confirm → Peserta list (screen F), now populated
 
 ### F. Participant List (`/turnamen/:id/peserta`)
+
 - Title: Peserta
 - Purpose: operational inspection (§14) — already exists, redesign is visual + add import entry point
 - Primary CTA: Impor Data Peserta
@@ -999,6 +1015,7 @@ Define once, apply everywhere (no route audited today has a fully consistent set
 - Next step: Kategori, or fix flagged issues (re-import or, if/when editing exists, correct inline)
 
 ### G. Categories (`/turnamen/:id/kategori`)
+
 - Title: Kategori
 - Purpose: browse tournament structure (§15)
 - Primary CTA: click a row → opens that category inside the Drawing Workspace
@@ -1010,6 +1027,7 @@ Define once, apply everywhere (no route audited today has a fully consistent set
 - Next step: Drawing Workspace for the selected category
 
 ### H. Drawing Preflight (`/turnamen/:id/drawing`)
+
 - Title: Drawing
 - Purpose: pre-generation readiness check + trigger generation (§16)
 - Primary CTA: Buat Drawing
@@ -1021,6 +1039,7 @@ Define once, apply everywhere (no route audited today has a fully consistent set
 ### I. Drawing Workspace (`/turnamen/:id/drawing`, category selected) — see §34 detail below
 
 ### J. Manual Move / Warning Dialog
+
 - Title: contextual ("Perpindahan ini perlu diperiksa." / "Peserta tidak dapat dipindahkan.")
 - Purpose: present a move/swap verdict (§18)
 - Primary CTA: Tetap Pindahkan (YELLOW) or none (RED, only Tutup)
@@ -1029,12 +1048,14 @@ Define once, apply everywhere (no route audited today has a fully consistent set
 - Next step: apply (GREEN/YELLOW-confirmed) or return to workspace unchanged (RED/cancelled)
 
 ### K. Review / Approval
+
 - Not a separate route — a mode of the Drawing Workspace, surfaced via the lifecycle stepper (§19)
 - Primary CTA: whatever the current stage's next action is (Ajukan/Setujui/Kunci/Terbitkan)
 - Secondary: view quality summary, view flagged categories
 - Important state: confirmation dialogs for Lock/Publish (§19)
 
 ### L. Documents (`/turnamen/:id/dokumen`)
+
 - Title: Dokumen
 - Purpose: generate/preview/download official documents (§21)
 - Primary CTA: Buat Dokumen (per type)
@@ -1044,6 +1065,7 @@ Define once, apply everywhere (no route audited today has a fully consistent set
 - Next step: download, or return to Drawing if a document reveals a problem
 
 ### M. Revision History (`/turnamen/:id/riwayat`)
+
 - Title: Riwayat
 - Purpose: audit trail (§22)
 - Primary CTA: none (read-only)
@@ -1185,5 +1207,5 @@ Ordered to unblock the primary workflow as early as possible, each slice indepen
 
 ---
 
-*This document is an audit and specification only. No React components, CSS, routes, migrations,
-API, auth, engine, or export code were changed to produce it.*
+_This document is an audit and specification only. No React components, CSS, routes, migrations,
+API, auth, engine, or export code were changed to produce it._

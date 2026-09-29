@@ -5,7 +5,7 @@ export const EXPORT_TEMPLATE_VERSION = 'v1';
  * Template version of the dense semi-prestasi tournament-desk sheet (AUD-012) — versioned on its
  * own so re-designing that one template never invalidates the fingerprints of the older documents.
  */
-export const SEMI_PRESTASI_COMPACT_TEMPLATE_VERSION = 'semi-compact-v5';
+export const SEMI_PRESTASI_COMPACT_TEMPLATE_VERSION = 'semi-compact-v6';
 
 /** The template version recorded in `export_artifact.template_version` / the parameters fingerprint. */
 export function exportTemplateVersionFor(exportType: string): string {

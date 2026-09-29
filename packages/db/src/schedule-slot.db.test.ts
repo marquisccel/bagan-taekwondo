@@ -112,7 +112,7 @@ for (const backend of testBackends()) {
       expect(slot).toBeNull();
     });
 
-    it('finds the arena/day slot once one of the run\'s categories is scheduled there, in the sheet\'s own row order', async () => {
+    it("finds the arena/day slot once one of the run's categories is scheduled there, in the sheet's own row order", async () => {
       const ready = expected.categories.filter((c) => c.readiness === 'READY');
       const first = ready[0];
       const second = ready[1];
@@ -162,7 +162,8 @@ for (const backend of testBackends()) {
       const kyorugiWithWeight = ready.find(
         (c) => !alreadyScheduled.has(c.categoryKey) && /\|WEIGHT_CLASS=[-+]\d+(\||$)/.test(c.categoryKey),
       );
-      if (!kyorugiWithWeight) throw new Error('need a 3rd+ Kyorugi category with a weight class for this fixture');
+      if (!kyorugiWithWeight)
+        throw new Error('need a 3rd+ Kyorugi category with a weight class for this fixture');
       const dims = categoryKeyDims(kyorugiWithWeight.categoryKey);
       const canonical = dims.get('WEIGHT_CLASS') ?? '';
       const sign = canonical[0];

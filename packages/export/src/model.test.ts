@@ -70,7 +70,10 @@ describe('buildExportModel — determinism and exact mapping', () => {
     // Plain categoryKey string sort would put "-78" before "-9" ('7' < '9'), which is backwards --
     // Under 9kg is a lighter (and thus earlier) weight class than Under 78kg. This is exactly the
     // ordering bug `category-order.ts` exists to fix so screen and export agree.
-    expect(model.categories.map((c) => c.categoryKey)).toEqual(['TPL|WEIGHT_CLASS=-9', 'TPL|WEIGHT_CLASS=-78']);
+    expect(model.categories.map((c) => c.categoryKey)).toEqual([
+      'TPL|WEIGHT_CLASS=-9',
+      'TPL|WEIGHT_CLASS=-78',
+    ]);
   });
 
   it('orders pools by ordinal and bracket slots by position, independent of insertion order', () => {

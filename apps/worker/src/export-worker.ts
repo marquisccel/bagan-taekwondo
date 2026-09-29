@@ -155,7 +155,11 @@ export async function executeExport(
       tournamentSlug: model.tournament.code,
       documentType: claimed.exportType,
       revisionNo: claimed.revisionNo,
-      ...(scope.category ? { categorySlug: scope.category.categoryKey } : slotSlug ? { categorySlug: slotSlug } : {}),
+      ...(scope.category
+        ? { categorySlug: scope.category.categoryKey }
+        : slotSlug
+          ? { categorySlug: slotSlug }
+          : {}),
       generatedAt,
       extension: claimed.format === 'PDF' ? 'pdf' : 'xlsx',
     });

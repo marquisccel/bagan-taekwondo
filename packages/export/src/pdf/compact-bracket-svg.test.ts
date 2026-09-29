@@ -16,8 +16,10 @@ function withUniquePrefix(bracket: ExportBracket, prefix: string): ExportBracket
       ...m,
       id: rename(m.id),
       matchUid: rename(m.matchUid),
-      feederA: m.feederA.kind === 'match' ? { ...m.feederA, matchUid: rename(m.feederA.matchUid) } : m.feederA,
-      feederB: m.feederB.kind === 'match' ? { ...m.feederB, matchUid: rename(m.feederB.matchUid) } : m.feederB,
+      feederA:
+        m.feederA.kind === 'match' ? { ...m.feederA, matchUid: rename(m.feederA.matchUid) } : m.feederA,
+      feederB:
+        m.feederB.kind === 'match' ? { ...m.feederB, matchUid: rename(m.feederB.matchUid) } : m.feederB,
     })),
   };
 }
@@ -46,19 +48,22 @@ describe('documentMatchNumbers', () => {
     const a = bracketFor(4, 'A-');
     const pinnedMatch = a.matches.find((m) => m.round === 1);
     if (!pinnedMatch) throw new Error('fixture has no round-1 match');
-    const pinned = { ...a, matches: a.matches.map((m) => (m.id === pinnedMatch.id ? { ...m, displayNo: 99 } : m)) };
+    const pinned = {
+      ...a,
+      matches: a.matches.map((m) => (m.id === pinnedMatch.id ? { ...m, displayNo: 99 } : m)),
+    };
     const b = bracketFor(2, 'B-');
 
     const numbers = documentMatchNumbers([pool('pa', pinned), pool('pb', b)]);
     expect(numbers.get(pinnedMatch.matchUid)).toBe(99);
-    const others = [...pinned.matches.filter((m) => m.id !== pinnedMatch.id), ...b.matches].map(
-      (m) => numbers.get(m.matchUid),
+    const others = [...pinned.matches.filter((m) => m.id !== pinnedMatch.id), ...b.matches].map((m) =>
+      numbers.get(m.matchUid),
     );
     // 3 other matches total (2 remaining in `a`, 1 in `b`), filling 1, 2, 3 -- never reusing 99.
     expect([...others].sort((x, y) => (x ?? 0) - (y ?? 0))).toEqual([1, 2, 3]);
   });
 
-  it('a bracket too large for the compact card contributes no numbers, and does not shift later pools\' numbers', () => {
+  it("a bracket too large for the compact card contributes no numbers, and does not shift later pools' numbers", () => {
     const tooLarge = bracketFor(64, 'C-');
     const small = bracketFor(2, 'B-');
     const numbers = documentMatchNumbers([pool('pc', tooLarge), pool('pb', small)]);
@@ -66,16 +71,20 @@ describe('documentMatchNumbers', () => {
     expect(numbers.get(small.matches[0]!.matchUid)).toBe(1);
   });
 
-  it('a pool with no bracket at all (a lone walkover entry) still takes exactly one number, keyed by the pool id -- matching the committee\'s own SPS sheet, which numbers a lone entry too', () => {
+  it("a pool with no bracket at all (a lone walkover entry) still takes exactly one number, keyed by the pool id -- matching the committee's own SPS sheet, which numbers a lone entry too", () => {
     const a = bracketFor(4, 'A-'); // 3 matches: 1, 2, 3
-    const numbers = documentMatchNumbers([pool('pa', a), pool('walkover-pool', null), pool('pb', bracketFor(2, 'B-'))]);
+    const numbers = documentMatchNumbers([
+      pool('pa', a),
+      pool('walkover-pool', null),
+      pool('pb', bracketFor(2, 'B-')),
+    ]);
     expect(numbers.get('walkover-pool')).toBe(4);
     expect([...a.matches.map((m) => numbers.get(m.matchUid))].sort((x, y) => (x ?? 0) - (y ?? 0))).toEqual([
       1, 2, 3,
     ]);
   });
 
-  it('a pool whose bracket EXISTS but draws nothing (a real 1-entry-plus-bye bracket, persisted as size 2 with a single WALKOVER match -- CHELO QUEEN GADIZA P\'s real shape) still takes one number, exactly like a null bracket', () => {
+  it("a pool whose bracket EXISTS but draws nothing (a real 1-entry-plus-bye bracket, persisted as size 2 with a single WALKOVER match -- CHELO QUEEN GADIZA P's real shape) still takes one number, exactly like a null bracket", () => {
     // A real 1-participant pool is NOT persisted as `bracket: null` -- it's a size-2 bracket with
     // one bye slot and one WALKOVER match, so `bracket.matches.length === 0` alone never catches
     // it (length is 1, not 0). This exact shape was the actual production bug: the lone entry got
@@ -92,7 +101,13 @@ describe('documentMatchNumbers', () => {
           position: 1,
           seedNo: null,
           isBye: false,
-          entry: { id: 'e-lone', externalRef: 'X1', displayName: 'Lone Entry', contingent: 'C', athletes: [] },
+          entry: {
+            id: 'e-lone',
+            externalRef: 'X1',
+            displayName: 'Lone Entry',
+            contingent: 'C',
+            athletes: [],
+          },
         },
         { position: 2, seedNo: null, isBye: true, entry: null },
       ],

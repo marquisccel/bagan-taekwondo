@@ -315,84 +315,84 @@ export function buildExportModel(args: BuildExportModelArgs): ExportModel {
   );
 
   const categories: ExportCategory[] = sortedCategories.map((c) => {
-      const rawPools = [...(poolsByCategory.get(c.id) ?? [])].sort((a, b) => a.ordinal - b.ordinal);
-      let participantCount = 0;
+    const rawPools = [...(poolsByCategory.get(c.id) ?? [])].sort((a, b) => a.ordinal - b.ordinal);
+    let participantCount = 0;
 
-      const pools: ExportPool[] = rawPools.map((p) => {
-        const bracket = bracketByPool.get(p.id) ?? null;
-        const memberIds = membersByPool.get(p.id) ?? [];
-        participantCount += memberIds.length;
+    const pools: ExportPool[] = rawPools.map((p) => {
+      const bracket = bracketByPool.get(p.id) ?? null;
+      const memberIds = membersByPool.get(p.id) ?? [];
+      participantCount += memberIds.length;
 
-        let members: ExportEntry[];
-        let exportBracket: ExportBracket | null = null;
-        if (bracket) {
-          const slots = [...(slotsByBracket.get(bracket.id) ?? [])].sort((a, b) => a.position - b.position);
-          const matches = [...(matchesByBracket.get(bracket.id) ?? [])].sort(
-            (a, b) => a.round - b.round || a.position - b.position,
-          );
-          const bracketSlots: ExportBracketSlot[] = slots.map((s) => ({
-            position: s.position,
-            seedNo: s.seedNo,
-            entry: s.entryId ? (entryById.get(s.entryId) ?? null) : null,
-            isBye: s.entryId === null,
-          }));
-          exportBracket = {
-            id: bracket.id,
-            size: bracket.size,
-            rounds: bracket.rounds,
-            entries: bracket.entries,
-            byes: bracket.byes,
-            slots: bracketSlots,
-            matches: matches.map((m) => ({
-              id: m.id,
-              matchUid: m.matchUid,
-              publicCode: m.publicCode,
-              round: m.round,
-              position: m.position,
-              status: m.status,
-              displayNo: m.displayNo ?? null,
-              resolvedDisplayNo: resolvedNumberByMatchId.get(m.id) ?? null,
-              feederA: feederFor(m.feederASlot, m.feederAMatchId, publicCodeByMatchId, matchUidByMatchId),
-              feederB: feederFor(m.feederBSlot, m.feederBMatchId, publicCodeByMatchId, matchUidByMatchId),
-            })),
-          };
-          members = bracketSlots
-            .filter((s): s is ExportBracketSlot & { entry: ExportEntry } => s.entry !== null)
-            .map((s) => s.entry);
-        } else {
-          members = memberIds
-            .map((id) => entryById.get(id))
-            .filter((e): e is ExportEntry => e !== undefined)
-            .sort((a, b) => a.displayName.localeCompare(b.displayName));
-        }
-
-        return {
-          id: p.id,
-          poolUid: p.poolUid,
-          ordinal: p.ordinal,
-          isWalkover: p.isWalkover,
-          warnings: p.warnings,
-          members,
-          bracket: exportBracket,
+      let members: ExportEntry[];
+      let exportBracket: ExportBracket | null = null;
+      if (bracket) {
+        const slots = [...(slotsByBracket.get(bracket.id) ?? [])].sort((a, b) => a.position - b.position);
+        const matches = [...(matchesByBracket.get(bracket.id) ?? [])].sort(
+          (a, b) => a.round - b.round || a.position - b.position,
+        );
+        const bracketSlots: ExportBracketSlot[] = slots.map((s) => ({
+          position: s.position,
+          seedNo: s.seedNo,
+          entry: s.entryId ? (entryById.get(s.entryId) ?? null) : null,
+          isBye: s.entryId === null,
+        }));
+        exportBracket = {
+          id: bracket.id,
+          size: bracket.size,
+          rounds: bracket.rounds,
+          entries: bracket.entries,
+          byes: bracket.byes,
+          slots: bracketSlots,
+          matches: matches.map((m) => ({
+            id: m.id,
+            matchUid: m.matchUid,
+            publicCode: m.publicCode,
+            round: m.round,
+            position: m.position,
+            status: m.status,
+            displayNo: m.displayNo ?? null,
+            resolvedDisplayNo: resolvedNumberByMatchId.get(m.id) ?? null,
+            feederA: feederFor(m.feederASlot, m.feederAMatchId, publicCodeByMatchId, matchUidByMatchId),
+            feederB: feederFor(m.feederBSlot, m.feederBMatchId, publicCodeByMatchId, matchUidByMatchId),
+          })),
         };
-      });
+        members = bracketSlots
+          .filter((s): s is ExportBracketSlot & { entry: ExportEntry } => s.entry !== null)
+          .map((s) => s.entry);
+      } else {
+        members = memberIds
+          .map((id) => entryById.get(id))
+          .filter((e): e is ExportEntry => e !== undefined)
+          .sort((a, b) => a.displayName.localeCompare(b.displayName));
+      }
 
       return {
-        id: c.id,
-        categoryKey: c.categoryKey,
-        stream: c.stream,
-        discipline: c.discipline,
-        format: c.format,
-        gender: c.gender,
-        movement: c.movement,
-        ageDivisionCode: c.ageDivisionCode,
-        ageDivisionLabel: c.ageDivisionLabel,
-        weightClassCode: c.weightClassCode,
-        readiness: c.readiness,
-        participantCount,
-        pools,
+        id: p.id,
+        poolUid: p.poolUid,
+        ordinal: p.ordinal,
+        isWalkover: p.isWalkover,
+        warnings: p.warnings,
+        members,
+        bracket: exportBracket,
       };
     });
+
+    return {
+      id: c.id,
+      categoryKey: c.categoryKey,
+      stream: c.stream,
+      discipline: c.discipline,
+      format: c.format,
+      gender: c.gender,
+      movement: c.movement,
+      ageDivisionCode: c.ageDivisionCode,
+      ageDivisionLabel: c.ageDivisionLabel,
+      weightClassCode: c.weightClassCode,
+      readiness: c.readiness,
+      participantCount,
+      pools,
+    };
+  });
 
   return {
     tournament: args.tournament,

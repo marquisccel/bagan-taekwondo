@@ -139,7 +139,9 @@ log('setup', `web app: http://localhost:${webPort}`);
 const corsOrigin = `http://localhost:${webPort},http://127.0.0.1:${webPort}`;
 
 const children = [
-  runService('api', 'node', ['apps/api/dist/main.js'], { env: { DATABASE_URL: dbUrl, CORS_ORIGIN: corsOrigin } }),
+  runService('api', 'node', ['apps/api/dist/main.js'], {
+    env: { DATABASE_URL: dbUrl, CORS_ORIGIN: corsOrigin },
+  }),
   runService('worker', 'node', ['apps/worker/dist/main.js'], { env: { DATABASE_URL: dbUrl } }),
   runService('web', 'npx', ['next', 'dev', '-p', String(webPort)], { cwd: join(repoRoot, 'apps/web') }),
 ];

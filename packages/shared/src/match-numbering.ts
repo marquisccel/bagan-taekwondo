@@ -39,7 +39,9 @@ export function resolveMatchNumbers(matches: readonly MatchNumberInput[]): Reado
       used.add(m.displayNo);
     }
   }
-  const unnumbered = matches.filter((m) => m.displayNo === null).sort((a, b) => compareOrder(a.order, b.order));
+  const unnumbered = matches
+    .filter((m) => m.displayNo === null)
+    .sort((a, b) => compareOrder(a.order, b.order));
   let next = 1;
   for (const m of unnumbered) {
     while (used.has(next)) next += 1;

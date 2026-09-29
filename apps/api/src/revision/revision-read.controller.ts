@@ -220,7 +220,12 @@ export class RevisionReadController {
         return {
           id: m.id,
           displayNo: m.display_no,
-          order: [pool ? (categoryIndexById.get(pool.category_id) ?? 0) : 0, pool?.ordinal ?? 0, m.round, m.position],
+          order: [
+            pool ? (categoryIndexById.get(pool.category_id) ?? 0) : 0,
+            pool?.ordinal ?? 0,
+            m.round,
+            m.position,
+          ],
         };
       }),
     );

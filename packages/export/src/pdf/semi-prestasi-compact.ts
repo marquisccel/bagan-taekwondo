@@ -461,7 +461,7 @@ function docHeader(model: ExportModel, opts: RenderOptions, categoryTitle: strin
   const metaBlock = metaBlockOrEmpty(model, opts);
   return `<div class="doc-head">
     <div>
-      <div class="doc-kicker">${esc(model.tournament.name)} (${esc(model.tournament.code)})</div>
+      <div class="doc-kicker">${esc(model.tournament.name)}</div>
       <h1>${esc(L.documentTitle)}</h1>
       ${categoryLine}
     </div>
@@ -499,7 +499,7 @@ function sessionHeader(
     : '';
   return `<div class="doc-head">
     <div>
-      <div class="doc-kicker">${esc(model.tournament.name)} (${esc(model.tournament.code)})</div>
+      <div class="doc-kicker">${esc(model.tournament.name)}</div>
       <h1>DAY ${slot.dayNumber} &middot; ${esc(slot.arena)}${classification}</h1>
       <div class="doc-category">${esc(slot.dayLabel)}</div>
     </div>

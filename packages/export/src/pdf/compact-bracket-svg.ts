@@ -211,7 +211,11 @@ const num = (n: number): string => String(Math.round(n * 100) / 100);
  */
 export function renderLoneEntrySvg(
   entry: { readonly displayName: string; readonly contingent: string; readonly externalRef: string | null },
-  columns: { readonly genderLabel: string; readonly divisionLabel: string; readonly weightClassLabel: string },
+  columns: {
+    readonly genderLabel: string;
+    readonly divisionLabel: string;
+    readonly weightClassLabel: string;
+  },
   area: { readonly width: number; readonly leafWidth: number },
   poolNumber: number | undefined,
 ): string {
@@ -238,7 +242,9 @@ export function renderLoneEntrySvg(
     if (text) parts.push(textEl(col.x, y - 3, text, { size: 12, bold }));
   }
   if (poolNumber != null) {
-    parts.push(textEl(leafWidth + colWidth + 3, y - 2.5, String(poolNumber), { size: 13, bold: true, fill: '#222' }));
+    parts.push(
+      textEl(leafWidth + colWidth + 3, y - 2.5, String(poolNumber), { size: 13, bold: true, fill: '#222' }),
+    );
   }
   return `<svg width="100%" viewBox="0 0 ${num(area.width)} ${num(height)}" style="display:block;height:auto" xmlns="http://www.w3.org/2000/svg" role="img">${parts.join('')}</svg>`;
 }
@@ -349,7 +355,8 @@ export function renderCompactBracketSvg(bracket: ExportBracket, opts: CompactBra
       `<line x1="${num(leafWidth)}" y1="${num(y)}" x2="${num(endX)}" y2="${num(y)}" stroke="${INTEGRATED_STROKE}" stroke-width="${INTEGRATED_STROKE_WIDTH}"/>`,
     );
     const poolNo = opts.poolId != null ? matchNumber.get(opts.poolId) : undefined;
-    if (poolNo != null) parts.push(textEl(xOf(1) + 3, y - 2.5, String(poolNo), { size: 13, bold: true, fill: '#222' }));
+    if (poolNo != null)
+      parts.push(textEl(xOf(1) + 3, y - 2.5, String(poolNo), { size: 13, bold: true, fill: '#222' }));
   }
 
   for (const node of geometry.matches) {

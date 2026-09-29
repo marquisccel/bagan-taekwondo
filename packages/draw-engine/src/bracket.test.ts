@@ -133,7 +133,7 @@ describe('bracket placement, n ≤ 8: exhaustive over the defined search space (
     });
   });
 
-  it('pairs entries with a close belt rank together in round 1 rather than crossing a too-wide gap (2×Geup8 + 2×Geup3, team\'s own example)', () => {
+  it("pairs entries with a close belt rank together in round 1 rather than crossing a too-wide gap (2×Geup8 + 2×Geup3, team's own example)", () => {
     // Four different contingents so contingent-separation cost ties at 0 for every permutation --
     // isolating belt tolerance as the only thing that can decide the round-1 pairing.
     const four = [
