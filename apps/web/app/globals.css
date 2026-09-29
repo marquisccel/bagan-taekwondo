@@ -1,22 +1,28 @@
 /*
- * BaganTKD visual foundation — "Professional Taekwondo Tournament Control Desk" (UX slice 0).
- * Minimalist, information-dense, restrained. Elegance comes from spacing/typography/hierarchy,
- * never decorative effects: no gradients, no glassmorphism, no heavy shadows on every panel.
+ * BaganTKD visual foundation — "Premium Taekwondo Tournament Control Desk".
+ * Minimalist and information-dense, in the register of a well-made Apple tool: generous but
+ * purposeful whitespace, one confident accent, soft layered depth instead of hard borders, smooth
+ * considered motion. Never decorative for its own sake -- every gradient/shadow here signals real
+ * hierarchy (elevation, emphasis, brand), and dense working surfaces (tables, brackets) stay dense.
  */
 
 :root {
-  --canvas: #f6f7f9;
+  --canvas: #f7f7f8;
   --surface: #ffffff;
-  --surface-2: #f9fafb;
-  --border: rgba(15, 23, 42, 0.08);
-  --border-strong: rgba(15, 23, 42, 0.14);
-  --text: #111827;
-  --text-dim: #667085;
-  --text-muted: #98a2b3;
+  --surface-2: #f6f7f9;
+  --border: rgba(10, 10, 15, 0.07);
+  --border-strong: rgba(10, 10, 15, 0.13);
+  --text: #0b0c10;
+  --text-dim: #64656d;
+  --text-muted: #97989f;
 
-  --accent: #2563eb;
-  --accent-surface: #eff4fe;
-  --accent-strong: #1d4ed8;
+  --accent: #1447e6;
+  --accent-surface: #eef2ff;
+  --accent-strong: #0d2fac;
+
+  --gold: #b0813a;
+  --gold-strong: #8a6226;
+  --gold-surface: #faf3e6;
 
   --green: #12805c;
   --green-bg: #e8f6f0;
@@ -25,15 +31,21 @@
   --red: #b3261e;
   --red-bg: #fbeae9;
 
-  --focus: #2563eb;
+  --focus: #1447e6;
 
-  --radius-sm: 7px;
-  --radius-md: 8px;
-  --radius-lg: 11px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
 
-  --shadow-floating: 0 8px 24px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --cheong: #1f5fa8;
+  --shadow-sm: 0 1px 2px rgba(10, 10, 15, 0.04);
+  --shadow-md: 0 2px 8px rgba(10, 10, 15, 0.06), 0 1px 2px rgba(10, 10, 15, 0.04);
+  --shadow-lg: 0 16px 40px rgba(10, 10, 15, 0.12), 0 2px 6px rgba(10, 10, 15, 0.05);
+  --shadow-floating: 0 16px 40px rgba(10, 10, 15, 0.16), 0 2px 8px rgba(10, 10, 15, 0.08);
+
+  --cheong: #205ea8;
   --hong: #b3261e;
 
   /* Bracket-sheet lines/boxes need to read as solid and black like the committee's own printed
@@ -58,28 +70,31 @@ body {
   font-size: 13.5px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 h1,
 h2,
 h3 {
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   margin: 0;
 }
 h1 {
-  font-size: 22px;
+  font-size: 23px;
 }
 h2 {
   font-size: 18px;
 }
 h3 {
   font-size: 14px;
+  letter-spacing: -0.01em;
 }
 
 a {
   color: var(--accent);
   text-decoration: none;
+  transition: color 140ms var(--ease);
 }
 
 button,
@@ -120,19 +135,24 @@ textarea {
   align-items: center;
   gap: 16px;
   padding: 0 24px;
-  height: 52px;
-  background: var(--surface);
+  height: 58px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 30;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-weight: 700;
-  font-size: 14px;
-  letter-spacing: -0.01em;
+  font-size: 14.5px;
+  letter-spacing: -0.015em;
   color: var(--text);
   white-space: nowrap;
 }
@@ -140,6 +160,8 @@ textarea {
 .brand-mark {
   display: block;
   flex-shrink: 0;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
 }
 
 .topbar-back {
@@ -177,10 +199,15 @@ textarea {
   align-items: center;
   gap: 4px;
   padding: 0 24px;
-  height: 40px;
-  background: var(--surface);
+  height: 42px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  position: sticky;
+  top: 58px;
+  z-index: 29;
 }
 
 .tabs {
@@ -198,11 +225,15 @@ textarea {
   font-weight: 500;
   font-size: 13px;
   border-bottom: 2px solid transparent;
+  transition:
+    color 140ms var(--ease),
+    border-color 140ms var(--ease);
 }
 
 .tabs a.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
+  font-weight: 600;
 }
 
 .tabs a:hover:not(.active) {
@@ -278,7 +309,8 @@ textarea {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 18px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
 }
 
 .grid {
@@ -325,14 +357,24 @@ textarea {
 .stat {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
-  min-width: 140px;
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  min-width: 150px;
+  box-shadow: var(--shadow-sm);
+  transition:
+    box-shadow 180ms var(--ease),
+    transform 180ms var(--ease);
+}
+
+.stat:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .stat .value {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
 
@@ -340,7 +382,9 @@ textarea {
   color: var(--text-dim);
   font-size: 11.5px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  margin-top: 2px;
 }
 
 .num {
@@ -351,10 +395,11 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 9px;
+  padding: 3px 10px;
   border-radius: 999px;
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 650;
+  letter-spacing: -0.005em;
   line-height: 1.6;
 }
 
@@ -428,42 +473,68 @@ textarea {
   border-radius: var(--radius-sm);
   padding: 6px 10px;
   color: var(--text);
+  transition:
+    border-color 140ms var(--ease),
+    box-shadow 140ms var(--ease);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-surface);
 }
 
 .btn {
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  padding: 6px 13px;
+  padding: 6px 14px;
   cursor: pointer;
   font-weight: 600;
   font-size: 12.5px;
   color: var(--text);
+  box-shadow: var(--shadow-sm);
   transition:
-    border-color 140ms ease,
-    background 140ms ease,
-    color 140ms ease;
+    border-color 160ms var(--ease),
+    background 160ms var(--ease),
+    color 160ms var(--ease),
+    box-shadow 160ms var(--ease),
+    transform 160ms var(--ease);
 }
 
 .btn:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent);
+  box-shadow: var(--shadow-md);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .btn-primary {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+  box-shadow:
+    0 1px 2px rgba(20, 71, 230, 0.25),
+    0 6px 16px rgba(20, 71, 230, 0.22);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--accent-strong);
   border-color: var(--accent-strong);
   color: #fff;
+  box-shadow:
+    0 1px 2px rgba(13, 47, 172, 0.3),
+    0 10px 22px rgba(13, 47, 172, 0.28);
 }
 
 .btn-danger {
@@ -767,9 +838,10 @@ textarea {
   min-width: 280px;
   max-width: 320px;
   flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
   transition:
-    border-color 140ms ease,
-    box-shadow 140ms ease;
+    border-color 160ms var(--ease),
+    box-shadow 160ms var(--ease);
 }
 
 .pool-card.drop-target {
@@ -913,9 +985,9 @@ textarea {
   background: var(--surface);
   border-left: 1px solid var(--border);
   box-shadow: var(--shadow-floating);
-  padding: 20px;
+  padding: 22px;
   overflow-y: auto;
-  animation: slide-in 200ms ease-out;
+  animation: slide-in 260ms var(--ease);
 }
 
 .drawer.inspector {
@@ -1236,4 +1308,110 @@ textarea {
 .session-pool-over {
   outline: 2px dashed var(--accent);
   outline-offset: -2px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* SPS upload hero (the app's entry point, before any tournament exists)   */
+/* ---------------------------------------------------------------------- */
+
+.upload-hero {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 20px;
+  gap: 32px;
+  background: radial-gradient(circle at 50% -10%, rgba(20, 71, 230, 0.06), transparent 55%), var(--canvas);
+}
+
+.upload-hero-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+}
+
+.upload-hero-brand h1 {
+  font-size: 27px;
+}
+
+.upload-hero-eyebrow {
+  color: var(--text-dim);
+  font-size: 13.5px;
+  max-width: 420px;
+  line-height: 1.55;
+}
+
+.upload-card {
+  width: 100%;
+  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.upload-dropzone {
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  text-align: center;
+  padding: 52px 28px;
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color 200ms var(--ease),
+    background 200ms var(--ease),
+    box-shadow 200ms var(--ease),
+    transform 200ms var(--ease);
+}
+
+.upload-dropzone:not(.busy) {
+  cursor: pointer;
+}
+
+.upload-dropzone:not(.busy):hover {
+  border-color: var(--accent);
+  background: var(--accent-surface);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.upload-dropzone-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: var(--accent-surface);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+}
+
+.upload-preview-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.upload-note {
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.upload-note-warning {
+  background: var(--yellow-bg);
+  color: var(--yellow-strong, #7a4b00);
+}
+
+.upload-note-danger {
+  background: var(--red-bg);
+  color: var(--red);
 }

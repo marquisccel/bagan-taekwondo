@@ -3,27 +3,12 @@
 import { useParams, usePathname } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 
+import { BrandMark } from '../../../components/BrandMark';
 import { PersonaSwitcher } from '../../../components/PersonaSwitcher';
 import { api } from '../../../lib/api';
 import { useDevAuth } from '../../../lib/dev-auth';
 import { TOURNAMENT_TABS } from '../../../lib/nav-tabs';
 import { useApiSWR } from '../../../lib/use-api-swr';
-
-/** A simple geometric bracket mark: two lines converging like a single-elimination bracket. */
-function BrandMark() {
-  return (
-    <svg className="brand-mark" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-      <path
-        d="M2 3.5H6.5V8.25H2M2 14.5H6.5V9.75H2M6.5 6H10.5V12H6.5M10.5 9H16"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 export default function TournamentLayout({ children }: { children: ReactNode }) {
   const params = useParams<{ id: string }>();
@@ -57,7 +42,7 @@ export default function TournamentLayout({ children }: { children: ReactNode }) 
       <div className="topbar">
         <span className="brand">
           <BrandMark />
-          Taekwondo Bracket Generator
+          Taekwondo Indonesia
         </span>
         <span className="topbar-divider" aria-hidden="true" />
         <span className="topbar-tournament">{tournament?.name ?? ' '}</span>

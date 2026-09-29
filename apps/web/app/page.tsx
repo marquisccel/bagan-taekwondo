@@ -3,10 +3,25 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+import { BrandMark } from '../components/BrandMark';
 import { previewSps, uploadSps, type SpsUploadPreview, type SpsUploadResult } from '../lib/api';
 import { useDevAuth } from '../lib/dev-auth';
 
 type Stage = 'idle' | 'previewing' | 'reviewing' | 'committing' | 'done';
+
+function UploadIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 16V4m0 0-4 4m4-4 4 4M5 16v2a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-2"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 /**
  * The app's entry point: already connected (an earlier upload) -> straight to the dashboard, no
@@ -76,135 +91,140 @@ export default function HomePage() {
   const showDropzone = stage === 'idle' || stage === 'previewing';
 
   return (
-    <main className="content" style={{ maxWidth: 560 }}>
-      <h1>BaganTKD</h1>
-      <p style={{ color: 'var(--text-dim)' }}>
-        Unggah file SPS (jadwal &amp; peserta) untuk mulai. Sistem otomatis membuat turnamen baru dari data di
-        dalamnya, tidak perlu isi apa pun secara manual.
-      </p>
+    <main className="upload-hero">
+      <div className="upload-hero-brand">
+        <BrandMark size="hero" />
+        <div>
+          <h1>Taekwondo Indonesia</h1>
+          <p className="upload-hero-eyebrow" style={{ marginTop: 4 }}>
+            Unggah file SPS (jadwal &amp; peserta) untuk mulai. Sistem otomatis membuat bagan turnamen dari
+            data di dalamnya — presisi, bisa diedit, tanpa perlu isi apa pun secara manual.
+          </p>
+        </div>
+      </div>
 
-      {showDropzone ? (
-        <div
-          className="panel grid"
-          style={{
-            borderStyle: 'dashed',
-            borderWidth: 2,
-            textAlign: 'center',
-            padding: '2.5rem 1.5rem',
-            cursor: busy ? 'default' : 'pointer',
-          }}
-          onClick={() => !busy && inputRef.current?.click()}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            const file = e.dataTransfer.files[0];
-            if (file && !busy) void handleFile(file);
-          }}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".xlsx"
-            hidden
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void handleFile(file);
+      <div className="upload-card">
+        {showDropzone ? (
+          <div
+            className={`upload-dropzone${busy ? ' busy' : ''}`}
+            onClick={() => !busy && inputRef.current?.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const file = e.dataTransfer.files[0];
+              if (file && !busy) void handleFile(file);
             }}
-          />
-          {stage === 'previewing' ? (
-            <p>Memeriksa isi file…</p>
-          ) : (
-            <>
-              <p style={{ fontWeight: 600, marginBottom: 4 }}>Klik atau seret file SPS (.xlsx) ke sini</p>
-              <p style={{ color: 'var(--text-dim)', fontSize: '0.9em' }}>
-                Sistem otomatis mencari tab jadwal (nama mengandung &quot;Jadwal&quot; dan &quot;FIX&quot;)
-                dan tab peserta (&quot;semi-prestasi&quot;) — tidak perlu nama tab persis sama.
-              </p>
-            </>
-          )}
-        </div>
-      ) : null}
-
-      {error ? (
-        <p className="panel" style={{ borderColor: 'var(--danger, #b33)', color: 'var(--danger, #b33)' }}>
-          Gagal: {error}
-        </p>
-      ) : null}
-
-      {(stage === 'reviewing' || stage === 'committing') && preview ? (
-        <div className="panel grid" data-testid="sps-preview">
-          <p style={{ fontWeight: 600 }}>{preview.tournamentName}</p>
-          <p style={{ color: 'var(--text-dim)', fontSize: '0.9em' }}>
-            {preview.participantCount} peserta · {preview.categoryCount} kategori · {preview.scheduleRowCount}{' '}
-            baris jadwal · {preview.arenaCodes.length} arena
-            {preview.eventStart && preview.eventEnd
-              ? ` · ${preview.eventStart} s.d. ${preview.eventEnd}`
-              : ''}
-          </p>
-
-          {preview.participantIssueCounts.error > 0 || preview.participantIssueCounts.warning > 0 ? (
-            <p style={{ color: '#7a4b00', fontSize: '0.9em' }}>
-              {preview.participantIssueCounts.error > 0
-                ? `${preview.participantIssueCounts.error} data peserta bermasalah`
-                : null}
-              {preview.participantIssueCounts.error > 0 && preview.participantIssueCounts.warning > 0
-                ? ', '
-                : null}
-              {preview.participantIssueCounts.warning > 0
-                ? `${preview.participantIssueCounts.warning} peringatan`
-                : null}{' '}
-              — bisa diperbaiki nanti di halaman Peserta setelah turnamen dibuat.
-            </p>
-          ) : null}
-
-          {preview.scheduleIssues.length > 0 ? (
-            <p style={{ color: '#7a4b00', fontSize: '0.9em' }}>
-              {preview.scheduleIssues.length} baris jadwal tidak dikenali sistem dan akan dilewati (bukan
-              ditebak), biasanya kelas Prestasi atau Freestyle yang memang belum didukung sistem ini.
-            </p>
-          ) : null}
-
-          {!preview.ok ? (
-            <div style={{ color: 'var(--danger, #b33)' }}>
-              <p style={{ fontWeight: 600, margin: '0 0 4px' }}>Belum bisa dilanjutkan:</p>
-              <ul style={{ margin: 0, paddingLeft: 18 }}>
-                {preview.blockers.map((b) => (
-                  <li key={b}>{b}</li>
-                ))}
-              </ul>
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".xlsx"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleFile(file);
+              }}
+            />
+            <div className="upload-dropzone-icon">
+              <UploadIcon />
             </div>
-          ) : null}
-
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            <button
-              type="button"
-              className="btn"
-              onClick={pickDifferentFile}
-              disabled={stage === 'committing'}
-            >
-              Pilih file lain
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => void confirmUpload()}
-              disabled={!preview.ok || stage === 'committing'}
-            >
-              {stage === 'committing' ? 'Membuat turnamen…' : 'Lanjutkan & Buat Turnamen'}
-            </button>
+            {stage === 'previewing' ? (
+              <p style={{ fontWeight: 600 }}>Memeriksa isi file…</p>
+            ) : (
+              <>
+                <p style={{ fontWeight: 700, marginBottom: 6, fontSize: 14.5 }}>
+                  Klik atau seret file SPS (.xlsx) ke sini
+                </p>
+                <p style={{ color: 'var(--text-dim)', fontSize: '0.9em', maxWidth: 380, margin: '0 auto' }}>
+                  Sistem otomatis mencari tab jadwal (nama mengandung &quot;Jadwal&quot; dan &quot;FIX&quot;)
+                  dan tab peserta (&quot;semi-prestasi&quot;) — tidak perlu nama tab persis sama.
+                </p>
+              </>
+            )}
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      {stage === 'done' && result ? (
-        <div className="panel grid">
-          <p style={{ fontWeight: 600 }}>Berhasil! Membuka dashboard…</p>
-          <p style={{ color: 'var(--text-dim)', fontSize: '0.9em' }}>
-            {result.participantCount} peserta · {result.scheduleRowCount} baris jadwal ·{' '}
-            {result.arenaCodes.length} arena
-          </p>
-        </div>
-      ) : null}
+        {error ? <div className="upload-note upload-note-danger">Gagal: {error}</div> : null}
+
+        {(stage === 'reviewing' || stage === 'committing') && preview ? (
+          <div className="panel grid" data-testid="sps-preview">
+            <p style={{ fontWeight: 700, fontSize: 15 }}>{preview.tournamentName}</p>
+            <p className="upload-preview-line">
+              <span>{preview.participantCount} peserta</span>·<span>{preview.categoryCount} kategori</span>·
+              <span>{preview.scheduleRowCount} baris jadwal</span>·
+              <span>{preview.arenaCodes.length} arena</span>
+              {preview.eventStart && preview.eventEnd ? (
+                <span>
+                  · {preview.eventStart} s.d. {preview.eventEnd}
+                </span>
+              ) : null}
+            </p>
+
+            {preview.participantIssueCounts.error > 0 || preview.participantIssueCounts.warning > 0 ? (
+              <p className="upload-note upload-note-warning">
+                {preview.participantIssueCounts.error > 0
+                  ? `${preview.participantIssueCounts.error} data peserta bermasalah`
+                  : null}
+                {preview.participantIssueCounts.error > 0 && preview.participantIssueCounts.warning > 0
+                  ? ', '
+                  : null}
+                {preview.participantIssueCounts.warning > 0
+                  ? `${preview.participantIssueCounts.warning} peringatan`
+                  : null}{' '}
+                — bisa diperbaiki nanti di halaman Peserta setelah turnamen dibuat.
+              </p>
+            ) : null}
+
+            {preview.scheduleIssues.length > 0 ? (
+              <p className="upload-note upload-note-warning">
+                {preview.scheduleIssues.length} baris jadwal tidak dikenali sistem dan akan dilewati (bukan
+                ditebak), biasanya kelas Prestasi atau Freestyle yang memang belum didukung sistem ini.
+              </p>
+            ) : null}
+
+            {!preview.ok ? (
+              <div className="upload-note upload-note-danger">
+                <p style={{ fontWeight: 700, margin: '0 0 4px' }}>Belum bisa dilanjutkan:</p>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {preview.blockers.map((b) => (
+                    <li key={b}>{b}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+              <button
+                type="button"
+                className="btn"
+                onClick={pickDifferentFile}
+                disabled={stage === 'committing'}
+              >
+                Pilih file lain
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => void confirmUpload()}
+                disabled={!preview.ok || stage === 'committing'}
+              >
+                {stage === 'committing' ? 'Membuat turnamen…' : 'Lanjutkan & Buat Turnamen'}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {stage === 'done' && result ? (
+          <div className="panel grid">
+            <p style={{ fontWeight: 700 }}>Berhasil! Membuka dashboard…</p>
+            <p className="upload-preview-line">
+              <span>{result.participantCount} peserta</span>·
+              <span>{result.scheduleRowCount} baris jadwal</span>·
+              <span>{result.arenaCodes.length} arena</span>
+            </p>
+          </div>
+        ) : null}
+      </div>
     </main>
   );
 }

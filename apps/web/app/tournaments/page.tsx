@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { BrandMark } from '../../components/BrandMark';
 import { api } from '../../lib/api';
 import { useDevAuth } from '../../lib/dev-auth';
 import {
@@ -14,23 +15,6 @@ import {
 } from '../../lib/id-labels';
 import { TOURNAMENT_TABS } from '../../lib/nav-tabs';
 import { useApiSWR } from '../../lib/use-api-swr';
-
-/** A simple geometric bracket mark: two lines converging like a single-elimination bracket. Kept
- * identical to the one in tournaments/[id]/layout.tsx so the brand looks the same everywhere. */
-function BrandMark() {
-  return (
-    <svg className="brand-mark" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-      <path
-        d="M2 3.5H6.5V8.25H2M2 14.5H6.5V9.75H2M6.5 6H10.5V12H6.5M10.5 9H16"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 /**
  * The same topbar/tab shell as a tournament's own pages (tournaments/[id]/layout.tsx), so moving to
@@ -47,7 +31,7 @@ function Shell({ tournamentId, children }: { tournamentId: string; children: Rea
       <div className="topbar">
         <span className="brand">
           <BrandMark />
-          Taekwondo Bracket Generator
+          Taekwondo Indonesia
         </span>
       </div>
       <div className="subbar">
