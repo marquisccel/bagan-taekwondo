@@ -1,11 +1,12 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { EntryCorrectionDialog } from '../../../../components/EntryCorrectionDialog';
 import { api, type EntryListItem, type EntryListParams } from '../../../../lib/api';
 import { useDevAuth } from '../../../../lib/dev-auth';
+import { useDebouncedValue } from '../../../../lib/use-debounced-value';
 import {
   ageDivisionLabel,
   confidenceLabel,
@@ -30,7 +31,9 @@ interface Filters {
   readonly discipline: string;
   readonly categoryId: string;
   readonly eligibility: string;
-  readonly hasIssues: boolean;
+  /** '' = every participant; 'NEEDS_REVIEW' = only those with an open data issue -- replaces a plain
+   * "Hanya yang bermasalah" checkbox whose purpose wasn't obvious on its own (spelled out here). */
+  readonly review: '' | 'NEEDS_REVIEW';
 }
 
 const EMPTY: Filters = {
@@ -39,7 +42,7 @@ const EMPTY: Filters = {
   discipline: '',
   categoryId: '',
   eligibility: '',
-  hasIssues: false,
+  review: '',
 };
 
 function IssueSummary({ entry }: { entry: EntryListItem }) {
@@ -155,18 +158,23 @@ function EntryRow({ e, onCorrect }: { e: EntryListItem; onCorrect: (e: EntryList
 export default function PesertaPage() {
   const { id } = useParams<{ id: string }>();
   const { actorId } = useDevAuth();
-  const [draft, setDraft] = useState<Filters>(EMPTY);
-  const [applied, setApplied] = useState<Filters>(EMPTY);
+  const [filters, setFilters] = useState<Filters>(EMPTY);
   const [offset, setOffset] = useState(0);
   const [correcting, setCorrecting] = useState<EntryListItem | null>(null);
 
+  // Free-text fields debounce so typing doesn't fire a request per keystroke; every other filter
+  // (a select, a deliberate click) applies the instant it changes -- there's no separate "Terapkan"
+  // step to remember, the list just updates as you adjust anything.
+  const q = useDebouncedValue(filters.q, 350);
+  const contingent = useDebouncedValue(filters.contingent, 350);
+
   const params: EntryListParams = {
-    q: applied.q.trim(),
-    contingent: applied.contingent.trim(),
-    discipline: applied.discipline,
-    categoryId: applied.categoryId,
-    eligibility: applied.eligibility,
-    hasIssues: applied.hasIssues ? true : undefined,
+    q: q.trim(),
+    contingent: contingent.trim(),
+    discipline: filters.discipline,
+    categoryId: filters.categoryId,
+    eligibility: filters.eligibility,
+    hasIssues: filters.review === 'NEEDS_REVIEW' ? true : undefined,
     limit: PAGE_SIZE,
     offset,
   };
@@ -176,17 +184,14 @@ export default function PesertaPage() {
     { keepPreviousData: true },
   );
 
-  const set = <K extends keyof Filters>(k: K, v: Filters[K]) => setDraft((d) => ({ ...d, [k]: v }));
-  const submit = (ev: React.SyntheticEvent<HTMLFormElement>) => {
-    ev.preventDefault();
+  // Any filter change re-starts from the first page -- otherwise "page 3" of an old, wider result
+  // set could silently show past the end of a newly narrowed one.
+  useEffect(() => {
     setOffset(0);
-    setApplied(draft);
-  };
-  const reset = () => {
-    setDraft(EMPTY);
-    setApplied(EMPTY);
-    setOffset(0);
-  };
+  }, [q, contingent, filters.discipline, filters.categoryId, filters.eligibility, filters.review]);
+
+  const set = <K extends keyof Filters>(k: K, v: Filters[K]) => setFilters((f) => ({ ...f, [k]: v }));
+  const reset = () => setFilters(EMPTY);
 
   const total = data?.total ?? 0;
   const from = total === 0 ? 0 : offset + 1;
@@ -200,22 +205,22 @@ export default function PesertaPage() {
         hasil validasi sistem.
       </p>
 
-      <form className="filters" role="search" aria-label="Filter peserta" onSubmit={submit}>
+      <div className="filters" role="search" aria-label="Filter peserta">
         <input
           aria-label="Cari peserta"
           placeholder="Cari nama peserta…"
-          value={draft.q}
+          value={filters.q}
           onChange={(e) => set('q', e.target.value)}
         />
         <input
           aria-label="Cari kontingen"
           placeholder="Cari kontingen…"
-          value={draft.contingent}
+          value={filters.contingent}
           onChange={(e) => set('contingent', e.target.value)}
         />
         <select
           aria-label="Disiplin"
-          value={draft.discipline}
+          value={filters.discipline}
           onChange={(e) => set('discipline', e.target.value)}
         >
           <option value="">Semua disiplin</option>
@@ -225,7 +230,7 @@ export default function PesertaPage() {
         </select>
         <select
           aria-label="Kategori"
-          value={draft.categoryId}
+          value={filters.categoryId}
           onChange={(e) => set('categoryId', e.target.value)}
         >
           <option value="">Semua kategori</option>
@@ -238,7 +243,7 @@ export default function PesertaPage() {
         </select>
         <select
           aria-label="Kelayakan"
-          value={draft.eligibility}
+          value={filters.eligibility}
           onChange={(e) => set('eligibility', e.target.value)}
         >
           <option value="">Semua kelayakan</option>
@@ -247,21 +252,18 @@ export default function PesertaPage() {
           <option value="OVERRIDDEN">Dikecualikan (override)</option>
           <option value="DRAWN">Sudah diundi</option>
         </select>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <input
-            type="checkbox"
-            checked={draft.hasIssues}
-            onChange={(e) => set('hasIssues', e.target.checked)}
-          />
-          Hanya yang bermasalah
-        </label>
-        <button type="submit" className="btn btn-primary">
-          Terapkan
-        </button>
+        <select
+          aria-label="Status peninjauan"
+          value={filters.review}
+          onChange={(e) => set('review', e.target.value as Filters['review'])}
+        >
+          <option value="">Semua peserta</option>
+          <option value="NEEDS_REVIEW">Perlu ditinjau (ada masalah data)</option>
+        </select>
         <button type="button" className="btn" onClick={reset}>
           Atur ulang
         </button>
-      </form>
+      </div>
 
       {isLoading && !data ? <div className="state-loading">Memuat data peserta…</div> : null}
       {error ? <div className="state-error">Gagal memuat data peserta: {error.message}</div> : null}

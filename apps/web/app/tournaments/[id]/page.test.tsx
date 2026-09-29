@@ -60,7 +60,7 @@ describe('TournamentOverviewPage (read-only)', () => {
     expect(screen.getByText('Kontingen')).toBeInTheDocument();
   });
 
-  it('shows draw run status, revision status, and blocked/warning counts once a draw run exists', async () => {
+  it('summarizes a successful draw run in plain language, and combines blocked/error/warning counts into one attention figure', async () => {
     vi.mocked(api.tournament).mockResolvedValue({
       id: 't1',
       code: 'T1',
@@ -83,13 +83,45 @@ describe('TournamentOverviewPage (read-only)', () => {
       errorCount: 0,
     });
     renderIsolated(<TournamentOverviewPage />);
-    expect(await screen.findByText('Aman')).toBeInTheDocument();
-    expect(screen.getByText('Draf')).toBeInTheDocument();
+    expect(await screen.findByText(/Bagan berhasil dibuat/)).toHaveTextContent('Status: Draf');
     expect(screen.getByText('8 / 10')).toBeInTheDocument();
-    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('Kategori Siap')).toBeInTheDocument();
+    // 2 blocked + 0 errors + 3 warnings = 5, shown as one "needs a look" figure, not 3 separate ones.
+    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText('Perlu Ditinjau')).toBeInTheDocument();
+    expect(screen.queryByText('Kategori Diblokir')).not.toBeInTheDocument();
+    expect(screen.queryByText('Error')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /cek & atur bagan/i })).toHaveAttribute(
       'href',
       '/tournaments/t1/sesi/rev-1',
     );
+  });
+
+  it('tells a committee member a draw needs review, in plain language, without exposing the engine kind/status words', async () => {
+    vi.mocked(api.tournament).mockResolvedValue({
+      id: 't1',
+      code: 'T1',
+      name: 'Piala Test',
+      eventStart: '2026-08-27',
+      eventEnd: '2026-08-30',
+      totalEntries: 100,
+      totalContingents: 12,
+      activeRuleSetStatus: 'ACTIVE',
+      latestDrawRun: {
+        id: 'run-1',
+        status: 'UNSAFE',
+        kind: 'CANDIDATE',
+        requestedAt: new Date().toISOString(),
+        finishedAt: null,
+      },
+      latestRevision: { id: 'rev-1', revision_no: 1, lifecycle: 'DRAFT', lock_version: 0 },
+      categoryCounts: { total: 10, ready: 8, blocked: 2 },
+      warningCount: 0,
+      errorCount: 0,
+    });
+    renderIsolated(<TournamentOverviewPage />);
+    expect(await screen.findByText(/perlu ditinjau sebelum dipakai/i)).toBeInTheDocument();
+    expect(screen.queryByText('Kandidat')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tidak aman')).not.toBeInTheDocument();
   });
 });

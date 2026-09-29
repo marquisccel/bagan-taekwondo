@@ -217,7 +217,7 @@ describe('PesertaPage', () => {
     expect(rowEl.textContent).not.toMatch(/WEIGHT_OUT_OF_RANGE|NAME_WHITESPACE/);
   });
 
-  it('applies the search, contingent, discipline, category, eligibility and issue filters to the API query', async () => {
+  it('applies the search, contingent, discipline, category, eligibility and review filters live, with no separate apply step', async () => {
     vi.mocked(api.entries).mockResolvedValue(list([entry()]));
     renderIsolated(<PesertaPage />);
     await screen.findByTestId('entry-row');
@@ -227,20 +227,21 @@ describe('PesertaPage', () => {
     fireEvent.change(screen.getByLabelText('Disiplin'), { target: { value: 'KYORUGI' } });
     fireEvent.change(screen.getByLabelText('Kategori'), { target: { value: 'c1' } });
     fireEvent.change(screen.getByLabelText('Kelayakan'), { target: { value: 'BLOCKED' } });
-    fireEvent.click(screen.getByLabelText('Hanya yang bermasalah'));
-    fireEvent.click(screen.getByRole('button', { name: 'Terapkan' }));
+    fireEvent.change(screen.getByLabelText('Status peninjauan'), { target: { value: 'NEEDS_REVIEW' } });
 
-    await waitFor(() =>
-      expect(api.entries).toHaveBeenLastCalledWith('actor-1', 't1', {
-        q: 'budi',
-        contingent: 'Kota',
-        discipline: 'KYORUGI',
-        categoryId: 'c1',
-        eligibility: 'BLOCKED',
-        hasIssues: true,
-        limit: 50,
-        offset: 0,
-      }),
+    await waitFor(
+      () =>
+        expect(api.entries).toHaveBeenLastCalledWith('actor-1', 't1', {
+          q: 'budi',
+          contingent: 'Kota',
+          discipline: 'KYORUGI',
+          categoryId: 'c1',
+          eligibility: 'BLOCKED',
+          hasIssues: true,
+          limit: 50,
+          offset: 0,
+        }),
+      { timeout: 2000 },
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Atur ulang' }));

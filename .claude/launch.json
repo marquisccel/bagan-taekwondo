@@ -4,8 +4,8 @@
     {
       "name": "web",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["-y", "pnpm@10.34.5", "--filter", "@bagantkd/web", "exec", "next", "dev"],
-      "port": 3000
+      "runtimeArgs": ["-y", "pnpm@10.34.5", "dev"],
+      "port": 3001
     }
   ]
 }

@@ -4,15 +4,25 @@ import { useParams } from 'next/navigation';
 import { useApiSWR } from '../../../lib/use-api-swr';
 
 import { ExportPanel } from '../../../components/ExportPanel';
-import { api } from '../../../lib/api';
+import { api, type TournamentSummary } from '../../../lib/api';
 import { useDevAuth } from '../../../lib/dev-auth';
-import {
-  drawRunKindLabel,
-  drawRunStatusLabel,
-  formatDateRange,
-  revisionLifecycleLabel,
-  ruleSetStatusLabel,
-} from '../../../lib/id-labels';
+import { formatDateRange, revisionLifecycleLabel, ruleSetStatusLabel } from '../../../lib/id-labels';
+
+/** A plain sentence for the latest draw run -- no engine jargon ("Kandidat"/"Aman") in the headline;
+ * a committee member cares whether the bracket is ready to use, not the engine's internal run kind. */
+function drawRunSummary(
+  run: NonNullable<TournamentSummary['latestDrawRun']>,
+  rev: TournamentSummary['latestRevision'],
+): string {
+  const when = new Date(run.requestedAt).toLocaleString('id-ID');
+  if (run.status === 'QUEUED' || run.status === 'RUNNING') return `Bagan sedang dibuat sejak ${when}…`;
+  if (run.status === 'FAILED') {
+    return `Pembuatan bagan terakhir (${when}) gagal. Coba buat ulang dari Jadwal & Buat Bagan.`;
+  }
+  if (run.status === 'UNSAFE') return `Bagan dibuat ${when}, tapi ada yang perlu ditinjau sebelum dipakai.`;
+  const statusWord = rev ? ` · Status: ${revisionLifecycleLabel(rev.lifecycle)}` : '';
+  return `Bagan berhasil dibuat ${when}${statusWord}.`;
+}
 
 export default function TournamentOverviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +41,16 @@ export default function TournamentOverviewPage() {
 
   const run = data.latestDrawRun;
   const rev = data.latestRevision;
+  // One general "needs attention" figure instead of three separate developer-facing counters
+  // (blocked categories, errors, warnings) -- a committee member needs to know whether SOMETHING
+  // needs a look, not the engine's own breakdown of why.
+  const needsAttention = data.categoryCounts.blocked + data.errorCount + data.warningCount;
+  const attentionColor =
+    data.errorCount > 0 || data.categoryCounts.blocked > 0
+      ? 'var(--red)'
+      : data.warningCount > 0
+        ? 'var(--yellow)'
+        : undefined;
 
   return (
     <main className="content page-stack">
@@ -56,39 +76,16 @@ export default function TournamentOverviewPage() {
           <div className="label">Kontingen</div>
         </div>
         <div className="stat">
-          <div className="value">{run ? drawRunStatusLabel(run.status) : 'Belum ada'}</div>
-          <div className="label">Status Drawing</div>
-        </div>
-        <div className="stat">
-          <div className="value">{rev ? revisionLifecycleLabel(rev.lifecycle) : '·'}</div>
-          <div className="label">Status Revisi</div>
-        </div>
-        <div className="stat">
           <div className="value">
             {data.categoryCounts.ready} / {data.categoryCounts.total}
           </div>
           <div className="label">Kategori Siap</div>
         </div>
         <div className="stat">
-          <div
-            className="value"
-            style={{ color: data.categoryCounts.blocked > 0 ? 'var(--red)' : undefined }}
-          >
-            {data.categoryCounts.blocked}
+          <div className="value" style={{ color: attentionColor }}>
+            {needsAttention}
           </div>
-          <div className="label">Kategori Diblokir</div>
-        </div>
-        <div className="stat">
-          <div className="value" style={{ color: data.errorCount > 0 ? 'var(--red)' : undefined }}>
-            {data.errorCount}
-          </div>
-          <div className="label">Error</div>
-        </div>
-        <div className="stat">
-          <div className="value" style={{ color: data.warningCount > 0 ? 'var(--yellow)' : undefined }}>
-            {data.warningCount}
-          </div>
-          <div className="label">Peringatan</div>
+          <div className="label">Perlu Ditinjau</div>
         </div>
       </div>
 
@@ -96,10 +93,7 @@ export default function TournamentOverviewPage() {
         <h3 className="panel-title">Bagan Terakhir</h3>
         {run ? (
           <>
-            <p style={{ margin: '0 0 12px' }}>
-              <strong>{drawRunKindLabel(run.kind)}</strong> · {drawRunStatusLabel(run.status)} · diminta{' '}
-              {new Date(run.requestedAt).toLocaleString('id-ID')}
-            </p>
+            <p style={{ margin: '0 0 12px' }}>{drawRunSummary(run, rev)}</p>
             {rev ? (
               <a className="btn btn-primary" href={`/tournaments/${id}/sesi/${rev.id}`}>
                 Cek &amp; Atur Bagan
