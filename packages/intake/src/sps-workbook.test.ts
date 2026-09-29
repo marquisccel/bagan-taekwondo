@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import type { RuleSet } from '@bagantkd/rules';
 import { describe, expect, it } from 'vitest';
 
-import { extractParticipantCsv, parseJadwalFixSheet } from './sps-workbook.js';
+import { extractParticipantCsv, parseJadwalFixSheet, resolveSpsSheetNames } from './sps-workbook.js';
 
 /**
  * Structural reference: the committee's real "Jadwal FIX" tab (SPS spreadsheet) --
@@ -147,6 +147,68 @@ describe('parseJadwalFixSheet', () => {
       ['KYORUGI SEMI PRESTASI', 'Laki-laki', 'JUNIOR', '-45'],
     ];
     expect(parseJadwalFixSheet(matrix, rs)).toEqual(parseJadwalFixSheet(matrix, rs));
+  });
+});
+
+describe('resolveSpsSheetNames', () => {
+  const REAL_SHEET_NAMES = [
+    'CLASS_CATEGORY',
+    'query_kolektif',
+    'tanda terima',
+    'semi-prestasi',
+    'prestasi',
+    'atlet_kategori',
+    'Jadwal FIX',
+    'BAGAN SEMI PRESTASI',
+    'PRESTASI KYORUGI',
+    'DAY 1-ARENA B',
+    'SEMI-PRESTASI KYORUGI',
+    'SEMI-PRESTASI POOMSAE',
+    'INPUT_JUARA',
+  ];
+
+  it('finds the exact real-world tab names', () => {
+    expect(resolveSpsSheetNames(REAL_SHEET_NAMES)).toEqual({
+      jadwalSheet: 'Jadwal FIX',
+      participantSheet: 'semi-prestasi',
+    });
+  });
+
+  it('is tolerant of case, spacing and an inserted qualifier word in the jadwal tab name', () => {
+    for (const name of [
+      'JADWAL FIX',
+      'jadwal-fix',
+      'Jadwal   FIX',
+      'Jadwal Terbaru FIX',
+      'Jadwal_Fix_2026',
+    ]) {
+      const names = REAL_SHEET_NAMES.map((n) => (n === 'Jadwal FIX' ? name : n));
+      expect(resolveSpsSheetNames(names).jadwalSheet).toBe(name);
+    }
+  });
+
+  it('is tolerant of case, spacing and punctuation in the participant tab name, without matching the unrelated SEMI-PRESTASI KYORUGI/POOMSAE tabs', () => {
+    for (const name of ['SEMI-PRESTASI', 'Semi Prestasi', 'semi_prestasi']) {
+      const names = REAL_SHEET_NAMES.map((n) => (n === 'semi-prestasi' ? name : n));
+      expect(resolveSpsSheetNames(names).participantSheet).toBe(name);
+    }
+  });
+
+  it('throws a clear, specific error listing every tab when the jadwal sheet is missing entirely', () => {
+    const names = REAL_SHEET_NAMES.filter((n) => n !== 'Jadwal FIX');
+    expect(() => resolveSpsSheetNames(names)).toThrow(/no jadwal \(schedule\) sheet/i);
+  });
+
+  it('throws a clear, specific error (never picks one arbitrarily) when two sheets equally match the jadwal name', () => {
+    const names = [...REAL_SHEET_NAMES, 'Jadwal Fix (revisi)'];
+    expect(() => resolveSpsSheetNames(names)).toThrow(
+      /more than one sheet.*jadwal.*Jadwal FIX.*Jadwal Fix \(revisi\)/is,
+    );
+  });
+
+  it('never lets the participant match widen to catch SEMI-PRESTASI KYORUGI/POOMSAE', () => {
+    const names = REAL_SHEET_NAMES.filter((n) => n !== 'semi-prestasi');
+    expect(() => resolveSpsSheetNames(names)).toThrow(/no semi-prestasi.*sheet/i);
   });
 });
 

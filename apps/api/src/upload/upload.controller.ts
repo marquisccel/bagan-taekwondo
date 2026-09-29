@@ -8,6 +8,7 @@ import {
   listWorkbookSheetNames,
   parseJadwalFixSheet,
   readWorkbookSheet,
+  resolveSpsSheetNames,
 } from '@bagantkd/intake';
 import type { RuleSet } from '@bagantkd/rules';
 import {
@@ -26,8 +27,6 @@ import { ActorScope } from '../auth/tournament-scope.decorator';
 import { DB } from '../db/db.module';
 import { ApiError } from '../errors/api-error';
 
-const JADWAL_SHEET = 'Jadwal FIX';
-const PARTICIPANT_SHEET = 'semi-prestasi';
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
 /** The one rule set this upload flow bootstraps every tournament with -- calibrated on, and this
@@ -66,25 +65,29 @@ export class UploadController {
     } catch {
       throw new BadRequestException('could not read this file as an .xlsx workbook');
     }
-    for (const required of [JADWAL_SHEET, PARTICIPANT_SHEET]) {
-      if (!sheetNames.includes(required)) {
-        throw new BadRequestException(`the workbook has no "${required}" sheet`);
-      }
+    let jadwalSheet: string;
+    let participantSheet: string;
+    try {
+      ({ jadwalSheet, participantSheet } = resolveSpsSheetNames(sheetNames));
+    } catch (e) {
+      throw new BadRequestException(
+        e instanceof Error ? e.message : 'could not identify the required sheets',
+      );
     }
 
     const ruleSet = JSON.parse(readFileSync(RULE_SET_FIXTURE, 'utf-8')) as RuleSet;
     const { rows: scheduleRows, issues: scheduleIssues } = parseJadwalFixSheet(
-      readWorkbookSheet(bytes, JADWAL_SHEET),
+      readWorkbookSheet(bytes, jadwalSheet),
       ruleSet,
     );
     if (scheduleRows.length === 0) {
-      throw new BadRequestException(`"${JADWAL_SHEET}" produced no recognizable schedule rows`);
+      throw new BadRequestException(`"${jadwalSheet}" produced no recognizable schedule rows`);
     }
     let participantCsv: string;
     try {
-      participantCsv = extractParticipantCsv(readWorkbookSheet(bytes, PARTICIPANT_SHEET));
+      participantCsv = extractParticipantCsv(readWorkbookSheet(bytes, participantSheet));
     } catch (e) {
-      throw new BadRequestException(e instanceof Error ? e.message : `could not read "${PARTICIPANT_SHEET}"`);
+      throw new BadRequestException(e instanceof Error ? e.message : `could not read "${participantSheet}"`);
     }
 
     let nikKeys;

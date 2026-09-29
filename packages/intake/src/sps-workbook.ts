@@ -50,6 +50,68 @@ const cell = (v: string | number | null | undefined): string =>
   v === null || v === undefined ? '' : String(v).trim();
 const isBlankRow = (row: readonly (string | number | null)[]): boolean => row.every((v) => cell(v) === '');
 
+export interface ResolvedSpsSheets {
+  readonly jadwalSheet: string;
+  readonly participantSheet: string;
+}
+
+/** Case/spacing/punctuation-insensitive form of a sheet's own tab name, used only to MATCH which
+ * tab is which -- the original name (as the workbook has it) is always what gets read. */
+const normalizeSheetKey = (name: string): string =>
+  name
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, '');
+
+/** Every sheet whose normalized name satisfies `isMatch`, in workbook order (original names). */
+function candidateSheets(sheetNames: readonly string[], isMatch: (key: string) => boolean): string[] {
+  return sheetNames.filter((name) => isMatch(normalizeSheetKey(name)));
+}
+
+function findOneSheet(
+  sheetNames: readonly string[],
+  label: string,
+  isMatch: (key: string) => boolean,
+): string {
+  const [first, ...rest] = candidateSheets(sheetNames, isMatch);
+  if (first === undefined) {
+    throw new Error(`the workbook has no ${label} (sheet tabs found: ${sheetNames.join(', ')})`);
+  }
+  if (rest.length > 0) {
+    throw new Error(
+      `the workbook has more than one sheet that looks like the ${label}: ${[first, ...rest].join(', ')} -- rename the correct one so only it matches`,
+    );
+  }
+  return first;
+}
+
+/**
+ * Finds the schedule ("Jadwal FIX") and participant roster ("semi-prestasi") tabs by their own
+ * name, tolerant of the exact wording/casing/spacing the committee happens to use this time (e.g.
+ * "Jadwal Terbaru FIX", "JADWAL FIX", "Semi-Prestasi") -- this only reads a sheet's own name, never
+ * its content, so it can never silently pick the wrong tab based on a guess about what's inside it.
+ * Throws a clear, specific error (listing every candidate) when a required tab is missing entirely,
+ * or when more than one sheet name is equally plausible and a human needs to disambiguate by
+ * renaming one of them -- it never picks one arbitrarily.
+ *
+ * The participant sheet match stays an exact match after normalizing (not "contains") because the
+ * real workbook also has "SEMI-PRESTASI KYORUGI"/"SEMI-PRESTASI POOMSAE" tabs (aggregate counts, not
+ * the participant roster) that a loose "contains semi-prestasi" match would wrongly catch too.
+ */
+export function resolveSpsSheetNames(sheetNames: readonly string[]): ResolvedSpsSheets {
+  const jadwalSheet = findOneSheet(
+    sheetNames,
+    'jadwal (schedule) sheet',
+    (key) => key.includes('jadwal') && key.includes('fix'),
+  );
+  const participantSheet = findOneSheet(
+    sheetNames,
+    'semi-prestasi (participant roster) sheet',
+    (key) => key === 'semiprestasi',
+  );
+  return { jadwalSheet, participantSheet };
+}
+
 const DAY_HEADER_RE = /^DAY\s+(\d+)$/i;
 const ARENA_HEADER_RE = /^ARENA\s+([A-Z0-9]+)$/i;
 const MONTHS_ID: Readonly<Record<string, number>> = {
