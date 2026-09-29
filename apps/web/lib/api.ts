@@ -536,17 +536,36 @@ export interface SpsUploadResult {
   readonly scheduleIssues: readonly { readonly sheetRow: number; readonly message: string }[];
 }
 
-/**
- * Uploads the committee's SPS spreadsheet and bootstraps a brand-new tournament from it (arenas,
- * rule set, arena/day schedule, participant roster) — see apps/api/src/upload/upload.controller.ts.
- * Multipart, so it bypasses the JSON-only `request` helper; the `x-actor-id` header value is
- * whatever the caller has on hand (even a throwaway one) since this endpoint isn't scoped to an
- * existing tournament yet — the response's own `actorId` is the one to use from then on.
- */
-export async function uploadSps(actorId: string, file: File): Promise<SpsUploadResult> {
+/** `POST /uploads/sps/preview`'s response -- what a real upload of this exact file would do,
+ * computed without writing anything, so a wrong file or a dirty spreadsheet is caught before a
+ * tournament is ever created for it. See apps/api/src/upload/upload.controller.ts. */
+export interface SpsUploadPreview {
+  readonly ok: boolean;
+  readonly blockers: readonly string[];
+  readonly tournamentName: string;
+  readonly jadwalSheet: string | null;
+  readonly participantSheet: string | null;
+  readonly eventStart: string | null;
+  readonly eventEnd: string | null;
+  readonly arenaCodes: readonly string[];
+  readonly scheduleRowCount: number;
+  readonly scheduleIssues: readonly { readonly sheetRow: number; readonly message: string }[];
+  readonly participantCount: number;
+  readonly categoryCount: number;
+  readonly participantIssueCounts: {
+    readonly error: number;
+    readonly warning: number;
+    readonly info: number;
+  };
+}
+
+/** Shared by `uploadSps`/`previewSps` -- both are multipart, so they bypass the JSON-only `request`
+ * helper; the `x-actor-id` header value is whatever the caller has on hand (even a throwaway one)
+ * since neither endpoint is scoped to an existing tournament yet. */
+async function postFile<T>(path: string, actorId: string, file: File): Promise<T> {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(`${API_BASE}/uploads/sps`, {
+  const res = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers: { 'x-actor-id': actorId },
     body: form,
@@ -562,8 +581,22 @@ export async function uploadSps(actorId: string, file: File): Promise<SpsUploadR
       b?.details,
     );
   }
-  return parsed as SpsUploadResult;
+  return parsed as T;
 }
+
+/** Reports what uploading this exact file would do -- tabs matched, participant/schedule counts,
+ * every issue found -- without creating a tournament. Call this first; only call `uploadSps` with
+ * the same `File` once the committee has reviewed the preview and chosen to proceed. */
+export const previewSps = (actorId: string, file: File): Promise<SpsUploadPreview> =>
+  postFile('/uploads/sps/preview', actorId, file);
+
+/**
+ * Uploads the committee's SPS spreadsheet and bootstraps a brand-new tournament from it (arenas,
+ * rule set, arena/day schedule, participant roster) — see apps/api/src/upload/upload.controller.ts.
+ * The response's own `actorId` is the one to use from then on.
+ */
+export const uploadSps = (actorId: string, file: File): Promise<SpsUploadResult> =>
+  postFile('/uploads/sps', actorId, file);
 
 /** Downloads a READY export's file with the required x-actor-id header (a plain <a href> can't set headers). */
 export async function downloadExportFile(actorId: string, exp: ExportArtifact): Promise<void> {
