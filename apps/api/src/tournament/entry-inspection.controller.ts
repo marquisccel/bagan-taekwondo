@@ -1,12 +1,14 @@
 import type { Db } from '@bagantkd/db';
-import { DISCIPLINES, ELIGIBILITY_STATUSES, ENTRY_FORMATS } from '@bagantkd/domain';
-import { formatCategoryDisplayName } from '@bagantkd/export';
-import { Controller, Get, Inject, Param, Query, UseGuards } from '@nestjs/common';
+import { DISCIPLINES, ELIGIBILITY_STATUSES, ENTRY_FORMATS, GENDERS } from '@bagantkd/domain';
+import { formatOperatorCategoryTitle } from '@bagantkd/export';
+import type { RuleSet } from '@bagantkd/rules';
+import { Body, Controller, Get, Inject, Param, Patch, Query, UseGuards } from '@nestjs/common';
 
 import { ActorGuard } from '../auth/actor.guard';
 import { TournamentScope } from '../auth/tournament-scope.decorator';
 import { DB } from '../db/db.module';
 import { ApiError } from '../errors/api-error';
+import { body, numOrNull, oneOf, strOrNull } from '../validation';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -67,7 +69,7 @@ const categoryName = (c: {
   age_label: string | null;
   weight_code: string | null;
 }): string =>
-  formatCategoryDisplayName({
+  formatOperatorCategoryTitle({
     stream: c.stream,
     discipline: c.discipline,
     gender: c.gender,
@@ -189,6 +191,10 @@ export class EntryInspectionController {
     );
 
     const ids = rows.map((r) => r.id);
+    // `registered_belt_code` (e.g. "GEUP_9") is the rule set's normalized code, not what the
+    // committee wrote in the SPS -- the human wording (e.g. "Geup 9 (kuning)", the color the team
+    // actually needs on the mat) only lives in `rule_belt.label`, already persisted from the rule
+    // set's own belt vocabulary. Never re-derive it from the code string.
     const members = ids.length
       ? await this.db.query<{
           entry_id: string;
@@ -196,11 +202,21 @@ export class EntryInspectionController {
           full_name: string | null;
           gender: string | null;
           belt: string | null;
+          belt_label: string | null;
+          height_mm: number | null;
+          weight_g: number | null;
+          birth_date: string | null;
         }>(
-          `select em.entry_id, em.position, a.full_name, a.gender, a.registered_belt_code as belt
-           from entry_member em join athlete a on a.id = em.athlete_id
+          `select em.entry_id, em.position, a.full_name, a.gender, a.registered_belt_code as belt,
+                  rb.label as belt_label,
+                  a.registered_height_mm as height_mm, a.registered_weight_g as weight_g,
+                  to_char(a.birth_date, 'YYYY-MM-DD') as birth_date
+           from entry_member em
+           join athlete a on a.id = em.athlete_id
+           left join rule_belt rb on rb.code = a.registered_belt_code
+             and rb.rule_set_id = (select id from rule_set where tournament_id = $2 and status = 'ACTIVE' limit 1)
            where em.entry_id = any($1::uuid[]) order by em.entry_id, em.position`,
-          [ids],
+          [ids, tournamentId],
         )
       : [];
     const issues = ids.length
@@ -237,7 +253,16 @@ export class EntryInspectionController {
     const items = rows.map((r) => {
       const entryMembers = members
         .filter((m) => m.entry_id === r.id)
-        .map((m) => ({ position: m.position, fullName: m.full_name, gender: m.gender, beltCode: m.belt }));
+        .map((m) => ({
+          position: m.position,
+          fullName: m.full_name,
+          gender: m.gender,
+          beltCode: m.belt,
+          beltLabel: m.belt_label,
+          heightMm: m.height_mm,
+          weightG: m.weight_g,
+          birthDate: m.birth_date,
+        }));
       const entryIssues = issues
         .filter((i) => i.entry_id === r.id)
         .map((i) => ({
@@ -302,5 +327,122 @@ export class EntryInspectionController {
     });
 
     return { items, total, limit, offset, facets: { categories: facets } };
+  }
+
+  /**
+   * The active rule set's own belt/age-division/weight-class vocabulary, trimmed to what the
+   * "Perbaiki Data Peserta" dropdowns need (never hand-invented lists) -- belts ordered by `rank`
+   * (Geup 9 lowest through Dan 4 highest), age divisions ordered by `order`, and weight classes kept
+   * scoped by (stream, ageDivisionCode, gender) exactly as the rule set defines them, since Kyorugi
+   * weight classes differ by age division and gender.
+   */
+  @Get('rule-set-vocabulary')
+  async ruleSetVocabulary(@Param('id') tournamentId: string): Promise<{
+    belts: readonly { code: string; rank: number; label: string }[];
+    ageDivisions: readonly { code: string; label: string; order: number }[];
+    weightClassTables: readonly {
+      stream: string;
+      ageDivisionCode: string;
+      gender: string;
+      classes: readonly { code: string }[];
+    }[];
+  }> {
+    const [row] = await this.db.query<{ snapshot: RuleSet }>(
+      `select snapshot from rule_set where tournament_id = $1 and status = 'ACTIVE' limit 1`,
+      [tournamentId],
+    );
+    const snapshot = row?.snapshot;
+    return {
+      belts: [...(snapshot?.belts ?? [])].sort((a, b) => a.rank - b.rank),
+      ageDivisions: [...(snapshot?.ageDivisions ?? [])].sort((a, b) => a.order - b.order),
+      weightClassTables: (snapshot?.weightClassTables ?? []).map((t) => ({
+        stream: t.stream,
+        ageDivisionCode: t.ageDivisionCode,
+        gender: t.gender,
+        classes: t.classes.map((c) => ({ code: c.code })),
+      })),
+    };
+  }
+
+  /**
+   * A minimal, direct correction for the data-quality issues the team actually hits (wrong weight,
+   * unclear belt/class, a birthdate typo) -- not a general-purpose entry editor. Scoped to
+   * INDIVIDUAL entries only: a Pair/Team entry has several athletes, and this form has no per-member
+   * picker, so editing it here would silently change the wrong person's data. Writes straight to the
+   * registered fields (never the immutable intake/import-row snapshot) and leaves re-validation to
+   * the next draw run's intake snapshot -- there is no per-field re-validation pass to invoke here.
+   */
+  @Patch('entries/:entryId')
+  async correct(
+    @Param('id') tournamentId: string,
+    @Param('entryId') entryId: string,
+    @Body() raw: unknown,
+  ): Promise<{ readonly ok: true }> {
+    if (!UUID.test(entryId)) throw new ApiError('VALIDATION_ERROR', 'entryId must be a UUID');
+    const b = body(raw);
+
+    const [entry] = await this.db.query<{ format: string }>(
+      `select declared_format as format from entry where id = $1 and tournament_id = $2`,
+      [entryId, tournamentId],
+    );
+    if (!entry) throw new ApiError('VALIDATION_ERROR', 'entry not found');
+    if (entry.format !== 'INDIVIDUAL')
+      throw new ApiError(
+        'VALIDATION_ERROR',
+        'only an INDIVIDUAL entry can be corrected here (a Pair/Team entry has multiple athletes)',
+      );
+
+    const [member] = await this.db.query<{ athlete_id: string }>(
+      `select athlete_id from entry_member where entry_id = $1 order by position limit 1`,
+      [entryId],
+    );
+    if (!member) throw new ApiError('VALIDATION_ERROR', 'entry has no athlete to correct');
+
+    const fullName = strOrNull(b, 'fullName');
+    const gender = b['gender'] === undefined || b['gender'] === null ? null : oneOf(b, 'gender', GENDERS);
+    const birthDate = strOrNull(b, 'birthDate');
+    const heightMm = numOrNull(b, 'heightMm');
+    const weightG = numOrNull(b, 'weightG');
+    const beltCode = strOrNull(b, 'beltCode');
+    const declaredAgeDivision = strOrNull(b, 'declaredAgeDivision');
+    const declaredClass = strOrNull(b, 'declaredClass');
+    const contingentName = strOrNull(b, 'contingent');
+
+    await this.db.transaction(async (tx) => {
+      await tx.query(
+        `update athlete set
+           full_name = coalesce($1, full_name),
+           gender = coalesce($2, gender),
+           birth_date = coalesce($3::date, birth_date),
+           registered_height_mm = coalesce($4, registered_height_mm),
+           registered_weight_g = coalesce($5, registered_weight_g),
+           registered_belt_code = coalesce($6, registered_belt_code)
+         where id = $7`,
+        [fullName, gender, birthDate, heightMm, weightG, beltCode, member.athlete_id],
+      );
+      if (declaredAgeDivision !== null || declaredClass !== null) {
+        await tx.query(
+          `update entry set
+             declared_age_division = coalesce($1, declared_age_division),
+             declared_class = coalesce($2, declared_class)
+           where id = $3`,
+          [declaredAgeDivision, declaredClass, entryId],
+        );
+      }
+      if (contingentName !== null) {
+        // Re-points THIS entry to the (existing or newly created) contingent of that name --
+        // never renames the entry's current contingent row, so other entries under it are
+        // untouched. Reuses an existing row when the name already exists (contingent_name_uq).
+        const [c] = await tx.query<{ id: string }>(
+          `insert into contingent (tournament_id, name) values ($1, $2)
+           on conflict (tournament_id, name) do update set name = excluded.name
+           returning id`,
+          [tournamentId, contingentName],
+        );
+        await tx.query(`update entry set contingent_id = $1 where id = $2`, [c?.id, entryId]);
+      }
+    });
+
+    return { ok: true };
   }
 }

@@ -45,12 +45,30 @@ export const drawRunKindLabel = lookup({ CANDIDATE: 'Kandidat', SIMULATION: 'Sim
 
 export const revisionLifecycleLabel = lookup({
   DRAFT: 'Draf',
-  REVIEW: 'Tinjauan',
+  REVIEW: 'Dalam Peninjauan',
   APPROVED: 'Disetujui',
-  LOCKED: 'Terkunci',
+  LOCKED: 'Dikunci',
   PUBLISHED: 'Diterbitkan',
-  AMENDED: 'Diamendemen',
-  SUPERSEDED: 'Digantikan',
+  AMENDED: 'Sedang Direvisi',
+  SUPERSEDED: 'Digantikan Revisi Baru',
+});
+
+/** GREEN/YELLOW/RED, the server's own quality verdict (never computed client-side) — one label
+ * source for every place a verdict is shown (StatusBadge, pool status, command feedback). */
+export const qualityLabel = lookup({
+  GREEN: 'Aman',
+  YELLOW: 'Perlu Perhatian',
+  RED: 'Tidak Dapat Diterapkan',
+});
+
+/** Static (never animated) icon per quality level — color is never the only signal. */
+export const qualityIcon: Readonly<Record<string, string>> = { GREEN: '✓', YELLOW: '!', RED: '×' };
+
+export const roleLabel = lookup({
+  VIEWER: 'Peninjau',
+  DRAWING_OFFICER: 'Petugas Drawing',
+  TECHNICAL_DELEGATE: 'Delegasi Teknis',
+  ADMIN: 'Admin',
 });
 
 export const disciplineLabel = lookup({
@@ -170,6 +188,69 @@ export const ruleFindingLabel = lookup({
   RULE_NOT_COMMITTEE_CONFIRMED: 'Aturan belum dikonfirmasi panitia',
   SCHEMA_VIOLATION: 'Struktur set aturan tidak valid',
 });
+
+/**
+ * `categoryKey` is `${templateCode}|${DIM}=${value}|...` with dimension order coming from the rule
+ * set's own template (see deriveCategory() in packages/intake/src/categories.ts) — parsed generically
+ * here, never by assuming a fixed dimension order.
+ */
+export function categoryKeyDims(categoryKey: string): ReadonlyMap<string, string> {
+  const dims = new Map<string, string>();
+  for (const part of categoryKey.split('|').slice(1)) {
+    const eq = part.indexOf('=');
+    if (eq > 0) dims.set(part.slice(0, eq), part.slice(eq + 1));
+  }
+  return dims;
+}
+
+export const ageDivisionLabel = lookup({
+  PRA_CADET_A: 'Pra Cadet A',
+  PRA_CADET_B: 'Pra Cadet B',
+  PRA_CADET_C: 'Pra Cadet C',
+  PRA_CADET: 'Pra Cadet',
+  CADET: 'Cadet',
+  JUNIOR: 'Junior',
+  SENIOR: 'Senior',
+});
+
+/**
+ * The canonical rule set only ever defines a weight class as "-NN" (upper-bound-only) or "+NN"
+ * (lower-bound-only) — see packages/rules/src/schema.ts and the identical
+ * `weightClassDisplayLabel` in packages/export/src/presentation.ts (duplicated here, not imported,
+ * since that package pulls in server-only PDF dependencies unsuitable for the browser bundle).
+ * `-41` always means "at most 41kg", shown "Under 41 kg"; `+78` means "over 78kg", "Over 78 kg".
+ */
+export function weightClassDisplayLabel(code: string): string {
+  const m = /^([-+])(\d+)$/.exec(code);
+  if (!m) return `${code} kg`;
+  return m[1] === '-' ? `Under ${m[2]} kg` : `Over ${m[2]} kg`;
+}
+
+/** A human-readable "Kyorugi Semi Prestasi · Putri · Junior · Under 68 kg" from a raw category_key
+ * — the key itself is an internal identifier and must never be shown to the team as-is. */
+export function formatCategoryLabel(summary: {
+  readonly category_key: string;
+  readonly stream: string;
+  readonly discipline: string;
+  readonly gender: string;
+  readonly format: string;
+}): string {
+  const dims = categoryKeyDims(summary.category_key);
+  const parts = [
+    disciplineLabel(summary.discipline),
+    streamLabel(summary.stream),
+    genderLabel(summary.gender),
+  ];
+  const ageDivision = dims.get('AGE_DIVISION');
+  if (ageDivision) parts.push(ageDivisionLabel(ageDivision));
+  const weightClass = dims.get('WEIGHT_CLASS');
+  if (weightClass && weightClass !== 'INDIVIDUAL' && weightClass !== 'PAIR' && weightClass !== 'TEAM') {
+    parts.push(weightClassDisplayLabel(weightClass));
+  } else if (summary.format !== 'INDIVIDUAL') {
+    parts.push(formatLabel(summary.format));
+  }
+  return parts.join(' · ');
+}
 
 export function formatDateRange(start: string, end: string): string {
   const fmt = (d: string) =>

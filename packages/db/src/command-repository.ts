@@ -112,8 +112,27 @@ async function rebuildPoolBracket(
      where p.id = $1`,
     [args.poolId, args.revisionId],
   );
-  const members = await tx.query<{ entry_id: string; seed_no: number | null; contingent: string }>(
-    `select e.id as entry_id, e.seed_no, con.name as contingent from pool_member pm join entry e on e.id = pm.entry_id join contingent con on con.id = e.contingent_id where pm.pool_id = $1`,
+  const [run] = await tx.query<{ rules_snapshot: RuleSet }>(
+    `select rules_snapshot from draw_run where id = (select draw_run_id from draw_revision where id = $1)`,
+    [args.revisionId],
+  );
+  const beltRankByCode = new Map((run?.rules_snapshot.belts ?? []).map((b) => [b.code, b.rank]));
+  const members = await tx.query<{
+    entry_id: string;
+    seed_no: number | null;
+    contingent: string;
+    belt_code: string | null;
+  }>(
+    `select e.id as entry_id, e.seed_no, con.name as contingent, a.registered_belt_code as belt_code
+     from pool_member pm
+     join entry e on e.id = pm.entry_id
+     join contingent con on con.id = e.contingent_id
+     left join lateral (
+       select at.registered_belt_code
+       from entry_member em join athlete at on at.id = em.athlete_id
+       where em.entry_id = e.id order by em.position limit 1
+     ) a on true
+     where pm.pool_id = $1`,
     [args.poolId],
   );
   if (members.length === 0) {
@@ -132,6 +151,7 @@ async function rebuildPoolBracket(
     id: m.entry_id,
     contingent: m.contingent,
     seedNo: m.seed_no,
+    beltRank: m.belt_code ? (beltRankByCode.get(m.belt_code) ?? null) : null,
   }));
   const categoryKey = pool?.category_key ?? '';
   const ordinal = pool?.ordinal ?? 1;
@@ -320,6 +340,18 @@ async function applyContent(
       await tx.query(`update entry set seed_no = $2 where id = $1`, [cmd.entryId, cmd.seedNo]);
       const p = await poolOfEntry(tx, rev.id, cmd.entryId);
       return { touchedPools: p ? [p.poolId] : [] };
+    }
+    case 'SET_MATCH_DISPLAY_NO': {
+      // Presentation only (FINAL/OFFICIAL bracket sheet numbering) -- never touches bracket
+      // structure, quality or the persisted matchUid/publicCode identity, so it never affects pools.
+      const [match] = await tx.query<{ id: string }>(
+        `select id from match where revision_id = $1 and id = $2`,
+        [rev.id, cmd.matchId],
+      );
+      if (!match)
+        return { rejected: 'INVALID_COMMAND', hard: [`match ${cmd.matchId} not found in this revision`] };
+      await tx.query(`update match set display_no = $2 where id = $1`, [cmd.matchId, cmd.displayNo]);
+      return { touchedPools: [] };
     }
     case 'REGENERATE_POOL': {
       const [pool] = await tx.query<{ id: string }>(
@@ -608,7 +640,14 @@ async function applyOnce(tx: SqlExecutor, cmd: DrawCommand, actor: CommandActor)
       : canPerformCommand(actor.role, cmd.type);
   if (!authorized) return reject('FORBIDDEN_COMMAND', [`role ${actor.role} may not issue ${cmd.type}`]);
 
-  if (cmd.type !== 'LIFECYCLE' && !acceptsDrawCommands(rev.lifecycle as never)) {
+  // SET_MATCH_DISPLAY_NO is presentation-only (the FINAL/OFFICIAL bracket sheet's printed numbers)
+  // and never touches the frozen draw content itself, so it is allowed at any lifecycle stage --
+  // the team can still fix a match number after LOCK/PUBLISH, right before generating the PDF.
+  if (
+    cmd.type !== 'LIFECYCLE' &&
+    cmd.type !== 'SET_MATCH_DISPLAY_NO' &&
+    !acceptsDrawCommands(rev.lifecycle as never)
+  ) {
     return reject('REVISION_LOCKED', [`revision is ${rev.lifecycle}, not DRAFT`]);
   }
 

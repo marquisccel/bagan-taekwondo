@@ -55,6 +55,9 @@
     },
     "0.4.0": {
       "REAL_2026": "sha256:f72a99e7eba4bd2d5cf49c688baa0a9ca72da168abbe7fd9d9a8b710803e6213"
+    },
+    "0.5.0": {
+      "REAL_2026": "sha256:e26d561dab6cce3fe862ed2b09b224203069ae953d112b7e4e36171c480309fe"
     }
   }
 }

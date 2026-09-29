@@ -3,20 +3,22 @@
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 
+import { EntryCorrectionDialog } from '../../../../components/EntryCorrectionDialog';
 import { api, type EntryListItem, type EntryListParams } from '../../../../lib/api';
 import { useDevAuth } from '../../../../lib/dev-auth';
 import {
+  ageDivisionLabel,
   confidenceLabel,
   disciplineLabel,
-  eligibilityLabel,
   formatLabel,
   groupSourceLabel,
   groupStatusLabel,
+  humanizeCode,
   issueCodeLabel,
   issueSeverityLabel,
   issueStatusLabel,
-  registrationStatusLabel,
   streamLabel,
+  weightClassDisplayLabel,
 } from '../../../../lib/id-labels';
 import { useApiSWR } from '../../../../lib/use-api-swr';
 
@@ -38,13 +40,6 @@ const EMPTY: Filters = {
   categoryId: '',
   eligibility: '',
   hasIssues: false,
-};
-
-const ELIGIBILITY_BADGE: Record<string, string> = {
-  READY: 'badge-green',
-  OVERRIDDEN: 'badge-yellow',
-  DRAWN: 'badge-green',
-  BLOCKED: 'badge-red',
 };
 
 function IssueSummary({ entry }: { entry: EntryListItem }) {
@@ -69,9 +64,8 @@ function IssueSummary({ entry }: { entry: EntryListItem }) {
       <ul style={{ margin: '4px 0 0', paddingLeft: 16 }}>
         {entry.issues.map((i) => (
           <li key={i.id}>
-            <strong>{issueSeverityLabel(i.severity)}</strong>: {issueCodeLabel(i.code)}{' '}
-            <code style={{ fontSize: 11 }}>{i.code}</code>
-            {i.status !== 'OPEN' ? ` — ${issueStatusLabel(i.status)}` : null}
+            <strong>{issueSeverityLabel(i.severity)}</strong>: {issueCodeLabel(i.code)}
+            {i.status !== 'OPEN' ? ` · ${issueStatusLabel(i.status)}` : null}
           </li>
         ))}
       </ul>
@@ -79,10 +73,24 @@ function IssueSummary({ entry }: { entry: EntryListItem }) {
   );
 }
 
-function EntryRow({ e }: { e: EntryListItem }) {
+const fmtHeight = (mm: number | null): string => (mm !== null ? `${Math.round(mm / 10)} cm` : '·');
+const fmtWeight = (g: number | null): string => (g !== null ? `${(g / 1000).toFixed(1)} kg` : '·');
+const fmtBirthDate = (d: string | null): string =>
+  d ? new Date(`${d}T00:00:00Z`).toLocaleDateString('id-ID', { timeZone: 'UTC' }) : '·';
+/** "GEUP_7" -> "Geup 7" -- the only belt detail this data actually carries (no color/strip is
+ * imported); shown identically here and in the "Cek & Atur Bagan" session view. */
+const fmtBelt = (label: string | null, code: string | null): string =>
+  label ?? (code ? humanizeCode(code) : '·');
+const genderWord = (g: string | null): string => (g === 'MALE' ? 'Putra' : g === 'FEMALE' ? 'Putri' : '·');
+
+function EntryRow({ e, onCorrect }: { e: EntryListItem; onCorrect: (e: EntryListItem) => void }) {
   const grouped = e.format !== 'INDIVIDUAL';
+  const first = e.members[0];
   return (
     <tr data-testid="entry-row">
+      <td>
+        <code style={{ fontSize: 11 }}>{e.externalRef ?? '·'}</code>
+      </td>
       <td>
         <div style={{ fontWeight: 600 }}>{e.displayName}</div>
         {grouped ? (
@@ -96,48 +104,48 @@ function EntryRow({ e }: { e: EntryListItem }) {
               : ''}
           </div>
         ) : null}
-        {e.externalRef ? (
-          <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
-            Ref: <code>{e.externalRef}</code>
-          </div>
-        ) : null}
       </td>
       <td>{e.contingent}</td>
+      <td>{genderWord(first?.gender ?? null)}</td>
+      <td className="num">{fmtBirthDate(first?.birthDate ?? null)}</td>
+      <td className="num">{fmtHeight(first?.heightMm ?? null)}</td>
+      <td className="num">{fmtWeight(first?.weightG ?? null)}</td>
+      <td>{fmtBelt(first?.beltLabel ?? null, first?.beltCode ?? null)}</td>
       <td>
-        {disciplineLabel(e.declared.discipline)} · {formatLabel(e.declared.format)}
+        {disciplineLabel(e.declared.discipline)} {streamLabel(e.declared.stream)}
       </td>
-      <td>
-        {e.category ? (
-          <span data-testid="entry-category">{e.category.displayName}</span>
-        ) : (
-          <>
-            <span data-testid="entry-category" style={{ color: 'var(--text-dim)' }}>
-              Belum ditetapkan
-            </span>
-            <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
-              Diajukan: {streamLabel(e.declared.stream)} · {e.declared.ageDivision}
-              {e.declared.weightClass ? ` · ${e.declared.weightClass}` : ''}
-            </div>
-          </>
-        )}
-      </td>
-      <td>{registrationStatusLabel(e.registrationStatus)}</td>
-      <td>
-        <span className={`badge ${ELIGIBILITY_BADGE[e.eligibilityStatus] ?? 'badge-yellow'}`}>
-          {eligibilityLabel(e.eligibilityStatus)}
-        </span>
-        {e.eligibilityReasons.length > 0 ? (
-          <ul style={{ margin: '4px 0 0', paddingLeft: 16, fontSize: 12 }} aria-label="Alasan diblokir">
-            {e.eligibilityReasons.map((r) => (
-              <li key={r}>
-                {issueCodeLabel(r)} <code style={{ fontSize: 11 }}>{r}</code>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </td>
+      <td>{ageDivisionLabel(e.declared.ageDivision)}</td>
+      <td>{e.declared.weightClass ? weightClassDisplayLabel(e.declared.weightClass) : '·'}</td>
       <td>
         <IssueSummary entry={e} />
+      </td>
+      <td>
+        {!grouped ? (
+          <button
+            type="button"
+            className="btn icon-btn"
+            aria-label={`Perbaiki data ${e.displayName}`}
+            title="Perbaiki data peserta"
+            onClick={() => onCorrect(e)}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+              <path d="m15 5 4 4" />
+            </svg>
+          </button>
+        ) : (
+          <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>·</span>
+        )}
       </td>
     </tr>
   );
@@ -150,6 +158,7 @@ export default function PesertaPage() {
   const [draft, setDraft] = useState<Filters>(EMPTY);
   const [applied, setApplied] = useState<Filters>(EMPTY);
   const [offset, setOffset] = useState(0);
+  const [correcting, setCorrecting] = useState<EntryListItem | null>(null);
 
   const params: EntryListParams = {
     q: applied.q.trim(),
@@ -161,7 +170,7 @@ export default function PesertaPage() {
     limit: PAGE_SIZE,
     offset,
   };
-  const { data, error, isLoading } = useApiSWR(
+  const { data, error, isLoading, mutate } = useApiSWR(
     actorId && id ? ['entries', id, actorId, JSON.stringify(params)] : null,
     () => api.entries(actorId, id, params),
     { keepPreviousData: true },
@@ -184,7 +193,7 @@ export default function PesertaPage() {
   const to = Math.min(offset + PAGE_SIZE, total);
 
   return (
-    <main className="content">
+    <main className="content content-wide">
       <h1>Peserta</h1>
       <p style={{ color: 'var(--text-dim)' }}>
         Pemeriksaan data peserta yang sudah tersimpan (hanya-baca). Kelayakan dan masalah data berasal dari
@@ -267,18 +276,24 @@ export default function PesertaPage() {
             <table aria-label="Daftar peserta">
               <thead>
                 <tr>
-                  <th>Peserta</th>
+                  <th>ID Atlet</th>
+                  <th>Nama</th>
                   <th>Kontingen</th>
-                  <th>Disiplin</th>
-                  <th>Kategori</th>
-                  <th>Status pendaftaran</th>
-                  <th>Kelayakan</th>
+                  <th>Kelamin</th>
+                  <th>Tgl. Lahir</th>
+                  <th>TB</th>
+                  <th>BB</th>
+                  <th>Sabuk</th>
+                  <th>Klasifikasi</th>
+                  <th>Divisi</th>
+                  <th>Class</th>
                   <th>Masalah data</th>
+                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {data.items.map((e) => (
-                  <EntryRow key={e.entryId} e={e} />
+                  <EntryRow key={e.entryId} e={e} onCorrect={setCorrecting} />
                 ))}
               </tbody>
             </table>
@@ -308,6 +323,19 @@ export default function PesertaPage() {
             Berikutnya
           </button>
         </div>
+      ) : null}
+
+      {correcting ? (
+        <EntryCorrectionDialog
+          entry={correcting}
+          tournamentId={id}
+          actorId={actorId}
+          onClose={() => setCorrecting(null)}
+          onSaved={() => {
+            setCorrecting(null);
+            void mutate();
+          }}
+        />
       ) : null}
     </main>
   );

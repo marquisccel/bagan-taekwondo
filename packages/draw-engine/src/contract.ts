@@ -10,7 +10,10 @@ import type { DrawSeed, Fingerprint } from '@bagantkd/shared';
  * data: no Dates, no class instances, integer units only (ADR-0006). The same contract is
  * used by the worker, the API (predictive validation) and the draw simulator.
  */
-export const ENGINE_VERSION = '0.4.0';
+// 2026-09 belt-tolerance-aware round-1 seeding (bracket.ts's beltToleranceCost): a secondary
+// tie-breaker after contingent separation, so it can change which of several equally
+// contingent-optimal placements is chosen -- a real output change, hence the version bump.
+export const ENGINE_VERSION = '0.5.0';
 
 export const ENGINE_STAGES = [
   'normalizeEntries',

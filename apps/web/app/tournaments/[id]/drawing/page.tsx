@@ -89,7 +89,7 @@ function Preflight({ p }: { p: DrawPreflight }) {
         <strong>Set aturan:</strong>{' '}
         {p.ruleSet ? (
           <>
-            {p.ruleSet.name} <code>{p.ruleSet.code}</code> v{p.ruleSet.version} —{' '}
+            {p.ruleSet.name} <code>{p.ruleSet.code}</code> v{p.ruleSet.version} ·{' '}
             {ruleSetStatusLabel(p.ruleSet.status)}
           </>
         ) : (
@@ -112,7 +112,7 @@ function Preflight({ p }: { p: DrawPreflight }) {
         ) : (
           <div className="banner banner-conflict" role="status" data-testid="preflight-lock-status">
             <span>
-              <strong>Provisional — belum dapat dikunci.</strong> Drawing tetap dapat dibuat sebagai kandidat,
+              <strong>Provisional, belum dapat dikunci.</strong> Drawing tetap dapat dibuat sebagai kandidat,
               tetapi hasilnya belum dapat dikunci atau diterbitkan. {lock.blockerCount} hal penghalang,{' '}
               {lock.warningCount} peringatan.
             </span>
@@ -286,10 +286,7 @@ export default function DrawingPage() {
   return (
     <main className="content grid">
       <h1>
-        Buat drawing{' '}
-        <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>
-          — {p.tournament.name} ({p.tournament.code})
-        </span>
+        Buat drawing <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>· {p.tournament.name}</span>
       </h1>
 
       <Preflight p={p} />

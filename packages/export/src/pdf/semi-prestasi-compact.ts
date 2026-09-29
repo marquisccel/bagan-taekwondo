@@ -20,7 +20,12 @@ import {
 } from '../presentation.js';
 import { categoriesForSlot, type ScheduleSlot } from '../schedule.js';
 import { selectSemiPrestasiCategories } from '../semi-prestasi.js';
-import { compactBracketFits, documentMatchNumbers, renderCompactBracketSvg } from './compact-bracket-svg.js';
+import {
+  compactBracketFits,
+  documentMatchNumbers,
+  renderCompactBracketSvg,
+  renderLoneEntrySvg,
+} from './compact-bracket-svg.js';
 import {
   esc,
   footerTemplate,
@@ -60,7 +65,7 @@ const POOL_BRACKET_AREA = { width: 640, leafWidth: 130, nameChars: 30 } as const
 
 /** FINAL/OFFICIAL: the bracket IS the participant list (name + contingent on each leaf), so it spans the
  * whole card width -- nominal 1000 user units, scaled to 100% of the container by the SVG viewBox. */
-const OFFICIAL_BRACKET_AREA = { width: 1400, leafWidth: 740, nameChars: 50, integrated: true } as const;
+const OFFICIAL_BRACKET_AREA = { width: 1400, leafWidth: 900, nameChars: 50, integrated: true } as const;
 
 /**
  * A pool whose table is roughly a page tall (>= ~30 participants) may fragment across pages; keeping it in
@@ -69,20 +74,20 @@ const OFFICIAL_BRACKET_AREA = { width: 1400, leafWidth: 740, nameChars: 50, inte
 const TALL_CARD_MIN_LINES = 60;
 
 const COMPACT_CSS = `
-  body { font-size: 7.5pt; line-height: 1.25; }
+  body { font-size: 8.5pt; line-height: 1.25; }
   .doc-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 6mm;
     border-bottom: 0.8pt solid #111; padding-bottom: 1.5mm; margin-bottom: 2.5mm; }
-  .doc-head h1 { font-size: 13pt; margin: 0; }
+  .doc-head h1 { font-size: 14.5pt; margin: 0; }
   .doc-head .doc-kicker { margin-bottom: 0.5mm; }
-  .doc-category { font-size: 9pt; font-weight: 600; color: #222; margin-top: 0.5mm; }
-  .doc-meta { font-size: 7pt; color: #333; text-align: right; line-height: 1.35; }
+  .doc-category { font-size: 10pt; font-weight: 600; color: #222; margin-top: 0.5mm; }
+  .doc-meta { font-size: 8pt; color: #333; text-align: right; line-height: 1.35; }
   .doc-mode { font-weight: 700; }
-  .quality-line { font-size: 7pt; color: #7a4b00; margin: 0 0 2mm; }
+  .quality-line { font-size: 8pt; color: #7a4b00; margin: 0 0 2mm; }
   /* A plain heading (no boxed/backgrounded banner) before a category's pools -- only shown for a
      REVISION-scope document with more than one category; a CATEGORY-scoped export already shows its
      one category's title in the main doc header (docHeader()), so it is never repeated here. */
-  .cat-heading { font-size: 10pt; font-weight: 700; margin: 4mm 0 2mm; page-break-after: avoid; }
-  .cat-info { font-size: 7pt; color: #333; margin: -1.5mm 0 2mm; }
+  .cat-heading { font-size: 11pt; font-weight: 700; margin: 4mm 0 2mm; page-break-after: avoid; }
+  .cat-info { font-size: 8pt; color: #333; margin: -1.5mm 0 2mm; }
   .card { border: 0.5pt solid #555; break-inside: avoid; page-break-inside: avoid; overflow: hidden;
     margin-bottom: 2.5mm; }
   .card.tall { break-inside: auto; page-break-inside: auto; }
@@ -95,9 +100,9 @@ const COMPACT_CSS = `
      starts flush with the "No" column below it, instead of noticeably further right (visual polish). */
   .card-head { background: #fff; border-bottom: 0.5pt solid #555; padding: 1mm 2mm 1mm 1.1mm; }
   .card-head .row { display: flex; justify-content: space-between; align-items: center; gap: 2mm; }
-  .pool-no { font-size: 9pt; font-weight: 700; }
-  .pool-flag { font-size: 6.5pt; font-weight: 700; color: #a33; margin-left: 1.5mm; }
-  .card-count { font-size: 7pt; color: #333; white-space: nowrap; }
+  .pool-no { font-size: 10pt; font-weight: 700; }
+  .pool-flag { font-size: 7.5pt; font-weight: 700; color: #a33; margin-left: 1.5mm; }
+  .card-count { font-size: 8pt; color: #333; white-space: nowrap; }
   /* One pool per row, spanning the full page width (table refinement -- layout correction): the
      participant table gets a modest, fixed share and the bracket -- now substantially larger since
      its container is the full page width, not half of a 2-column grid -- gets the rest. */
@@ -110,7 +115,7 @@ const COMPACT_CSS = `
   table.pt { margin: 0; width: 100%; table-layout: fixed; }
   /* Header and body share the same font size/padding (visual polish pass) -- only the background and
      weight distinguish the header row now, instead of a visibly smaller, more cramped header. */
-  table.pt th, table.pt td { font-size: 7pt; padding: 0.3mm 1mm; border: 0.3pt solid #bbb; line-height: 1.15; }
+  table.pt th, table.pt td { font-size: 8pt; padding: 0.3mm 1mm; border: 0.3pt solid #bbb; line-height: 1.15; }
   table.pt th { background: #e8e8e8; white-space: nowrap; }
   table.pt th.wrap-ok { white-space: normal; }
   table.pt tr { break-inside: avoid; page-break-inside: avoid; }
@@ -125,10 +130,10 @@ const COMPACT_CSS = `
   table.pt .clamp2 { overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical;
     -webkit-line-clamp: 2; overflow: hidden; }
   table.pt .nm { font-weight: 600; }
-  table.pt .ct { font-size: 6.2pt; color: #333; }
+  table.pt .ct { font-size: 7pt; color: #333; }
   table.pt .na { color: #666; }
   .col-bracket, .bk { padding: 0.5mm 1.2mm 0.3mm; }
-  .bk-note { font-size: 6.5pt; color: #555; font-style: italic; padding: 0.8mm 1.5mm; }
+  .bk-note { font-size: 7.5pt; color: #555; font-style: italic; padding: 0.8mm 1.5mm; }
   /* FINAL/OFFICIAL: no participant table, the bracket spans the full card width. */
   .card-body.official { display: block; }
   /* Right padding 0 (structural reference): the bracket's final stub line reaches the SVG's own full
@@ -137,10 +142,16 @@ const COMPACT_CSS = `
   .card-body.official .col-bracket { padding: 1.5mm 0 1mm 2mm; }
   .pl { padding: 1mm 2mm; }
   .pl-row { display: flex; gap: 4mm; align-items: baseline; padding: 0.3mm 0; }
-  .pl-row .nm { font-size: 9pt; font-weight: 700; }
-  .pl-row .ct { font-size: 7.5pt; color: #444; }
-  .card-foot { border-top: 0.3pt solid #bbb; padding: 0.5mm 1.5mm; font-size: 6.3pt; color: #7a4b00; line-height: 1.25; }
-  .card-foot .code-tag { font-size: 5.5pt; color: #8a7a60; }
+  .pl-row .nm { font-size: 10pt; font-weight: 700; }
+  .pl-row .ct { font-size: 8.5pt; color: #444; }
+  /* A lone walkover entry's own line-and-number, in the same solid dark line and bold number style
+     as every real match (compact-bracket-svg.ts's INTEGRATED_STROKE) -- so it reads as "this is the
+     bracket, just with nobody to pair against" rather than a missing/broken diagram. */
+  .bk-walkover { display: flex; align-items: center; gap: 2mm; padding: 1mm 2mm 0; }
+  .bk-walkover-line { flex: 1; border-top: 1.1pt solid #222; }
+  .bk-walkover-no { font-size: 9pt; font-weight: 700; color: #222; }
+  .card-foot { border-top: 0.3pt solid #bbb; padding: 0.5mm 1.5mm; font-size: 7pt; color: #7a4b00; line-height: 1.25; }
+  .card-foot .code-tag { font-size: 6.3pt; color: #8a7a60; }
   .card-foot .gap { color: #555; }
 `;
 
@@ -275,17 +286,37 @@ function bracketHtml(
   matchNumbers: ReadonlyMap<string, number>,
 ): string {
   const bracket = pool.bracket;
-  const fallback = (note: string): string =>
-    official
-      ? `${participantList(pool)}<div class="bk-note">${esc(note)}</div>`
-      : `<div class="bk-note">${esc(note)}</div>`;
-  if (!bracket || bracket.matches.length === 0) return fallback(L.noBracket);
+  // A genuine walkover (no bracket at all) still gets the pool's own assigned number here (see
+  // `documentMatchNumbers`, keyed by pool.id for exactly this case) -- matching the committee's own
+  // SPS sheet, which writes a sequence number next to a lone entry too. A bracket merely too large
+  // for this card takes no number (deferred to the full-size bracket sheet instead).
+  const fallback = (note: string, poolNumber?: number): string => {
+    if (!official) return `<div class="bk-note">${esc(note)}</div>`;
+    // A genuinely solo entry (no bracket persisted at all) is drawn with the same leaf-column layout
+    // and line-to-number language as every real match, not a plain name/contingent line -- see
+    // `renderLoneEntrySvg`. Only reachable when the pool really has exactly one member; any other
+    // no-bracket shape (never expected in practice) keeps the plain participant list as a safe fallback.
+    const soleMember = pool.members.length === 1 ? pool.members[0] : undefined;
+    if (soleMember) {
+      const svg = renderLoneEntrySvg(soleMember, officialColumns(category, pool), area, poolNumber);
+      return `<div class="bk">${svg}</div>`;
+    }
+    const stub =
+      poolNumber != null
+        ? `<div class="bk-walkover"><div class="bk-walkover-line"></div><div class="bk-walkover-no">${poolNumber}</div></div>`
+        : '';
+    return `${participantList(pool)}${stub}`;
+  };
+  if (!bracket || bracket.matches.length === 0) return fallback(L.noBracket, matchNumbers.get(pool.id));
   if (!compactBracketFits(bracket)) return fallback(L.bracketTooLarge);
   const svg = renderCompactBracketSvg(
     bracket,
-    official ? { ...area, matchNumbers, columns: officialColumns(category, pool) } : area,
+    official ? { ...area, matchNumbers, columns: officialColumns(category, pool), poolId: pool.id } : area,
   );
-  return svg ? `<div class="bk">${svg}</div>` : fallback(L.noBracket);
+  // A bracket that exists but draws nothing (a single entry persisted as a size-2 bracket with one
+  // WALKOVER match, e.g. a lone entry with a bye) still gets its own line-and-number here, same as
+  // the no-bracket-at-all case above and the same pool.id key `documentMatchNumbers` assigned it.
+  return svg ? `<div class="bk">${svg}</div>` : fallback(L.noBracket, matchNumbers.get(pool.id));
 }
 
 /** Which of the printed values are absent for at least one participant — a plain "what is not on file"
@@ -501,7 +532,7 @@ export function buildSemiPrestasiCompactSheetHtml(
     ? `${L.documentTitle} · ${singleCategoryTitle}`
     : `${L.documentTitle} · ${model.tournament.name}`;
   // FINAL/OFFICIAL match numbers run 1, 2, 3, ... across the WHOLE document, in its category/pool order.
-  const matchNumbers = documentMatchNumbers(categories.flatMap((c) => c.pools.map((p) => p.bracket)));
+  const matchNumbers = documentMatchNumbers(categories.flatMap((c) => c.pools));
   const body = `${docHeader(model, opts, singleCategoryTitle)}${qualityLine}${categories.map((c) => categorySection(c, !single, opts.mode, matchNumbers)).join('')}`;
   const html = `<!doctype html>
 <html lang="id">
@@ -566,7 +597,7 @@ export function buildSemiPrestasiSessionSheetHtml(
   }
   const title = `${L.documentTitle} · DAY ${slot.dayNumber} · ${slot.arena}`;
   // FINAL/OFFICIAL match numbers run 1, 2, 3, ... across the WHOLE arena/day document.
-  const matchNumbers = documentMatchNumbers(categories.flatMap((c) => c.pools.map((p) => p.bracket)));
+  const matchNumbers = documentMatchNumbers(categories.flatMap((c) => c.pools));
   // FINAL/OFFICIAL (structural reference: the legacy sheet): no per-category heading between weight
   // classes either -- the row's own division/weight-class columns already say which category a leaf
   // belongs to, and the arena/day heading already names the shared classification. PREVIEW keeps the

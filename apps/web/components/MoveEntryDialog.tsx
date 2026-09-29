@@ -21,11 +21,11 @@ export function MoveEntryDialog({
       <div
         className="drawer"
         role="dialog"
-        aria-label={`Move ${entryName}`}
+        aria-label={`Pindahkan ${entryName}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ marginTop: 0 }}>Move {entryName}</h2>
-        <p style={{ color: 'var(--text-dim)' }}>Choose a destination pool.</p>
+        <h2 style={{ marginTop: 0 }}>Pindahkan {entryName}</h2>
+        <p style={{ color: 'var(--text-dim)' }}>Pilih pool tujuan.</p>
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {pools.map((p) => (
             <li key={p.id} style={{ marginBottom: 6 }}>
@@ -36,13 +36,13 @@ export function MoveEntryDialog({
                 disabled={p.id === currentPoolId}
                 onClick={() => onPick(p.poolUid)}
               >
-                {p.poolUid} {p.id === currentPoolId ? '(current)' : `— ${p.members.length} entries`}
+                Pool {p.ordinal} {p.id === currentPoolId ? '(saat ini)' : `· ${p.members.length} peserta`}
               </button>
             </li>
           ))}
         </ul>
         <button type="button" className="btn" onClick={onCancel}>
-          Cancel
+          Batal
         </button>
       </div>
     </div>

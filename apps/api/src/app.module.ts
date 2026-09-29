@@ -10,6 +10,7 @@ import type { Probe } from './health/readiness';
 import { JobQueueModule } from './jobs/job-queue.module';
 import { RevisionModule } from './revision/revision.module';
 import { TournamentModule } from './tournament/tournament.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { TournamentModule } from './tournament/tournament.module';
     ExportModule,
     AuditModule,
     TournamentModule,
+    UploadModule,
   ],
   controllers: [HealthController],
   providers: [

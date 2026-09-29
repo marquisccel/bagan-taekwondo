@@ -50,18 +50,18 @@ test.describe('two-operator concurrency', () => {
     await rowB.click();
 
     // Both pages loaded the same revision (lock_version 0). Operator A swaps first and succeeds.
-    await pageA.getByRole('button', { name: 'Swap…' }).first().click();
-    await pageA.getByRole('dialog').getByRole('button').filter({ hasNotText: 'Cancel' }).first().click();
+    await pageA.getByRole('button', { name: 'Tukar Peserta' }).first().click();
+    await pageA.getByRole('dialog').getByRole('button').filter({ hasNotText: 'Batal' }).first().click();
     await expect(pageA.locator('main').getByRole('alert')).toHaveCount(0);
 
     // Operator B, still holding the stale revision snapshot in the page, submits a swap against
     // the same (now stale) expectedLockVersion. It must be rejected, not silently merged.
-    await pageB.getByRole('button', { name: 'Swap…' }).first().click();
-    await pageB.getByRole('dialog').getByRole('button').filter({ hasNotText: 'Cancel' }).first().click();
-    await expect(pageB.locator('main').getByRole('alert')).toContainText(/changed by another operator/i);
+    await pageB.getByRole('button', { name: 'Tukar Peserta' }).first().click();
+    await pageB.getByRole('dialog').getByRole('button').filter({ hasNotText: 'Batal' }).first().click();
+    await expect(pageB.locator('main').getByRole('alert')).toContainText(/diperbarui oleh pengguna lain/i);
 
     // Reloading operator B's view picks up the canonical (operator A's) state.
-    await pageB.getByRole('button', { name: 'Reload' }).click();
+    await pageB.getByRole('button', { name: 'Muat Ulang' }).click();
     await expect(pageB.locator('main').getByRole('alert')).toHaveCount(0);
 
     await ctxA.close();

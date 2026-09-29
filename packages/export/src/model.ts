@@ -1,3 +1,5 @@
+import { compareCategoriesByWeightClass, resolveMatchNumbers } from '@bagantkd/shared';
+
 /**
  * The canonical export view model (Phase 6 ACCEPTANCE §3). Every renderer (PDF, XLSX) consumes
  * ONLY this shape — never the database directly — so pools/brackets/BYEs/seeds/quality/contingent
@@ -42,6 +44,15 @@ export interface ExportMatch {
   readonly round: number;
   readonly position: number;
   readonly status: string;
+  /** Manually set by the team ("No." on the web bracket) — null when never edited. */
+  readonly displayNo: number | null;
+  /**
+   * The same "No." the team sees on screen, resolved identically here (see
+   * `@bagantkd/shared`'s `resolveMatchNumbers`, over the same weight-ascending category order as
+   * the web session view) so an unedited match never prints a different number than the screen
+   * shows. Always present; falls back to `displayNo` becoming this value once nothing is pinned.
+   */
+  readonly resolvedDisplayNo: number | null;
   readonly feederA: ExportFeeder;
   readonly feederB: ExportFeeder;
 }
@@ -210,6 +221,8 @@ export interface RawMatchRow {
   readonly feederAMatchId: string | null;
   readonly feederBSlot: number | null;
   readonly feederBMatchId: string | null;
+  /** Optional: absent for synthetic fixtures and snapshots taken before this column existed. */
+  readonly displayNo?: number | null;
 }
 
 export interface BuildExportModelArgs {
@@ -277,9 +290,31 @@ export function buildExportModel(args: BuildExportModelArgs): ExportModel {
   const publicCodeByMatchId = new Map(args.matches.map((m) => [m.id, m.publicCode]));
   const matchUidByMatchId = new Map(args.matches.map((m) => [m.id, m.matchUid]));
 
-  const categories: ExportCategory[] = [...args.categories]
-    .sort((a, b) => a.categoryKey.localeCompare(b.categoryKey))
-    .map((c) => {
+  // Weight-ascending order (not plain categoryKey string sort) so a category's position here is the
+  // exact same as the web session view (`RevisionReadController.session`) -- required for
+  // `resolvedDisplayNo` below to print the identical number the team sees on screen.
+  const sortedCategories = [...args.categories].sort(compareCategoriesByWeightClass);
+  const categoryIndexById = new Map(sortedCategories.map((c, i) => [c.id, i]));
+  const poolById = new Map(args.pools.map((p) => [p.id, p]));
+  const bracketById = new Map(args.brackets.map((b) => [b.id, b]));
+  const resolvedNumberByMatchId = resolveMatchNumbers(
+    args.matches.map((m) => {
+      const bracket = bracketById.get(m.bracketId);
+      const pool = bracket ? poolById.get(bracket.poolId) : undefined;
+      return {
+        id: m.id,
+        displayNo: m.displayNo ?? null,
+        order: [
+          pool ? (categoryIndexById.get(pool.categoryId) ?? 0) : 0,
+          pool?.ordinal ?? 0,
+          m.round,
+          m.position,
+        ],
+      };
+    }),
+  );
+
+  const categories: ExportCategory[] = sortedCategories.map((c) => {
       const rawPools = [...(poolsByCategory.get(c.id) ?? [])].sort((a, b) => a.ordinal - b.ordinal);
       let participantCount = 0;
 
@@ -315,6 +350,8 @@ export function buildExportModel(args: BuildExportModelArgs): ExportModel {
               round: m.round,
               position: m.position,
               status: m.status,
+              displayNo: m.displayNo ?? null,
+              resolvedDisplayNo: resolvedNumberByMatchId.get(m.id) ?? null,
               feederA: feederFor(m.feederASlot, m.feederAMatchId, publicCodeByMatchId, matchUidByMatchId),
               feederB: feederFor(m.feederBSlot, m.feederBMatchId, publicCodeByMatchId, matchUidByMatchId),
             })),

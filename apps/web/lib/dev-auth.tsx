@@ -7,11 +7,10 @@ import { api, type TournamentMember } from './api';
 /**
  * DEV AUTH ONLY. There is no login system in this repository (Phase 4 accepted `x-actor-id` as a
  * stand-in for whatever real auth eventually sits in front of it — see apps/api/src/auth/actor.ts).
- * This adapter does the smallest thing that makes the UI usable: the operator pastes a tournament
- * id and their own user id once (from a seed script or another operator), both persisted in
- * localStorage; every API call then carries that actor id. A persona switcher (below) lets you
- * flip between the tournament's existing members without re-typing ids. This is NOT a production
- * authentication system and must not be mistaken for one.
+ * The team doesn't type any id by hand: uploading an SPS spreadsheet (`/`) bootstraps a brand-new
+ * tournament and a shared "Tim" actor with full access (no role distinction -- ADR "no role
+ * gating"), and the app remembers both ids in localStorage from then on (`connect`, below). This is
+ * NOT a production authentication system and must not be mistaken for one.
  */
 interface DevAuthValue {
   readonly tournamentId: string;

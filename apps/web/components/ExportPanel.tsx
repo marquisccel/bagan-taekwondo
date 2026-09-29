@@ -1,93 +1,101 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import {
-  api,
-  ApiClientError,
-  downloadExportFile,
-  type ExportArtifact,
-  type ExportMode,
-  type ExportType,
-} from '../lib/api';
+import { api, ApiClientError, downloadExportFile, type ExportMode, type ExportType } from '../lib/api';
 import { friendlyExportMessage } from '../lib/command-error';
 import { useDevAuth } from '../lib/dev-auth';
-import { useApiSWR } from '../lib/use-api-swr';
+import { canExportOfficial } from '../lib/lifecycle';
 
 const TYPE_LABEL: Record<ExportType, string> = {
-  TOURNAMENT_DRAW_BOOK: 'Buku Bagan Turnamen (PDF)',
+  TOURNAMENT_DRAW_BOOK: 'Buku Bagan Lengkap · Semua Kategori (PDF)',
   CATEGORY_DRAW: 'Bagan Kategori (PDF)',
   POOL_SHEET: 'Lembar Pool (PDF)',
   BRACKET_SHEET: 'Bagan Pertandingan (PDF)',
   XLSX_WORKBOOK: 'Workbook (XLSX)',
-  SEMI_PRESTASI_COMPACT_DRAW_SHEET: 'Lembar Drawing Ringkas Semi Prestasi (PDF)',
-};
-
-const STATUS_LABEL: Record<ExportArtifact['status'], string> = {
-  REQUESTED: 'Menunggu',
-  GENERATING: 'Diproses',
-  READY: 'Siap',
-  FAILED: 'Gagal',
+  SEMI_PRESTASI_COMPACT_DRAW_SHEET: 'Lembar Bagan Arena/Hari Ini (PDF)',
 };
 
 /**
- * Minimal Phase 6 export UI (ACCEPTANCE §14) — an "Ekspor" action, a type selector already scoped
- * to what's valid for this page (categoryId/poolId are fixed by the caller, never chosen loosely),
- * a Preview/Resmi indicator, generation status, download, and history. No redesign of Phase 5: this
- * is one more `panel` block using the same classes as LifecycleBar/RevisionConflictBanner.
+ * Minimal Phase 6 export UI (ACCEPTANCE §14) — an "Ekspor" action and a type selector already
+ * scoped to what's valid for this page (categoryId/poolId are fixed by the caller, never chosen
+ * loosely). "Buat Ekspor" goes straight to a saved file: no visible history list and no separate
+ * "Unduh" click -- the team just wants the file, so this polls the one export it just requested
+ * until it's READY and downloads it immediately.
  */
 export function ExportPanel({
   revisionId,
+  revisionLifecycle,
   availableTypes,
   categoryId,
   poolId,
 }: {
   revisionId: string;
+  /** Picks the export mode automatically -- see the `mode` comment below. */
+  revisionLifecycle: string;
   availableTypes: readonly ExportType[];
   categoryId?: string;
   poolId?: string;
 }) {
   const { actorId, role } = useDevAuth();
   const [exportType, setExportType] = useState<ExportType>(availableTypes[0] ?? 'TOURNAMENT_DRAW_BOOK');
-  const [mode, setMode] = useState<ExportMode>('PREVIEW');
+  // No Preview/Resmi CHOICE here: the editable "Cek & Atur Bagan" screen (with TB/BB/Sabuk visible)
+  // already IS the preview, and every rendered document -- PREVIEW or OFFICIAL -- now uses the same
+  // clean "official" layout (see export-worker.ts), so the team never sees a visual difference.
+  // `mode` itself still has to be picked correctly, though: the backend only allows an OFFICIAL
+  // export once the revision is LOCKED+ (canExportInMode), so requesting OFFICIAL from a DRAFT
+  // revision -- exactly when the team is using this panel from Cek & Atur Bagan -- would always be
+  // refused. PREVIEW is used until the revision reaches that point, entirely transparently.
+  const mode: ExportMode = canExportOfficial(revisionLifecycle) ? 'OFFICIAL' : 'PREVIEW';
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
-  const { data: history, mutate } = useApiSWR(
-    actorId && revisionId ? ['exports', revisionId, actorId] : null,
-    () => api.listExports(actorId, revisionId),
-    {
-      refreshInterval: (data) =>
-        data?.some((e) => e.status === 'REQUESTED' || e.status === 'GENERATING') ? 2000 : 0,
-    },
-  );
-
-  const relevant = (history ?? []).filter(
-    (e) =>
-      e.exportType === exportType && e.categoryId === (categoryId ?? null) && e.poolId === (poolId ?? null),
-  );
+  // Poll the one export just requested until it's READY (download it immediately, no separate
+  // click) or FAILED (show why). Never touches any other export's history.
+  useEffect(() => {
+    if (!pendingId) return;
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const exp = await api.getExport(actorId, pendingId);
+        if (cancelled) return;
+        if (exp.status === 'READY') {
+          setPendingId(null);
+          setBusy(false);
+          await downloadExportFile(actorId, exp);
+        } else if (exp.status === 'FAILED') {
+          setPendingId(null);
+          setBusy(false);
+          setError(friendlyExportMessage(exp.errorCode ?? 'EXPORT_GENERATION_FAILED', 'Ekspor gagal'));
+        }
+      } catch (e: unknown) {
+        if (cancelled) return;
+        setPendingId(null);
+        setBusy(false);
+        const code = e instanceof ApiClientError ? e.code : 'UNKNOWN_ERROR';
+        setError(friendlyExportMessage(code, 'Gagal memeriksa status ekspor'));
+      }
+    };
+    const interval = setInterval(() => void tick(), 1500);
+    void tick();
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [pendingId, actorId]);
 
   const requestExport = async () => {
     setBusy(true);
     setError(null);
     try {
-      await api.requestExport(actorId, revisionId, { exportType, mode, categoryId, poolId });
-      await mutate();
+      const created = await api.requestExport(actorId, revisionId, { exportType, mode, categoryId, poolId });
+      setPendingId(created.id);
     } catch (e: unknown) {
       const code = e instanceof ApiClientError ? e.code : 'UNKNOWN_ERROR';
       const message = e instanceof Error ? e.message : 'Permintaan gagal';
       setError(friendlyExportMessage(code, message));
-    }
-    setBusy(false);
-  };
-
-  const download = async (exp: ExportArtifact) => {
-    setError(null);
-    try {
-      await downloadExportFile(actorId, exp);
-    } catch (e: unknown) {
-      const code = e instanceof ApiClientError ? e.code : 'UNKNOWN_ERROR';
-      setError(friendlyExportMessage(code, 'Unduhan gagal'));
+      setBusy(false);
     }
   };
 
@@ -95,7 +103,7 @@ export function ExportPanel({
 
   return (
     <div className="panel" style={{ marginBottom: 16 }}>
-      <h3 style={{ marginTop: 0 }}>Ekspor</h3>
+      <h3 style={{ marginTop: 0, marginBottom: 12 }}>Ekspor</h3>
       {error ? (
         <div className="banner banner-conflict" role="alert">
           <span>{error}</span>
@@ -116,55 +124,10 @@ export function ExportPanel({
             </option>
           ))}
         </select>
-        <select
-          aria-label="Status resmi"
-          value={mode}
-          onChange={(e) => setMode(e.target.value as ExportMode)}
-        >
-          <option value="PREVIEW">Preview</option>
-          <option value="OFFICIAL">Resmi</option>
-        </select>
         <button className="btn btn-primary" disabled={busy} onClick={() => void requestExport()}>
-          Buat Ekspor
+          {busy ? 'Memproses…' : 'Buat Ekspor'}
         </button>
       </div>
-
-      {relevant.length > 0 ? (
-        <table style={{ marginTop: 12, width: '100%', fontSize: 13 }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left' }}>Status</th>
-              <th style={{ textAlign: 'left' }}>Mode</th>
-              <th style={{ textAlign: 'left' }}>Diminta</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {relevant.map((e) => (
-              <tr key={e.id}>
-                <td>
-                  <span
-                    className={`badge ${e.status === 'FAILED' ? 'badge-red' : e.status === 'READY' ? 'badge-green' : 'badge-yellow'}`}
-                  >
-                    {STATUS_LABEL[e.status]}
-                  </span>
-                </td>
-                <td>{e.mode === 'PREVIEW' ? 'Preview' : 'Resmi'}</td>
-                <td>{new Date(e.requestedAt).toLocaleString('id-ID')}</td>
-                <td>
-                  {e.status === 'READY' ? (
-                    <button className="btn" onClick={() => void download(e)}>
-                      Unduh
-                    </button>
-                  ) : e.status === 'FAILED' ? (
-                    <span style={{ color: 'var(--text-dim)' }}>{e.errorCode}</span>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : null}
     </div>
   );
 }

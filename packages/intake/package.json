@@ -16,6 +16,7 @@
   "dependencies": {
     "@bagantkd/domain": "workspace:*",
     "@bagantkd/rules": "workspace:*",
-    "@bagantkd/shared": "workspace:*"
+    "@bagantkd/shared": "workspace:*",
+    "xlsx": "0.18.5"
   }
 }

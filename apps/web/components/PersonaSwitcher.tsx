@@ -2,23 +2,15 @@
 
 import { useDevAuth } from '../lib/dev-auth';
 
-/** DEV AUTH ONLY: switches which existing tournament member the browser acts as. */
+/**
+ * Shows who is acting in this session. There is deliberately no role-switching UI: the whole team
+ * shares one actor with full access (ADR "no role gating" -- everyone runs every step of the flow),
+ * so a dropdown here would just be a single, pointless option.
+ */
 export function PersonaSwitcher() {
-  const { actorId, role, displayName, members, membersError, setActor } = useDevAuth();
+  const { membersError } = useDevAuth();
 
-  if (membersError) return <span style={{ color: 'var(--red)', fontSize: 12 }}>members: {membersError}</span>;
+  if (membersError) return null;
 
-  return (
-    <label style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-      Acting as
-      <select aria-label="Acting as" value={actorId} onChange={(e) => setActor(e.target.value)}>
-        {members.map((m) => (
-          <option key={m.user_id} value={m.user_id}>
-            {m.display_name} ({m.role})
-          </option>
-        ))}
-      </select>
-      {displayName ? null : role ? null : <span style={{ color: 'var(--yellow)' }}>unknown actor</span>}
-    </label>
-  );
+  return <span className="badge badge-neutral">Admin</span>;
 }

@@ -6,6 +6,13 @@ import { useApiSWR } from '../../../lib/use-api-swr';
 import { ExportPanel } from '../../../components/ExportPanel';
 import { api } from '../../../lib/api';
 import { useDevAuth } from '../../../lib/dev-auth';
+import {
+  drawRunKindLabel,
+  drawRunStatusLabel,
+  formatDateRange,
+  revisionLifecycleLabel,
+  ruleSetStatusLabel,
+} from '../../../lib/id-labels';
 
 export default function TournamentOverviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -18,39 +25,49 @@ export default function TournamentOverviewPage() {
     },
   );
 
-  if (isLoading) return <main className="content state-loading">Loading tournament…</main>;
-  if (error) return <main className="content state-error">Failed to load: {error.message}</main>;
-  if (!data) return <main className="content state-empty">No data.</main>;
+  if (isLoading) return <main className="content state-loading">Memuat turnamen…</main>;
+  if (error) return <main className="content state-error">Gagal memuat: {error.message}</main>;
+  if (!data) return <main className="content state-empty">Tidak ada data.</main>;
 
   const run = data.latestDrawRun;
   const rev = data.latestRevision;
 
   return (
-    <main className="content">
-      <h1>
-        {data.name} <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>({data.code})</span>
-      </h1>
+    <main className="content page-stack">
+      <div className="page-header">
+        <h1>{data.name}</h1>
+        <span className="page-header-meta">{formatDateRange(data.eventStart, data.eventEnd)}</span>
+      </div>
 
       {data.activeRuleSetStatus !== 'ACTIVE' ? (
         <div className="banner banner-info">
-          Rule set is {data.activeRuleSetStatus}, not ACTIVE — a draw cannot be locked until it is.
+          Set aturan berstatus {ruleSetStatusLabel(data.activeRuleSetStatus)}, belum Aktif. Drawing belum bisa
+          dikunci sampai set aturan aktif.
         </div>
       ) : null}
 
       <div className="stat-row">
         <div className="stat">
-          <div className="value">{run ? run.status : 'None'}</div>
-          <div className="label">Draw run status</div>
+          <div className="value">{data.totalEntries}</div>
+          <div className="label">Total Peserta</div>
         </div>
         <div className="stat">
-          <div className="value">{rev ? rev.lifecycle : '—'}</div>
-          <div className="label">Revision status</div>
+          <div className="value">{data.totalContingents}</div>
+          <div className="label">Kontingen</div>
+        </div>
+        <div className="stat">
+          <div className="value">{run ? drawRunStatusLabel(run.status) : 'Belum ada'}</div>
+          <div className="label">Status Drawing</div>
+        </div>
+        <div className="stat">
+          <div className="value">{rev ? revisionLifecycleLabel(rev.lifecycle) : '·'}</div>
+          <div className="label">Status Revisi</div>
         </div>
         <div className="stat">
           <div className="value">
             {data.categoryCounts.ready} / {data.categoryCounts.total}
           </div>
-          <div className="label">Categories ready</div>
+          <div className="label">Kategori Siap</div>
         </div>
         <div className="stat">
           <div
@@ -59,53 +76,52 @@ export default function TournamentOverviewPage() {
           >
             {data.categoryCounts.blocked}
           </div>
-          <div className="label">Blocked categories</div>
+          <div className="label">Kategori Diblokir</div>
+        </div>
+        <div className="stat">
+          <div className="value" style={{ color: data.errorCount > 0 ? 'var(--red)' : undefined }}>
+            {data.errorCount}
+          </div>
+          <div className="label">Error</div>
         </div>
         <div className="stat">
           <div className="value" style={{ color: data.warningCount > 0 ? 'var(--yellow)' : undefined }}>
             {data.warningCount}
           </div>
-          <div className="label">Warnings</div>
+          <div className="label">Peringatan</div>
         </div>
       </div>
 
-      <nav aria-label="Navigasi turnamen" className="panel" style={{ marginTop: 20 }}>
-        <a className="btn" href={`/tournaments/${id}/peserta`}>
-          Lihat peserta
-        </a>{' '}
-        <a className="btn btn-primary" href={`/tournaments/${id}/drawing`}>
-          Buat Drawing
-        </a>{' '}
-        <a className="btn" href="/tournaments">
-          Semua turnamen
-        </a>
-      </nav>
-
-      <div style={{ marginTop: 20 }} className="grid">
+      <div className="panel">
+        <h3 className="panel-title">Bagan Terakhir</h3>
         {run ? (
-          <div className="panel">
-            <h3 style={{ marginTop: 0 }}>Current draw run</h3>
-            <p>
-              <strong>{run.kind}</strong> · {run.status} · requested{' '}
-              {new Date(run.requestedAt).toLocaleString()}
+          <>
+            <p style={{ margin: '0 0 12px' }}>
+              <strong>{drawRunKindLabel(run.kind)}</strong> · {drawRunStatusLabel(run.status)} · diminta{' '}
+              {new Date(run.requestedAt).toLocaleString('id-ID')}
             </p>
-            <a className="btn" href={`/tournaments/${id}/draws/${run.id}`}>
-              View draw run
-            </a>{' '}
             {rev ? (
-              <a className="btn btn-primary" href={`/tournaments/${id}/categories`}>
-                Browse categories
+              <a className="btn btn-primary" href={`/tournaments/${id}/sesi/${rev.id}`}>
+                Cek &amp; Atur Bagan
               </a>
-            ) : null}
-          </div>
+            ) : (
+              <p className="state-empty" style={{ margin: 0 }}>
+                Bagan sedang diproses, belum ada revisi untuk diperiksa.
+              </p>
+            )}
+          </>
         ) : (
-          <div className="panel state-empty">No draw run yet for this tournament.</div>
+          <p className="state-empty" style={{ margin: 0 }}>
+            Belum ada bagan untuk turnamen ini. Buat jadwal terlebih dahulu di tab{' '}
+            <a href={`/tournaments/${id}/jadwal`}>Jadwal &amp; Buat Bagan</a>.
+          </p>
         )}
       </div>
 
       {rev ? (
         <ExportPanel
           revisionId={rev.id}
+          revisionLifecycle={rev.lifecycle}
           availableTypes={['TOURNAMENT_DRAW_BOOK', 'XLSX_WORKBOOK', 'SEMI_PRESTASI_COMPACT_DRAW_SHEET']}
         />
       ) : null}

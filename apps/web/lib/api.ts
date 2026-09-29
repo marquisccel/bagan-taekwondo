@@ -41,6 +41,8 @@ async function request<T>(path: string, actorId: string, init?: RequestInit): Pr
 const get = <T>(path: string, actorId: string) => request<T>(path, actorId);
 const post = <T>(path: string, actorId: string, body: unknown) =>
   request<T>(path, actorId, { method: 'POST', body: JSON.stringify(body) });
+const patch = <T>(path: string, actorId: string, body: unknown) =>
+  request<T>(path, actorId, { method: 'PATCH', body: JSON.stringify(body) });
 
 // ---------------------------------------------------------------------------------------
 // Response shapes (subset of the backend's actual columns — see apps/api/src/**/*.controller.ts)
@@ -50,6 +52,10 @@ export interface TournamentSummary {
   readonly id: string;
   readonly code: string;
   readonly name: string;
+  readonly eventStart: string;
+  readonly eventEnd: string;
+  readonly totalEntries: number;
+  readonly totalContingents: number;
   readonly activeRuleSetStatus: string;
   readonly latestDrawRun: {
     readonly id: string;
@@ -150,6 +156,9 @@ export interface EntryDisplay {
     readonly weightG: number | null;
     readonly heightMm: number | null;
     readonly beltCode: string | null;
+    /** The rule set's own human wording for the belt (e.g. "Geup 9 (kuning)"), resolved server-side
+     * from `rule_belt.label` — never re-derive this from `beltCode` client-side. */
+    readonly beltLabel: string | null;
   }[];
 }
 
@@ -171,6 +180,9 @@ export interface BracketMatch {
   readonly round: number;
   readonly position: number;
   readonly publicCode: string | null;
+  readonly displayNo: number | null;
+  /** Auto-assigned "No." when the team hasn't manually set one — see resolveMatchNumbers in @bagantkd/shared. */
+  readonly resolvedDisplayNo: number | null;
   readonly status: string;
   readonly feederA: MatchFeeder;
   readonly feederB: MatchFeeder;
@@ -211,6 +223,29 @@ export interface CategoryDetail {
   readonly blockedReasons: readonly unknown[];
   readonly selectedStrategy: string | null;
   readonly pools: readonly PoolDetail[];
+}
+
+/** One category's pool assignment within a `GET /revisions/:id/session` response (no brackets --
+ * that stays the per-category detail's job; this is purely the pool-assignment step). */
+export interface SessionCategory {
+  readonly category: {
+    readonly category_id: string;
+    readonly category_key: string;
+    readonly stream: string;
+    readonly discipline: string;
+    readonly format: string;
+    readonly gender: string;
+    readonly movement: string | null;
+  };
+  readonly pools: readonly {
+    readonly id: string;
+    readonly poolUid: string;
+    readonly ordinal: number;
+    readonly isWalkover: boolean;
+    readonly explanation: readonly unknown[];
+    readonly members: readonly EntryDisplay[];
+    readonly bracket: Bracket | null;
+  }[];
 }
 
 export interface AuditEvent {
@@ -326,6 +361,8 @@ export const api = {
     get<CategorySummary[]>(`/revisions/${revisionId}/categories`, actorId),
   category: (actorId: string, revisionId: string, categoryId: string) =>
     get<CategoryDetail>(`/revisions/${revisionId}/categories/${categoryId}`, actorId),
+  session: (actorId: string, revisionId: string) =>
+    get<SessionCategory[]>(`/revisions/${revisionId}/session`, actorId),
   audit: (actorId: string, tournamentId: string, before?: string) =>
     get<{ events: AuditEvent[]; nextCursor: string | null }>(
       `/tournaments/${tournamentId}/audit${before ? `?before=${before}` : ''}`,
@@ -335,12 +372,32 @@ export const api = {
     get<SearchResult[]>(`/tournaments/${tournamentId}/search?q=${encodeURIComponent(q)}`, actorId),
 
   tournaments: (actorId: string) => get<TournamentListItem[]>('/tournaments', actorId),
+  archiveTournament: (actorId: string, tournamentId: string) =>
+    post<{ status: 'ARCHIVED' }>(`/tournaments/${tournamentId}/archive`, actorId, {}),
   entries: (actorId: string, tournamentId: string, params: EntryListParams = {}) => {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== '') qs.set(k, String(v));
     const s = qs.toString();
     return get<EntryList>(`/tournaments/${tournamentId}/entries${s ? `?${s}` : ''}`, actorId);
   },
+  correctEntry: (
+    actorId: string,
+    tournamentId: string,
+    entryId: string,
+    body: {
+      fullName?: string | null;
+      gender?: 'MALE' | 'FEMALE' | null;
+      birthDate?: string | null;
+      heightMm?: number | null;
+      weightG?: number | null;
+      beltCode?: string | null;
+      declaredAgeDivision?: string | null;
+      declaredClass?: string | null;
+      contingent?: string | null;
+    },
+  ) => patch<{ ok: true }>(`/tournaments/${tournamentId}/entries/${entryId}`, actorId, body),
+  ruleSetVocabulary: (actorId: string, tournamentId: string) =>
+    get<RuleSetVocabulary>(`/tournaments/${tournamentId}/rule-set-vocabulary`, actorId),
   drawPreflight: (actorId: string, tournamentId: string) =>
     get<DrawPreflight>(`/tournaments/${tournamentId}/draw-preflight`, actorId),
   createDrawRun: (actorId: string, tournamentId: string, body: CreateDrawRunBody) =>
@@ -421,6 +478,34 @@ export const api = {
       complaintId: null,
     }),
 
+  scheduleSlots: (actorId: string, tournamentId: string) =>
+    get<ScheduleSlotSummary[]>(`/tournaments/${tournamentId}/schedule`, actorId),
+  generateFromSchedule: (
+    actorId: string,
+    tournamentId: string,
+    body: { dayNumber: number; arenaCode: string; seed: string },
+  ) =>
+    post<{ drawRunId: string; status: 'QUEUED'; matchedCategoryCount: number }>(
+      `/tournaments/${tournamentId}/draw-runs/from-schedule`,
+      actorId,
+      body,
+    ),
+  setMatchDisplayNo: (
+    actorId: string,
+    revisionId: string,
+    body: {
+      matchId: string;
+      displayNo: number | null;
+      expectedLockVersion: number;
+      idempotencyKey: string;
+    },
+  ) =>
+    post<CommandOutcome>(`/revisions/${revisionId}/commands/set-match-display-no`, actorId, {
+      ...body,
+      reason: null,
+      complaintId: null,
+    }),
+
   requestExport: (
     actorId: string,
     revisionId: string,
@@ -430,6 +515,55 @@ export const api = {
   listExports: (actorId: string, revisionId: string) =>
     get<ExportArtifact[]>(`/revisions/${revisionId}/exports`, actorId),
 };
+
+export interface ScheduleSlotSummary {
+  readonly dayNumber: number;
+  readonly date: string;
+  readonly arenaCode: string;
+  readonly categoryCount: number;
+}
+
+export interface SpsUploadResult {
+  readonly tournamentId: string;
+  readonly actorId: string;
+  readonly ruleSetId: string;
+  readonly intakeSnapshotId: string;
+  readonly participantCount: number;
+  readonly scheduleRowCount: number;
+  readonly arenaCodes: readonly string[];
+  readonly eventStart: string;
+  readonly eventEnd: string;
+  readonly scheduleIssues: readonly { readonly sheetRow: number; readonly message: string }[];
+}
+
+/**
+ * Uploads the committee's SPS spreadsheet and bootstraps a brand-new tournament from it (arenas,
+ * rule set, arena/day schedule, participant roster) — see apps/api/src/upload/upload.controller.ts.
+ * Multipart, so it bypasses the JSON-only `request` helper; the `x-actor-id` header value is
+ * whatever the caller has on hand (even a throwaway one) since this endpoint isn't scoped to an
+ * existing tournament yet — the response's own `actorId` is the one to use from then on.
+ */
+export async function uploadSps(actorId: string, file: File): Promise<SpsUploadResult> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_BASE}/uploads/sps`, {
+    method: 'POST',
+    headers: { 'x-actor-id': actorId },
+    body: form,
+  });
+  const text = await res.text();
+  const parsed: unknown = text ? JSON.parse(text) : null;
+  if (!res.ok) {
+    const b = parsed as { code?: string; message?: string; details?: unknown } | null;
+    throw new ApiClientError(
+      res.status,
+      b?.code ?? 'UNKNOWN_ERROR',
+      b?.message ?? res.statusText,
+      b?.details,
+    );
+  }
+  return parsed as SpsUploadResult;
+}
 
 /** Downloads a READY export's file with the required x-actor-id header (a plain <a href> can't set headers). */
 export async function downloadExportFile(actorId: string, exp: ExportArtifact): Promise<void> {
@@ -500,6 +634,10 @@ export interface EntryListItem {
     readonly fullName: string | null;
     readonly gender: string | null;
     readonly beltCode: string | null;
+    readonly beltLabel: string | null;
+    readonly heightMm: number | null;
+    readonly weightG: number | null;
+    readonly birthDate: string | null;
   }[];
   readonly declared: {
     readonly stream: string;
@@ -524,6 +662,23 @@ export interface EntryList {
   readonly limit: number;
   readonly offset: number;
   readonly facets: { readonly categories: readonly { readonly id: string; readonly displayName: string }[] };
+}
+
+/** The active rule set's own belt/age-division/weight-class vocabulary, for the "Perbaiki Data
+ * Peserta" dropdowns -- never a hand-invented list, since different rule sets can differ. */
+export interface RuleSetVocabulary {
+  /** Ordered by rank (Geup 9 lowest through Dan 4 highest). */
+  readonly belts: readonly { readonly code: string; readonly rank: number; readonly label: string }[];
+  /** Ordered by the rule set's own division order (Pra Cadet A ... Master 4). */
+  readonly ageDivisions: readonly { readonly code: string; readonly label: string; readonly order: number }[];
+  /** Weight classes are scoped by (stream, ageDivisionCode, gender) -- Kyorugi classes differ by
+   * age division and gender, so the Class dropdown filters this by the selected Divisi. */
+  readonly weightClassTables: readonly {
+    readonly stream: string;
+    readonly ageDivisionCode: string;
+    readonly gender: string;
+    readonly classes: readonly { readonly code: string }[];
+  }[];
 }
 
 export interface DrawPreflight {

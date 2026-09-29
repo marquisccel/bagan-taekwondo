@@ -97,6 +97,24 @@ export class RevisionController {
     );
   }
 
+  @Post('commands/set-match-display-no')
+  async setMatchDisplayNo(
+    @Param('id') id: string,
+    @Body() raw: unknown,
+    @CurrentActor() actor: Actor,
+  ): Promise<CommandOutcome> {
+    const b = body(raw);
+    return this.run(
+      {
+        type: 'SET_MATCH_DISPLAY_NO',
+        ...this.common(b, id),
+        matchId: str(b, 'matchId'),
+        displayNo: numOrNull(b, 'displayNo'),
+      },
+      actor,
+    );
+  }
+
   @Post('commands/regenerate-pool')
   async regeneratePool(
     @Param('id') id: string,

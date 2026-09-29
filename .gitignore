@@ -22,8 +22,10 @@ apps/web/test-results/
 apps/web/playwright-report/
 apps/web/blob-report/
 
-# Generated tournament export artifacts (Phase 6 — local filesystem ArtifactStorage)
-var/exports/
+# Generated tournament export artifacts (Phase 6 — local filesystem ArtifactStorage) -- the whole
+# directory, not just var/exports/: anything else written here (e.g. var/demo-exports/) is also
+# generated output that can contain real participant data, never source to commit.
+var/
 apps/web/var/
 
 # Locally generated review PDFs (visual acceptance / manual review) — never committed

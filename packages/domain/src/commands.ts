@@ -44,6 +44,12 @@ export type DrawCommand =
   | (CommandBase & { readonly type: 'REGENERATE_CATEGORY'; readonly categoryId: string })
   | (CommandBase & { readonly type: 'SET_SEED'; readonly entryId: string; readonly seedNo: number | null })
   | (CommandBase & { readonly type: 'ACKNOWLEDGE_WARNING'; readonly findingId: string })
+  | (CommandBase & {
+      readonly type: 'SET_MATCH_DISPLAY_NO';
+      readonly matchId: string;
+      /** `null` reverts to the deterministic document-order default (see `documentMatchNumbers`). */
+      readonly displayNo: number | null;
+    })
   | (CommandBase & { readonly type: 'LIFECYCLE'; readonly action: RevisionAction });
 
 export type DrawCommandType = DrawCommand['type'];

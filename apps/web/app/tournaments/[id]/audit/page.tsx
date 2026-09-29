@@ -16,49 +16,51 @@ export default function AuditPage() {
     api.audit(actorId, id, cursor),
   );
 
-  if (isLoading) return <main className="content state-loading">Loading audit history…</main>;
-  if (error) return <main className="content state-error">Failed to load: {error.message}</main>;
+  if (isLoading) return <main className="content state-loading">Memuat riwayat…</main>;
+  if (error) return <main className="content state-error">Gagal memuat: {error.message}</main>;
   if (!data || data.events.length === 0)
-    return <main className="content state-empty">No audit events yet.</main>;
+    return <main className="content state-empty">Belum ada riwayat perubahan.</main>;
 
   return (
     <main className="content">
-      <h1>Audit history</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>When</th>
-            <th>Action</th>
-            <th>Subject</th>
-            <th>Reason</th>
-            <th>Detail</th>
-            <th>Hash</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.events.map((e) => (
-            <tr key={e.seq}>
-              <td>{new Date(e.occurred_at).toLocaleString()}</td>
-              <td>{e.action}</td>
-              <td>
-                {e.subject_type} {e.subject_id?.slice(0, 8) ?? ''}
-              </td>
-              <td>{e.reason ?? '—'}</td>
-              <td data-testid="audit-detail">{auditDetail(e.action, e.after) ?? '—'}</td>
-              <td>
-                <code style={{ fontSize: 11 }}>{e.hash.slice(0, 18)}…</code>
-              </td>
+      <h1>Riwayat</h1>
+      <div className="panel" style={{ overflowX: 'auto' }}>
+        <table>
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Tindakan</th>
+              <th>Subjek</th>
+              <th>Alasan</th>
+              <th>Detail</th>
+              <th>Hash</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.events.map((e) => (
+              <tr key={e.seq}>
+                <td>{new Date(e.occurred_at).toLocaleString('id-ID')}</td>
+                <td>{e.action}</td>
+                <td>
+                  {e.subject_type} {e.subject_id?.slice(0, 8) ?? ''}
+                </td>
+                <td>{e.reason ?? '·'}</td>
+                <td data-testid="audit-detail">{auditDetail(e.action, e.after) ?? '·'}</td>
+                <td>
+                  <code style={{ fontSize: 11 }}>{e.hash.slice(0, 18)}…</code>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {data.nextCursor ? (
         <button
           className="btn"
           style={{ marginTop: 12 }}
           onClick={() => setCursor(data.nextCursor as string)}
         >
-          Load older events
+          Muat peristiwa lebih lama
         </button>
       ) : null}
     </main>

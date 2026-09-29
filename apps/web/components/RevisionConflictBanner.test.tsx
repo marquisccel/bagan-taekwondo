@@ -6,14 +6,14 @@ import { RevisionConflictBanner } from './RevisionConflictBanner';
 describe('RevisionConflictBanner', () => {
   it('tells the operator to reload rather than silently retrying (ACCEPTANCE §REVISION CONFLICT)', () => {
     render(<RevisionConflictBanner onReload={() => undefined} />);
-    expect(screen.getByRole('alert')).toHaveTextContent(/changed by another operator/i);
-    expect(screen.getByRole('alert')).toHaveTextContent(/reload/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/diperbarui oleh pengguna lain/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/muat ulang/i);
   });
 
-  it('calls onReload when the Reload button is pressed', () => {
+  it('calls onReload when the Muat Ulang button is pressed', () => {
     const onReload = vi.fn();
     render(<RevisionConflictBanner onReload={onReload} />);
-    fireEvent.click(screen.getByRole('button', { name: /reload/i }));
+    fireEvent.click(screen.getByRole('button', { name: /muat ulang/i }));
     expect(onReload).toHaveBeenCalledOnce();
   });
 });

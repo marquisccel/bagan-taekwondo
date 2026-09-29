@@ -133,6 +133,69 @@ describe('bracket placement, n ≤ 8: exhaustive over the defined search space (
     });
   });
 
+  it('pairs entries with a close belt rank together in round 1 rather than crossing a too-wide gap (2×Geup8 + 2×Geup3, team\'s own example)', () => {
+    // Four different contingents so contingent-separation cost ties at 0 for every permutation --
+    // isolating belt tolerance as the only thing that can decide the round-1 pairing.
+    const four = [
+      { id: 'a', contingent: 'A', seedNo: null, beltRank: 8 },
+      { id: 'b', contingent: 'B', seedNo: null, beltRank: 8 },
+      { id: 'c', contingent: 'C', seedNo: null, beltRank: 3 },
+      { id: 'd', contingent: 'D', seedNo: null, beltRank: 3 },
+    ];
+    const b = buildBracket({
+      entries: four,
+      seed: parseDrawSeed('1'),
+      label: 'p',
+      byePolicy: 'CONTINGENT_AWARE',
+      budgetPerEntry: 20,
+    });
+    expect(b.search.beltToleranceByRound[0]).toBe(0);
+    const rankById = new Map(four.map((e) => [e.id, e.beltRank]));
+    for (let p = 1; p <= b.size; p += 2) {
+      const idA = b.slots.find((s) => s.position === p)?.entryId;
+      const idB = b.slots.find((s) => s.position === p + 1)?.entryId;
+      if (idA && idB) expect(rankById.get(idA)).toBe(rankById.get(idB));
+    }
+  });
+
+  it('never lets belt tolerance override contingent separation (the primary, pre-existing objective)', () => {
+    // 'a' and 'b' share a contingent but have close belts; 'c' and 'd' are lone contingents with a
+    // wide belt gap from everyone. Separating 'a' and 'b' in round 1 stays mandatory even though it
+    // is belt-neutral either way, and belt tolerance never gets to relitigate that choice.
+    const four = [
+      { id: 'a', contingent: 'X', seedNo: null, beltRank: 5 },
+      { id: 'b', contingent: 'X', seedNo: null, beltRank: 5 },
+      { id: 'c', contingent: 'Y', seedNo: null, beltRank: 1 },
+      { id: 'd', contingent: 'Z', seedNo: null, beltRank: 9 },
+    ];
+    const b = buildBracket({
+      entries: four,
+      seed: parseDrawSeed('1'),
+      label: 'p',
+      byePolicy: 'CONTINGENT_AWARE',
+      budgetPerEntry: 20,
+    });
+    expect(b.search.sameContingentByRound[0]).toBe(0);
+  });
+
+  it('an entry with no resolvable belt rank never contributes to belt-tolerance cost', () => {
+    const four = [
+      { id: 'a', contingent: 'A', seedNo: null, beltRank: null },
+      { id: 'b', contingent: 'B', seedNo: null, beltRank: 8 },
+      { id: 'c', contingent: 'C', seedNo: null, beltRank: null },
+      { id: 'd', contingent: 'D', seedNo: null, beltRank: 3 },
+    ];
+    expect(() =>
+      buildBracket({
+        entries: four,
+        seed: parseDrawSeed('1'),
+        label: 'p',
+        byePolicy: 'CONTINGENT_AWARE',
+        budgetPerEntry: 20,
+      }),
+    ).not.toThrow();
+  });
+
   it('refuses invalid manual seeds instead of guessing', () => {
     const es = [
       { id: 'a', contingent: 'A', seedNo: 1 },

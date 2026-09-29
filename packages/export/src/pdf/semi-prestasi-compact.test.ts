@@ -580,7 +580,7 @@ describe('FINAL/OFFICIAL document-sequential match numbering', () => {
     const bracket = multi.categories[0]!.pools[1]!.bracket!;
     const before = JSON.stringify(bracket.matches);
     const walkover = bracket.matches.find((m) => m.status === 'WALKOVER')!;
-    const numbers = documentMatchNumbers(multi.categories.flatMap((c) => c.pools.map((p) => p.bracket)));
+    const numbers = documentMatchNumbers(multi.categories.flatMap((c) => c.pools));
     expect(numbers.has(walkover.matchUid)).toBe(false);
     expect(JSON.stringify(bracket.matches)).toBe(before);
     for (const m of bracket.matches) {
@@ -592,8 +592,8 @@ describe('FINAL/OFFICIAL document-sequential match numbering', () => {
 
   it('is deterministic: the same source yields the same numbering every time', () => {
     expect(officialHtml()).toBe(officialHtml());
-    const brackets = multi.categories.flatMap((c) => c.pools.map((p) => p.bracket));
-    expect([...documentMatchNumbers(brackets)]).toEqual([...documentMatchNumbers(brackets)]);
+    const pools = multi.categories.flatMap((c) => c.pools);
+    expect([...documentMatchNumbers(pools)]).toEqual([...documentMatchNumbers(pools)]);
   });
 
   it('PREVIEW keeps the internal stable match codes (no display renumbering)', () => {

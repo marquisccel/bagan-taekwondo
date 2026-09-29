@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { SWRConfig } from 'swr';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -6,7 +6,8 @@ import { api, type TournamentListItem } from '../../lib/api';
 import { useDevAuth } from '../../lib/dev-auth';
 import TournamentListPage from './page';
 
-vi.mock('../../lib/api', () => ({ api: { tournaments: vi.fn() } }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('../../lib/api', () => ({ api: { tournaments: vi.fn(), archiveTournament: vi.fn() } }));
 vi.mock('../../lib/dev-auth', () => ({ useDevAuth: vi.fn() }));
 
 const renderIsolated = (ui: React.ReactElement) =>
@@ -34,8 +35,10 @@ const item = (over: Partial<TournamentListItem> = {}): TournamentListItem => ({
 
 describe('TournamentListPage', () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     vi.mocked(useDevAuth).mockReturnValue({ actorId: 'actor-1' } as ReturnType<typeof useDevAuth>);
     vi.mocked(api.tournaments).mockReset();
+    vi.mocked(api.archiveTournament).mockReset();
   });
 
   it('asks the operator to connect when there is no actor', () => {
@@ -45,7 +48,7 @@ describe('TournamentListPage', () => {
     expect(api.tournaments).not.toHaveBeenCalled();
   });
 
-  it('lists each tournament with name, code, dates, draw and revision state, and a link to open it', async () => {
+  it('lists each tournament with name, dates, draw and revision state, and a link to open it', async () => {
     vi.mocked(api.tournaments).mockResolvedValue([
       item(),
       item({
@@ -69,10 +72,9 @@ describe('TournamentListPage', () => {
       'href',
       '/tournaments/t1',
     );
-    expect(first.getByText('PG-2026')).toBeInTheDocument();
     expect(first.getAllByText('Aktif', { selector: 'td' })).toHaveLength(2); // tournament status + rule set
     expect(first.getByText(/Aman/)).toBeInTheDocument();
-    expect(first.getByText(/#2 · Tinjauan/)).toBeInTheDocument();
+    expect(first.getByText(/#2 · Dalam Peninjauan/)).toBeInTheDocument();
     expect(first.getByText(/8 \/ 10/)).toBeInTheDocument();
     expect(first.getByText(/2 diblokir/)).toBeInTheDocument();
     expect(first.getByRole('link', { name: 'Buka Piala Gubernur 2026' })).toHaveAttribute(
@@ -81,7 +83,7 @@ describe('TournamentListPage', () => {
     );
 
     const second = within(rows[1] as HTMLElement);
-    expect(second.getByText('Belum ada', { selector: 'span' })).toBeInTheDocument();
+    expect(second.getAllByText('Belum ada', { selector: 'span' }).length).toBeGreaterThan(0);
     expect(second.getByRole('link', { name: 'Buka Kejuaraan Kota' })).toHaveAttribute(
       'href',
       '/tournaments/t2',
@@ -99,5 +101,30 @@ describe('TournamentListPage', () => {
     vi.mocked(api.tournaments).mockRejectedValue(new Error('boom'));
     renderIsolated(<TournamentListPage />);
     expect(await screen.findByText(/gagal memuat daftar turnamen: boom/i)).toBeInTheDocument();
+  });
+
+  it('archives a tournament (after confirming) and removes it from the list without a full reload', async () => {
+    vi.mocked(api.tournaments).mockResolvedValue([item()]);
+    vi.mocked(api.archiveTournament).mockResolvedValue({ status: 'ARCHIVED' });
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    renderIsolated(<TournamentListPage />);
+    await screen.findByTestId('tournament-row');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hapus Piala Gubernur 2026' }));
+
+    await waitFor(() => expect(api.archiveTournament).toHaveBeenCalledWith('actor-1', 't1'));
+    await waitFor(() => expect(screen.queryByTestId('tournament-row')).not.toBeInTheDocument());
+  });
+
+  it('does nothing when the archive confirmation is declined', async () => {
+    vi.mocked(api.tournaments).mockResolvedValue([item()]);
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderIsolated(<TournamentListPage />);
+    await screen.findByTestId('tournament-row');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hapus Piala Gubernur 2026' }));
+
+    expect(api.archiveTournament).not.toHaveBeenCalled();
+    expect(screen.getByTestId('tournament-row')).toBeInTheDocument();
   });
 });

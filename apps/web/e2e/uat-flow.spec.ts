@@ -123,19 +123,21 @@ test.describe('UAT flow: semi-prestasi', () => {
     // 4. open the category, inspect pool + bracket
     await expect(page.getByRole('heading', { name: 'Categories' })).toBeVisible();
     await page.locator('tbody tr').filter({ hasText: 'KYORUGI_SEMI_PRESTASI' }).first().click();
-    await expect(page.getByText('Brackets')).toBeVisible();
     const pools = page.locator('.pool-card, [aria-label^="Pool"]');
     await expect(pools.first()).toBeVisible();
+    await page.getByRole('tab', { name: 'Bagan Pertandingan' }).click();
+    await expect(page.locator('.bracket-match').first()).toBeVisible();
+    await page.getByRole('tab', { name: 'Pool & Peserta' }).click();
     const body = await page.locator('main').innerText();
     expect(body).not.toMatch(/\b\d{16}\b/);
 
     // 5. MoveEntry into the tall pool: quality drops -> the server asks for a reason -> applied + feedback
-    await page.getByRole('button', { name: 'Move…' }).first().click();
+    await page.getByRole('button', { name: 'Pindahkan' }).first().click();
     const moveDialog = page.getByRole('dialog');
     await expect(moveDialog).toBeVisible();
     await moveDialog
       .getByRole('button')
-      .filter({ hasNotText: /Cancel|\(current\)/ })
+      .filter({ hasNotText: /Batal|\(saat ini\)/ })
       .first()
       .click();
     const reasonDialog = page.getByRole('dialog', { name: 'Alasan perubahan' });
@@ -149,8 +151,8 @@ test.describe('UAT flow: semi-prestasi', () => {
     await feedback.getByRole('button', { name: 'Tutup' }).click();
 
     // 6. SwapEntries: feedback again (server verdict)
-    await page.getByRole('button', { name: 'Swap…' }).first().click();
-    await page.getByRole('dialog').getByRole('button').filter({ hasNotText: 'Cancel' }).first().click();
+    await page.getByRole('button', { name: 'Tukar Peserta' }).first().click();
+    await page.getByRole('dialog').getByRole('button').filter({ hasNotText: 'Batal' }).first().click();
     const swapFeedback = page.getByTestId('command-feedback');
     const reason2 = page.getByRole('dialog', { name: 'Alasan perubahan' });
     if (await reason2.isVisible({ timeout: 5_000 }).catch(() => false)) {
@@ -161,27 +163,29 @@ test.describe('UAT flow: semi-prestasi', () => {
 
     // 7. review → approve → lock → publish → amend
     await page.goto(`/tournaments/${seed.tournament}/categories`);
-    await page.getByRole('button', { name: 'Submit for review' }).click();
-    await expect(page.getByRole('button', { name: 'Approve' })).toBeVisible();
+    await page.getByRole('button', { name: 'Ajukan untuk Ditinjau' }).click();
+    await expect(page.getByRole('button', { name: 'Setujui' })).toBeVisible();
     await actAs(page, seed.td);
-    await page.getByRole('button', { name: 'Approve' }).click();
-    await expect(page.getByRole('button', { name: 'Lock' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Lock' }).click();
-    await expect(page.getByRole('button', { name: 'Publish' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Publish' }).click();
-    await page.getByLabel('Amendment reason').fill('Amandemen UAT: koreksi setelah komplain');
-    await page.getByRole('button', { name: 'Amend', exact: true }).click();
+    await page.getByRole('button', { name: 'Setujui' }).click();
+    await expect(page.getByRole('button', { name: 'Kunci Drawing' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Kunci Drawing' }).click();
+    await expect(page.getByRole('button', { name: 'Terbitkan Drawing' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Terbitkan Drawing' }).click();
+    await page.getByLabel('Alasan revisi').fill('Amandemen UAT: koreksi setelah komplain');
+    await page.getByRole('button', { name: 'Buat Revisi', exact: true }).click();
 
     // 8. the amendment is a new DRAFT revision; drive it to PUBLISHED (replacement)
-    await expect(page.getByRole('button', { name: 'Submit for review' })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('button', { name: 'Ajukan untuk Ditinjau' })).toBeVisible({
+      timeout: 20_000,
+    });
     await actAs(page, seed.officer);
-    await page.getByRole('button', { name: 'Submit for review' }).click();
-    await expect(page.getByRole('button', { name: 'Approve' })).toBeVisible();
+    await page.getByRole('button', { name: 'Ajukan untuk Ditinjau' }).click();
+    await expect(page.getByRole('button', { name: 'Setujui' })).toBeVisible();
     await actAs(page, seed.td);
-    await page.getByRole('button', { name: 'Approve' }).click();
-    await page.getByRole('button', { name: 'Lock' }).click();
-    await page.getByRole('button', { name: 'Publish' }).click();
-    await expect(page.getByLabel('Amendment reason')).toBeVisible();
+    await page.getByRole('button', { name: 'Setujui' }).click();
+    await page.getByRole('button', { name: 'Kunci Drawing' }).click();
+    await page.getByRole('button', { name: 'Terbitkan Drawing' }).click();
+    await expect(page.getByLabel('Alasan revisi')).toBeVisible();
 
     // 9. the parent is SUPERSEDED, the replacement is the current PUBLISHED revision
     const revisions = await seed.db.query<{ revision_no: number; lifecycle: string }>(

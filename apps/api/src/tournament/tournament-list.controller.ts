@@ -67,7 +67,8 @@ export class TournamentListController {
                 count(*) filter (where readiness = 'BLOCKED') as blocked
          from draw_run_category where draw_run_id = lr.id
        ) cc on true
-       where exists (select 1 from tournament_member tm where tm.tournament_id = t.id and tm.user_id::text = $1)
+       where t.status <> 'ARCHIVED'
+         and exists (select 1 from tournament_member tm where tm.tournament_id = t.id and tm.user_id::text = $1)
        order by t.event_start desc, t.name, t.id`,
       [actorId],
     );

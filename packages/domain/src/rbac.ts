@@ -27,6 +27,7 @@ const OFFICER_COMMANDS: ReadonlySet<DrawCommandType> = new Set([
   'REGENERATE_POOL',
   'REGENERATE_CATEGORY',
   'SET_SEED',
+  'SET_MATCH_DISPLAY_NO',
 ]);
 
 /** Technical Delegate permissions: data-quality overrides, locking, publishing, amendments, warning acknowledgement. */

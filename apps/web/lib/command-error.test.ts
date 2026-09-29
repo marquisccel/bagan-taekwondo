@@ -104,17 +104,19 @@ describe('friendlyCommandRefusal (Indonesian)', () => {
 });
 
 describe('friendlyMessage', () => {
-  it('never surfaces the raw backend text for forbidden/unauthorized — always the same safe copy', () => {
+  it('never surfaces the raw backend text for forbidden/unauthorized — always the same safe copy, in Indonesian', () => {
     expect(friendlyMessage('FORBIDDEN_COMMAND', 'role DRAWING_OFFICER may not issue LOCK')).toBe(
-      'You do not have permission to do this.',
+      'Anda tidak memiliki izin untuk melakukan tindakan ini.',
     );
     expect(friendlyMessage('UNAUTHORIZED_TOURNAMENT_ACCESS', 'caller is not a member')).toBe(
-      'You do not have permission to do this.',
+      'Anda tidak memiliki izin untuk melakukan tindakan ini.',
     );
   });
 
   it('gives a specific explanation for a locked/frozen revision', () => {
-    expect(friendlyMessage('REVISION_LOCKED', 'revision is LOCKED, not DRAFT')).toMatch(/no longer editable/);
+    expect(friendlyMessage('REVISION_LOCKED', 'revision is LOCKED, not DRAFT')).toMatch(
+      /sudah tidak dapat diubah/,
+    );
   });
 
   it('passes through the backend message for other codes (e.g. RULE_SET_NOT_READY reasons)', () => {

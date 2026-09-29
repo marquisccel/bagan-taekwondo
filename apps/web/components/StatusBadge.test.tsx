@@ -6,13 +6,13 @@ import { StatusBadge } from './StatusBadge';
 describe('StatusBadge', () => {
   it('shows text, not just color, for every quality level (ACCEPTANCE §ACCESSIBILITY)', () => {
     render(<StatusBadge quality="GREEN" />);
-    expect(screen.getByText('OK')).toBeInTheDocument();
+    expect(screen.getByText('Aman')).toBeInTheDocument();
   });
 
-  it('renders Warning for YELLOW and Blocked for RED', () => {
+  it('renders Perlu Perhatian for YELLOW and Tidak Dapat Diterapkan for RED', () => {
     const { rerender } = render(<StatusBadge quality="YELLOW" />);
-    expect(screen.getByText('Warning')).toBeInTheDocument();
+    expect(screen.getByText('Perlu Perhatian')).toBeInTheDocument();
     rerender(<StatusBadge quality="RED" />);
-    expect(screen.getByText('Blocked')).toBeInTheDocument();
+    expect(screen.getByText('Tidak Dapat Diterapkan')).toBeInTheDocument();
   });
 });

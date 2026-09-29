@@ -1,5 +1,5 @@
 import type { Db } from '@bagantkd/db';
-import { Controller, Get, Inject, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Inject, Param, Post, Query, UseGuards } from '@nestjs/common';
 
 import { ActorGuard } from '../auth/actor.guard';
 import { TournamentScope } from '../auth/tournament-scope.decorator';
@@ -20,11 +20,25 @@ export class TournamentController {
 
   @Get()
   async summary(@Param('id') id: string): Promise<Record<string, unknown>> {
-    const [tournament] = await this.db.query<{ id: string; code: string; name: string }>(
-      `select id, code, name from tournament where id = $1`,
+    const [tournament] = await this.db.query<{
+      id: string;
+      code: string;
+      name: string;
+      event_start: string;
+      event_end: string;
+    }>(
+      `select id, code, name, to_char(event_start, 'YYYY-MM-DD') as event_start,
+              to_char(event_end, 'YYYY-MM-DD') as event_end
+       from tournament where id = $1`,
       [id],
     );
     if (!tournament) throw new ApiError('TOURNAMENT_NOT_FOUND');
+
+    const [participation] = await this.db.query<{ entries: string; contingents: string }>(
+      `select count(distinct e.id) entries, count(distinct e.contingent_id) contingents
+       from entry e where e.tournament_id = $1`,
+      [id],
+    );
 
     const [latestRun] = await this.db.query<{
       id: string;
@@ -75,6 +89,10 @@ export class TournamentController {
       id: tournament.id,
       code: tournament.code,
       name: tournament.name,
+      eventStart: tournament.event_start,
+      eventEnd: tournament.event_end,
+      totalEntries: Number(participation?.entries ?? 0),
+      totalContingents: Number(participation?.contingents ?? 0),
       activeRuleSetStatus: ruleSetRow?.status ?? 'NONE',
       latestDrawRun: latestRun
         ? {
@@ -94,6 +112,20 @@ export class TournamentController {
       warningCount: warningCounts?.warning_count ?? 0,
       errorCount: warningCounts?.error_count ?? 0,
     };
+  }
+
+  /**
+   * "Delete" a tournament from the team's list without a hard DELETE: this system is append-only
+   * everywhere else (audit_event's hash chain, registered measurements never overwritten, ...), and
+   * a real DELETE would either violate that (destroying audit history) or require correctly ordering
+   * deletes across ~30 interlinked tables (rule_set's own subtree, draw revisions, entries, ...),
+   * which is far riskier than a reversible status flip. Archiving just excludes it from
+   * `GET /tournaments` (TournamentListController) and is safe to run from any status.
+   */
+  @Post('archive')
+  async archive(@Param('id') id: string): Promise<{ readonly status: 'ARCHIVED' }> {
+    await this.db.query(`update tournament set status = 'ARCHIVED' where id = $1`, [id]);
+    return { status: 'ARCHIVED' };
   }
 
   /** DEV AUTH ONLY: backs the persona switcher — never a substitute for real login (see auth/actor.ts). */

@@ -8,8 +8,11 @@ import {
   type RawMatchRow,
   type RawPoolMemberRow,
   type RawPoolRow,
+  type ScheduleSlot,
 } from '@bagantkd/export';
-import { DomainError } from '@bagantkd/shared';
+import { parseWeightClass, vocabularyKey } from '@bagantkd/intake';
+import type { RuleSet } from '@bagantkd/rules';
+import { categoryKeyDims, DomainError } from '@bagantkd/shared';
 
 import type { Db } from './db.js';
 
@@ -202,9 +205,10 @@ export async function loadExportModel(db: Db, revisionId: string): Promise<Expor
         feeder_a_match_id: string | null;
         feeder_b_slot: number | null;
         feeder_b_match_id: string | null;
+        display_no: number | null;
       }>(
         `select id, bracket_id, match_uid, public_code, round, position, status,
-                feeder_a_slot, feeder_a_match_id, feeder_b_slot, feeder_b_match_id
+                feeder_a_slot, feeder_a_match_id, feeder_b_slot, feeder_b_match_id, display_no
          from match where bracket_id = any($1::uuid[])`,
         [bracketIds],
       )
@@ -221,6 +225,7 @@ export async function loadExportModel(db: Db, revisionId: string): Promise<Expor
     feederAMatchId: m.feeder_a_match_id,
     feederBSlot: m.feeder_b_slot,
     feederBMatchId: m.feeder_b_match_id,
+    displayNo: m.display_no,
   }));
 
   return buildExportModel({
@@ -339,4 +344,121 @@ async function loadEntryDisplays(
       athletes: memberAthletes,
     };
   });
+}
+
+/**
+ * `schedule_entry.weight_class_or_format` is the "Jadwal FIX" sheet's raw 4th-column cell text,
+ * trimmed only -- the SPS ingestion path (packages/intake/src/sps-workbook.ts) deliberately never
+ * canonicalizes it, unlike a category's own `WEIGHT_CLASS=`/`FORMAT=` dimension, which is always
+ * either a canonical `-NN`/`+NN` weight code (`parseWeightClass`) or one of the three fixed
+ * `EntryFormat` literals (via `rs.sourceVocabulary.format`). Comparing the two directly as strings
+ * silently matches nothing whenever the committee's sheet isn't already in that exact canonical
+ * form (a Unicode minus, a spreadsheet `=+45` leftover, a trailing `+`, or an Indonesian format
+ * label like "Perorangan" instead of "INDIVIDUAL") -- so this mirrors the same normalization the
+ * real intake pipeline applies before comparing.
+ */
+function normalizeScheduleWeightOrFormat(
+  discipline: string,
+  raw: string,
+  formatVocabulary: Readonly<Record<string, string>>,
+): string {
+  if (discipline === 'KYORUGI') {
+    const parsed = parseWeightClass(raw);
+    return parsed.kind === 'CANONICAL' ? parsed.code : raw;
+  }
+  const entry = Object.entries(formatVocabulary).find(([k]) => vocabularyKey(k) === vocabularyKey(raw));
+  return entry ? entry[1] : raw;
+}
+
+/**
+ * The committee's arena/day "Jadwal FIX" slot (schedule_entry) that a draw run's categories belong
+ * to, or `null` when the run isn't tied to one -- e.g. a draw made without going through "Jadwal &
+ * Buat Bagan"'s per-slot flow. `draw_run` itself never stores which slot it was generated for, so
+ * this is inferred: take the run's own categories, find any one of them in `schedule_entry` (a
+ * well-formed schedule places a category in exactly one slot), then load that whole slot in the
+ * committee's own row order (`order_index`) -- never just the run's own categories, since the arena/
+ * day document must show every category scheduled there, drawn or not.
+ */
+export async function loadScheduleSlotForDrawRun(
+  db: Db,
+  tournamentId: string,
+  drawRunId: string,
+): Promise<ScheduleSlot | null> {
+  const categoryRows = await db.query<{ category_key: string; stream: string; discipline: string; gender: string }>(
+    `select c.category_key, c.stream, c.discipline, c.gender
+     from draw_run_category rc join category c on c.id = rc.category_id
+     where rc.draw_run_id = $1`,
+    [drawRunId],
+  );
+  if (categoryRows.length === 0) return null;
+
+  const [ruleSetRow] = await db.query<{ snapshot: RuleSet }>(
+    `select snapshot from rule_set where tournament_id = $1 and status = 'ACTIVE' limit 1`,
+    [tournamentId],
+  );
+  const formatVocabulary = ruleSetRow?.snapshot?.sourceVocabulary?.format ?? {};
+
+  let match: { day_number: number; date: string; arena_code: string } | null = null;
+  for (const c of categoryRows) {
+    const dims = categoryKeyDims(c.category_key);
+    const ageDivisionCode = dims.get('AGE_DIVISION') ?? '';
+    const weightClassOrFormat = dims.get('WEIGHT_CLASS') ?? dims.get('FORMAT') ?? '';
+    const candidates = await db.query<{
+      day_number: number;
+      date: string;
+      arena_code: string;
+      weight_class_or_format: string;
+    }>(
+      `select se.day_number, se.date, a.code as arena_code, se.weight_class_or_format
+       from schedule_entry se join arena a on a.id = se.arena_id
+       where se.tournament_id = $1 and se.stream = $2 and se.discipline = $3 and se.gender = $4
+         and se.age_division_code = $5`,
+      [tournamentId, c.stream, c.discipline, c.gender, ageDivisionCode],
+    );
+    const found = candidates.find(
+      (row) =>
+        normalizeScheduleWeightOrFormat(c.discipline, row.weight_class_or_format, formatVocabulary) ===
+        weightClassOrFormat,
+    );
+    if (found) {
+      match = found;
+      break;
+    }
+  }
+  if (!match) return null;
+
+  const slotRows = await db.query<{
+    stream: string;
+    discipline: string;
+    gender: string;
+    age_division_code: string;
+    weight_class_or_format: string;
+  }>(
+    `select se.stream, se.discipline, se.gender, se.age_division_code, se.weight_class_or_format
+     from schedule_entry se join arena a on a.id = se.arena_id
+     where se.tournament_id = $1 and se.day_number = $2 and a.code = $3
+     order by se.order_index`,
+    [tournamentId, match.day_number, match.arena_code],
+  );
+
+  const dayLabel = new Date(`${match.date}T00:00:00Z`).toLocaleDateString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+
+  return {
+    dayNumber: match.day_number,
+    dayLabel,
+    arena: `ARENA ${match.arena_code}`,
+    categories: slotRows.map((r) => ({
+      discipline: r.discipline,
+      gender: r.gender,
+      ageDivisionCode: r.age_division_code || null,
+      weightClassCode:
+        normalizeScheduleWeightOrFormat(r.discipline, r.weight_class_or_format, formatVocabulary) || null,
+    })),
+  };
 }

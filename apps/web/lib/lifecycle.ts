@@ -17,12 +17,16 @@ export interface LifecycleAction {
   readonly minRole: Role;
 }
 
+/**
+ * One Indonesian label per lifecycle action (UX slice 0, §21) — deliberately never combined
+ * ("Kunci & Terbitkan" etc.): each transition stays its own explicit, separately-confirmed step.
+ */
 const NEXT_ACTION: Partial<Record<Lifecycle, LifecycleAction>> = {
-  DRAFT: { action: 'submit-review', label: 'Submit for review', minRole: 'DRAWING_OFFICER' },
-  REVIEW: { action: 'approve', label: 'Approve', minRole: 'TECHNICAL_DELEGATE' },
-  APPROVED: { action: 'lock', label: 'Lock', minRole: 'TECHNICAL_DELEGATE' },
-  LOCKED: { action: 'publish', label: 'Publish', minRole: 'TECHNICAL_DELEGATE' },
-  PUBLISHED: { action: 'amend', label: 'Amend', minRole: 'TECHNICAL_DELEGATE' },
+  DRAFT: { action: 'submit-review', label: 'Ajukan untuk Ditinjau', minRole: 'DRAWING_OFFICER' },
+  REVIEW: { action: 'approve', label: 'Setujui', minRole: 'TECHNICAL_DELEGATE' },
+  APPROVED: { action: 'lock', label: 'Kunci Drawing', minRole: 'TECHNICAL_DELEGATE' },
+  LOCKED: { action: 'publish', label: 'Terbitkan Drawing', minRole: 'TECHNICAL_DELEGATE' },
+  PUBLISHED: { action: 'amend', label: 'Buat Revisi', minRole: 'TECHNICAL_DELEGATE' },
 };
 
 export function nextLifecycleAction(lifecycle: string): LifecycleAction | null {
@@ -35,3 +39,9 @@ export function canAttempt(role: Role | null, action: LifecycleAction): boolean 
 
 /** Content commands (move/swap/etc.) only apply to a DRAFT revision — matches acceptsDrawCommands(). */
 export const isDraft = (lifecycle: string): boolean => lifecycle === 'DRAFT';
+
+/** Mirrors packages/domain/src/export-policy.ts's OFFICIAL_LIFECYCLES exactly: an OFFICIAL-mode
+ * export may only be requested once the revision has reached one of these states. Used to pick the
+ * export mode automatically (never shown to the team as a choice — see ExportPanel). */
+export const canExportOfficial = (lifecycle: string): boolean =>
+  lifecycle === 'LOCKED' || lifecycle === 'PUBLISHED' || lifecycle === 'AMENDED';

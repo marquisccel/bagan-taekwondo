@@ -2,9 +2,9 @@
 export function RevisionConflictBanner({ onReload }: { onReload: () => void }) {
   return (
     <div className="banner banner-conflict" role="alert">
-      <span>Draw changed by another operator. Reload the current revision before applying this action.</span>
+      <span>Drawing telah diperbarui oleh pengguna lain. Muat ulang sebelum melanjutkan.</span>
       <button className="btn btn-primary" onClick={onReload}>
-        Reload
+        Muat Ulang
       </button>
     </div>
   );

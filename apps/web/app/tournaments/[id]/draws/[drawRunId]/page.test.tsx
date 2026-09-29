@@ -1,12 +1,18 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { SWRConfig } from 'swr';
 import { describe, expect, it, vi } from 'vitest';
 
 import { api } from '../../../../../lib/api';
 import DrawRunPage from './page';
 
-vi.mock('next/navigation', () => ({ useParams: () => ({ id: 't1', drawRunId: 'run-1' }) }));
-vi.mock('../../../../../lib/api', () => ({ api: { drawRun: vi.fn(), drawRunQuality: vi.fn() } }));
+const replace = vi.fn();
+vi.mock('next/navigation', () => ({
+  useParams: () => ({ id: 't1', drawRunId: 'run-1' }),
+  useRouter: () => ({ replace }),
+}));
+vi.mock('../../../../../lib/api', () => ({
+  api: { drawRun: vi.fn(), tournament: vi.fn() },
+}));
 vi.mock('../../../../../lib/dev-auth', () => ({ useDevAuth: vi.fn(() => ({ actorId: 'actor-1' })) }));
 
 /** Each test gets its own SWR cache — otherwise the second test's differently-mocked response is
@@ -34,36 +40,40 @@ const baseRun = {
   finished_at: null,
 };
 
-describe('DrawRunPage — unsafe/blocked state', () => {
-  it('shows an UNSAFE run as Blocked, with its unsafe reasons, and does not offer to browse categories', async () => {
+describe('DrawRunPage — a waiting room, not a destination', () => {
+  it('shows a plain retry message for an UNSAFE run, with no raw engine internals', async () => {
     vi.mocked(api.drawRun).mockResolvedValue({
       ...baseRun,
       status: 'UNSAFE',
       unsafe_reasons: [{ code: 'NO_ELIGIBLE_ENTRIES' }],
     });
     renderIsolated(<DrawRunPage />);
-    expect(await screen.findByText('Blocked')).toBeInTheDocument();
-    expect(screen.getByText(/this draw run is unsafe/i)).toBeInTheDocument();
-    expect(screen.getByText(/NO_ELIGIBLE_ENTRIES/)).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /browse categories/i })).not.toBeInTheDocument();
+    expect(await screen.findByText(/tidak aman untuk dipakai/i)).toBeInTheDocument();
+    expect(screen.queryByText(/sha256:rules/)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /kembali ke jadwal/i })).toHaveAttribute(
+      'href',
+      '/tournaments/t1/jadwal',
+    );
   });
 
-  it('shows a SAFE run as OK and offers to browse categories', async () => {
-    vi.mocked(api.drawRun).mockResolvedValue({
-      ...baseRun,
-      status: 'SAFE',
-      unsafe_reasons: [],
-      output_fingerprint: 'sha256:out',
-    });
-    vi.mocked(api.drawRunQuality).mockResolvedValue({
-      report: {},
-      fingerprint: 'sha256:q',
-      error_count: 0,
-      warning_count: 1,
-      info_count: 0,
+  it('redirects straight to the session page once SAFE, with no manual click', async () => {
+    vi.mocked(api.drawRun).mockResolvedValue({ ...baseRun, status: 'SAFE', unsafe_reasons: [] });
+    vi.mocked(api.tournament).mockResolvedValue({
+      id: 't1',
+      code: 'T1',
+      name: 'Piala Test',
+      eventStart: '2026-08-27',
+      eventEnd: '2026-08-30',
+      totalEntries: 0,
+      totalContingents: 0,
+      activeRuleSetStatus: 'ACTIVE',
+      latestDrawRun: null,
+      latestRevision: { id: 'rev-1', revision_no: 1, lifecycle: 'DRAFT', lock_version: 0 },
+      categoryCounts: { total: 0, ready: 0, blocked: 0 },
+      warningCount: 0,
+      errorCount: 0,
     });
     renderIsolated(<DrawRunPage />);
-    expect(await screen.findByText('OK')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /browse categories/i })).toBeInTheDocument();
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/tournaments/t1/sesi/rev-1'));
   });
 });

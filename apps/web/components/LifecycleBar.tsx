@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { api, type CommandOutcome } from '../lib/api';
 import { friendlyMessage, runCommand } from '../lib/command-error';
 import { useDevAuth } from '../lib/dev-auth';
+import { revisionLifecycleLabel, roleLabel } from '../lib/id-labels';
 import { LIFECYCLE_STEPS, canAttempt, nextLifecycleAction } from '../lib/lifecycle';
 
 function runAction(
@@ -54,11 +55,11 @@ export function LifecycleBar({
   };
 
   return (
-    <div className="panel" style={{ marginBottom: 16 }}>
+    <div className="panel lifecycle-control">
       <div className="lifecycle-bar">
         {LIFECYCLE_STEPS.map((step) => (
           <span key={step} className={`lifecycle-step${step === lifecycle ? ' current' : ''}`}>
-            {step}
+            {revisionLifecycleLabel(step)}
           </span>
         ))}
       </div>
@@ -66,7 +67,7 @@ export function LifecycleBar({
         <div className="banner banner-conflict" role="alert">
           <span>{error}</span>
           <button className="btn" onClick={() => setError(null)}>
-            Dismiss
+            Tutup
           </button>
         </div>
       ) : null}
@@ -75,8 +76,8 @@ export function LifecycleBar({
           {next.action === 'amend' ? (
             <>
               <input
-                aria-label="Amendment reason"
-                placeholder="Reason for amendment"
+                aria-label="Alasan revisi"
+                placeholder="Alasan membuat revisi baru"
                 value={amendReason}
                 onChange={(e) => setAmendReason(e.target.value)}
               />
@@ -85,7 +86,7 @@ export function LifecycleBar({
                 disabled={busy || !canAttempt(role, next) || amendReason.trim().length === 0}
                 onClick={() => run(() => api.amend(actorId, revisionId, lockVersion, amendReason.trim()))}
               >
-                Amend
+                {next.label}
               </button>
             </>
           ) : (
@@ -98,14 +99,16 @@ export function LifecycleBar({
             </button>
           )}
           {!canAttempt(role, next) ? (
-            <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>Requires {next.minRole}+</span>
+            <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>
+              Minimal peran: {roleLabel(next.minRole)}
+            </span>
           ) : null}
         </div>
       ) : (
         <span style={{ color: 'var(--text-dim)' }}>
           {lifecycle === 'AMENDED'
-            ? 'Amended — a child revision is in DRAFT.'
-            : 'No further action from this state.'}
+            ? 'Sedang direvisi. Ada revisi baru berstatus Draf.'
+            : 'Tidak ada tindakan lebih lanjut pada status ini.'}
         </span>
       )}
     </div>

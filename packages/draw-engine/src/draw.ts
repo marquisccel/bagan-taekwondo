@@ -218,6 +218,7 @@ export function drawCategory(args: {
       id: p.id,
       contingent: p.contingent,
       seedNo: relSeed.get(p.id) ?? null,
+      beltRank: p.beltRank,
     }));
     const bracket = buildBracket({
       entries: bracketEntries,

@@ -34,13 +34,13 @@ const baseArgs = (overrides: Partial<BuildExportModelArgs> = {}): BuildExportMod
 });
 
 describe('buildExportModel — determinism and exact mapping', () => {
-  it('orders categories by categoryKey regardless of input order', () => {
+  it('orders categories weight-ascending (not by categoryKey string), matching the web session view exactly', () => {
     const model = buildExportModel(
       baseArgs({
         categories: [
           {
             id: 'c2',
-            categoryKey: 'B',
+            categoryKey: 'TPL|WEIGHT_CLASS=-78',
             stream: 'S',
             discipline: 'KYORUGI',
             format: 'INDIVIDUAL',
@@ -53,7 +53,7 @@ describe('buildExportModel — determinism and exact mapping', () => {
           },
           {
             id: 'c1',
-            categoryKey: 'A',
+            categoryKey: 'TPL|WEIGHT_CLASS=-9',
             stream: 'S',
             discipline: 'KYORUGI',
             format: 'INDIVIDUAL',
@@ -67,7 +67,10 @@ describe('buildExportModel — determinism and exact mapping', () => {
         ],
       }),
     );
-    expect(model.categories.map((c) => c.categoryKey)).toEqual(['A', 'B']);
+    // Plain categoryKey string sort would put "-78" before "-9" ('7' < '9'), which is backwards --
+    // Under 9kg is a lighter (and thus earlier) weight class than Under 78kg. This is exactly the
+    // ordering bug `category-order.ts` exists to fix so screen and export agree.
+    expect(model.categories.map((c) => c.categoryKey)).toEqual(['TPL|WEIGHT_CLASS=-9', 'TPL|WEIGHT_CLASS=-78']);
   });
 
   it('orders pools by ordinal and bracket slots by position, independent of insertion order', () => {

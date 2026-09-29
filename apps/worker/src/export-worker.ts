@@ -3,6 +3,7 @@ import {
   completeExport,
   failExport,
   loadExportModel,
+  loadScheduleSlotForDrawRun,
   type Db,
   type ExportArtifactRow,
 } from '@bagantkd/db';
@@ -14,6 +15,7 @@ import {
   type ExportCategory,
   type ExportModel,
   type ExportPool,
+  type ScheduleSlot,
   semiPrestasiFingerprintSubject,
 } from '@bagantkd/export';
 import {
@@ -21,6 +23,7 @@ import {
   renderCategoryDrawPdf,
   renderPoolSheetPdf,
   renderSemiPrestasiCompactDrawSheetPdf,
+  renderSemiPrestasiSessionDrawSheetPdf,
   renderTournamentDrawBookPdf,
   type RenderOptions,
 } from '@bagantkd/export/pdf';
@@ -69,10 +72,11 @@ function resolveScope(model: ExportModel, row: ExportArtifactRow): ScopedTarget 
   };
 }
 
-async function renderBytes(
+function renderBytes(
   model: ExportModel,
   row: ExportArtifactRow,
   opts: RenderOptions,
+  scheduleSlot: ScheduleSlot | null,
 ): Promise<Uint8Array> {
   switch (row.exportType) {
     case 'CATEGORY_DRAW':
@@ -85,12 +89,21 @@ async function renderBytes(
       return renderTournamentDrawBookPdf(model, opts);
     case 'XLSX_WORKBOOK':
       return buildExportWorkbook(model, opts);
-    case 'SEMI_PRESTASI_COMPACT_DRAW_SHEET':
-      return renderSemiPrestasiCompactDrawSheetPdf(
-        model,
-        opts,
-        row.scopeType === 'CATEGORY' ? (row.categoryId ?? '') : null,
-      );
+    case 'SEMI_PRESTASI_COMPACT_DRAW_SHEET': {
+      if (row.scopeType === 'CATEGORY') {
+        return renderSemiPrestasiCompactDrawSheetPdf(model, opts, row.categoryId ?? '');
+      }
+      // REVISION scope: when this draw run was generated for one arena/day "Jadwal FIX" slot (the
+      // normal "Lihat Bagan" flow), render the committee's own DAY/ARENA session sheet -- one
+      // continuous document for everything scheduled there, matching what the team already
+      // approved (artifacts/review/final-bracket/OFFICIAL_final.pdf) -- instead of the generic
+      // "every semi-prestasi category in this revision" compact sheet, which has no session
+      // heading and was never meant to stand in for it. A draw not tied to any schedule slot (made
+      // outside that flow) falls back to the compact sheet, since there is no slot to name.
+      return scheduleSlot
+        ? renderSemiPrestasiSessionDrawSheetPdf(model, opts, scheduleSlot)
+        : renderSemiPrestasiCompactDrawSheetPdf(model, opts, null);
+    }
     /* c8 ignore next 2 -- exhaustive over the ExportRowType union */
     default:
       throw new Error(`unknown export type: ${String(row.exportType)}`);
@@ -118,15 +131,31 @@ export async function executeExport(
     const semanticFingerprint = computeSemanticExportFingerprint(scope.fingerprintSubject);
     const generatedAt = new Date().toISOString();
     const verificationCode = semanticFingerprint.replace('sha256:', '').slice(0, 12);
-    const opts: RenderOptions = { mode: claimed.mode, generatedAt, verificationCode };
+    // The rendered document is always the clean "official" layout (no PREVIEW watermark, no
+    // TB/BB/Sabuk) regardless of `claimed.mode` -- the editable Cek & Atur Bagan screen already IS
+    // the team's preview, so there is no reason a printed document should ever look different from
+    // the final one. `claimed.mode` itself is untouched: it still gates WHO may request an export
+    // and WHEN (see canExportInMode, packages/domain/src/export-policy.ts) and is still the value
+    // stored on the export_artifact row and shown in the export history.
+    const opts: RenderOptions = { mode: 'OFFICIAL', generatedAt, verificationCode };
 
-    const bytes = await renderBytes(model, claimed, opts);
+    // Resolved once here (not inside renderBytes) so both the rendering AND the filename reflect
+    // the same arena/day slot -- a REVISION-scope semi-prestasi sheet generated from a schedule-
+    // driven draw run should be named "DAY 1 · ARENA A", not the generic document-type name, same
+    // as its own printed header.
+    const scheduleSlot =
+      claimed.exportType === 'SEMI_PRESTASI_COMPACT_DRAW_SHEET' && claimed.scopeType !== 'CATEGORY'
+        ? await loadScheduleSlotForDrawRun(db, claimed.tournamentId, claimed.drawRunId)
+        : null;
+
+    const bytes = await renderBytes(model, claimed, opts, scheduleSlot);
     const fileSha256 = computeFileSha256(bytes);
+    const slotSlug = scheduleSlot ? `day${scheduleSlot.dayNumber}-${scheduleSlot.arena}` : null;
     const filename = exportFilename({
       tournamentSlug: model.tournament.code,
       documentType: claimed.exportType,
       revisionNo: claimed.revisionNo,
-      ...(scope.category ? { categorySlug: scope.category.categoryKey } : {}),
+      ...(scope.category ? { categorySlug: scope.category.categoryKey } : slotSlug ? { categorySlug: slotSlug } : {}),
       generatedAt,
       extension: claimed.format === 'PDF' ? 'pdf' : 'xlsx',
     });

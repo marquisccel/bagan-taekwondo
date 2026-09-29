@@ -15,7 +15,19 @@ export interface BracketEntry {
   readonly contingent: string;
   /** Manual seed within this bracket (1 = top), or null. */
   readonly seedNo: number | null;
+  /**
+   * Belt rank (rule set's `rule_belt.rank`, lower = beginner), or null/absent when unresolvable.
+   * Optional so every existing caller/fixture without belt data is unaffected: an entry with no
+   * rank never contributes to `BELT_TOLERANCE_GAP` cost (see `beltToleranceCost`).
+   */
+  readonly beltRank?: number | null;
 }
+
+/**
+ * How many belt ranks apart two entries may be and still meet without the pairing being flagged as
+ * too wide a gap (team's own rule: green can only meet yellow/blue, i.e. 2 ranks either side).
+ */
+export const BELT_TOLERANCE = 2;
 
 export interface BracketSlot {
   readonly position: number;
@@ -41,6 +53,8 @@ export interface PlacementSearch {
   readonly evaluated: number;
   /** Same-contingent meetings per round, round 1 first, for the chosen placement. */
   readonly sameContingentByRound: readonly number[];
+  /** Meetings per round pairing entries whose belt ranks differ by more than BELT_TOLERANCE. */
+  readonly beltToleranceByRound: readonly number[];
 }
 
 export interface Bracket {
@@ -88,6 +102,37 @@ function contingentCost(byPosition: readonly (BracketEntry | null)[], rounds: nu
     for (let b = a + 1; b < byPosition.length; b += 1) {
       const eb = byPosition[b];
       if (eb && eb.contingent === ea.contingent) {
+        const r = meetingRound(a + 1, b + 1) - 1;
+        cost[r] = (cost[r] ?? 0) + 1;
+      }
+    }
+  }
+  return cost;
+}
+
+/**
+ * Same-idea as `contingentCost` but for belt-rank gaps (BELT_TOLERANCE_GAP): counts, per round, how
+ * many meetings pair two entries whose belt ranks differ by more than `BELT_TOLERANCE`. An entry
+ * with no resolvable belt rank (null/absent) never contributes -- pools without belt data behave
+ * exactly as before this cost existed.
+ *
+ * This is a SECONDARY objective, applied only as a tie-breaker after contingent separation
+ * (`contingentCost`) in `combinedCost` below: it never moves an entry into a worse-contingent
+ * placement just to close a belt gap. Within a pool small enough that contingent separation is a
+ * tie (e.g. every entry from a different contingent, as in the team's own 2×Geup8 + 2×Geup3
+ * example), this is what decides round-1 pairings.
+ */
+function beltToleranceCost(byPosition: readonly (BracketEntry | null)[], rounds: number): number[] {
+  const cost = new Array<number>(rounds).fill(0);
+  for (let a = 0; a < byPosition.length; a += 1) {
+    const ea = byPosition[a];
+    const rankA = ea?.beltRank;
+    if (ea == null || rankA == null) continue;
+    for (let b = a + 1; b < byPosition.length; b += 1) {
+      const eb = byPosition[b];
+      const rankB = eb?.beltRank;
+      if (eb == null || rankB == null) continue;
+      if (Math.abs(rankA - rankB) > BELT_TOLERANCE) {
         const r = meetingRound(a + 1, b + 1) - 1;
         cost[r] = (cost[r] ?? 0) + 1;
       }
@@ -149,8 +194,17 @@ export function buildBracket(args: BuildBracketArgs): Bracket {
     return byPosition;
   };
 
+  // Contingent separation is the primary objective (unchanged from before belt tolerance existed);
+  // belt-gap avoidance is appended as a secondary tie-breaker so it only decides between placements
+  // that are already equally good for contingent separation -- it can never make same-contingent
+  // meetings worse in order to close a belt gap.
+  const combinedCost = (assignment: readonly BracketEntry[]): number[] => {
+    const lay = layout(assignment);
+    return [...contingentCost(lay, rounds), ...beltToleranceCost(lay, rounds)];
+  };
+
   let best: BracketEntry[] = unseeded;
-  let bestCost = contingentCost(layout(best), rounds);
+  let bestCombined = combinedCost(best);
   let evaluated = 1;
   let method: PlacementSearch['method'];
   const contingentAware = args.byePolicy !== 'RANDOM_SEEDED';
@@ -170,10 +224,10 @@ export function buildBracket(args: BuildBracketArgs): Bracket {
         const j = i % 2 === 0 ? 0 : (c[i] ?? 0);
         [a[j], a[i]] = [a[i] as BracketEntry, a[j] as BracketEntry];
         evaluated += 1;
-        const cost = contingentCost(layout(a), rounds);
-        if (lexCompare(cost, bestCost) < 0) {
+        const cost = combinedCost(a);
+        if (lexCompare(cost, bestCombined) < 0) {
           best = [...a];
-          bestCost = cost;
+          bestCombined = cost;
         }
         c[i] = (c[i] ?? 0) + 1;
         i = 0;
@@ -201,20 +255,42 @@ export function buildBracket(args: BuildBracketArgs): Bracket {
       }
       return c;
     };
+    /** Belt-gap meetings of `e` at position `pos` with everyone else on the board (see beltToleranceCost). */
+    const beltContrib = (pos: number, e: BracketEntry, skip: ReadonlySet<number>): number[] => {
+      const c = new Array<number>(rounds).fill(0);
+      const rankE = e.beltRank;
+      if (rankE == null) return c;
+      for (let q = 0; q < size; q += 1) {
+        if (q === pos || skip.has(q)) continue;
+        const o = byPos[q];
+        const rankO = o?.beltRank;
+        if (o && rankO != null && Math.abs(rankO - rankE) > BELT_TOLERANCE) {
+          const r = meetingRound(pos + 1, q + 1) - 1;
+          c[r] = (c[r] ?? 0) + 1;
+        }
+      }
+      return c;
+    };
+    const combinedContrib = (pos: number, e: BracketEntry, skip: ReadonlySet<number>): number[] => [
+      ...contrib(pos, e, skip),
+      ...beltContrib(pos, e, skip),
+    ];
     const remaining = [...unseeded];
     const placed: BracketEntry[] = [];
     for (let k = 0; k < unseeded.length; k += 1) {
       const pos = positions[k] ?? 0;
       let pick = 0;
       let pickCost: number[] | null = null;
-      // Entries of one contingent are interchangeable for the cost: evaluate the first of each.
+      // Entries sharing both contingent and belt rank are interchangeable for the cost: evaluate
+      // the first of each (contingent alone is no longer enough now that belt rank also matters).
       const seen = new Set<string>();
       for (let x = 0; x < remaining.length; x += 1) {
-        const contingent = (remaining[x] as BracketEntry).contingent;
-        if (seen.has(contingent)) continue;
-        seen.add(contingent);
+        const e = remaining[x] as BracketEntry;
+        const key = `${e.contingent}\u0000${e.beltRank ?? ''}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
         evaluated += 1;
-        const cost = contrib(pos, remaining[x] as BracketEntry, new Set());
+        const cost = combinedContrib(pos, e, new Set());
         if (!pickCost || lexCompare(cost, pickCost) < 0) {
           pick = x;
           pickCost = cost;
@@ -232,13 +308,17 @@ export function buildBracket(args: BuildBracketArgs): Bracket {
         for (let y = x + 1; y < placed.length && evaluated < budget; y += 1) {
           const ex = placed[x] as BracketEntry;
           const ey = placed[y] as BracketEntry;
-          if (ex.contingent === ey.contingent) continue;
+          if (ex.contingent === ey.contingent && (ex.beltRank ?? null) === (ey.beltRank ?? null)) continue;
           evaluated += 1;
           const px = positions[x] ?? 0;
           const py = positions[y] ?? 0;
           const skip = new Set([px, py]);
-          const before = contrib(px, ex, skip).map((v, i) => v + (contrib(py, ey, skip)[i] ?? 0));
-          const after = contrib(px, ey, skip).map((v, i) => v + (contrib(py, ex, skip)[i] ?? 0));
+          const before = combinedContrib(px, ex, skip).map(
+            (v, i) => v + (combinedContrib(py, ey, skip)[i] ?? 0),
+          );
+          const after = combinedContrib(px, ey, skip).map(
+            (v, i) => v + (combinedContrib(py, ex, skip)[i] ?? 0),
+          );
           if (lexCompare(after, before) < 0) {
             placed[x] = ey;
             placed[y] = ex;
@@ -251,7 +331,6 @@ export function buildBracket(args: BuildBracketArgs): Bracket {
       }
     }
     best = placed;
-    bestCost = contingentCost(layout(best), rounds);
   }
 
   const byPosition = layout(best);
@@ -309,7 +388,12 @@ export function buildBracket(args: BuildBracketArgs): Bracket {
     byes,
     slots,
     matches,
-    search: { method, evaluated, sameContingentByRound: bestCost },
+    search: {
+      method,
+      evaluated,
+      sameContingentByRound: contingentCost(byPosition, rounds),
+      beltToleranceByRound: beltToleranceCost(byPosition, rounds),
+    },
   };
 }
 

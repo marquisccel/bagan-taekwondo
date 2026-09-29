@@ -6,7 +6,10 @@ import { api, type EntryList, type EntryListItem } from '../../../../lib/api';
 import PesertaPage from './page';
 
 vi.mock('next/navigation', () => ({ useParams: () => ({ id: 't1' }) }));
-vi.mock('../../../../lib/api', () => ({ api: { entries: vi.fn() } }));
+vi.mock('../../../../lib/api', () => ({
+  api: { entries: vi.fn(), correctEntry: vi.fn(), ruleSetVocabulary: vi.fn() },
+  ApiClientError: class extends Error {},
+}));
 vi.mock('../../../../lib/dev-auth', () => ({ useDevAuth: vi.fn(() => ({ actorId: 'actor-1' })) }));
 
 const renderIsolated = (ui: React.ReactElement) =>
@@ -18,7 +21,18 @@ const entry = (over: Partial<EntryListItem> = {}): EntryListItem => ({
   contingent: 'Kota Uji 1',
   displayName: 'Budi Santoso',
   format: 'INDIVIDUAL',
-  members: [{ position: 1, fullName: 'Budi Santoso', gender: 'MALE', beltCode: 'GEUP_9' }],
+  members: [
+    {
+      position: 1,
+      fullName: 'Budi Santoso',
+      gender: 'MALE',
+      beltCode: 'GEUP_9',
+      beltLabel: 'Geup 9 (kuning)',
+      heightMm: null,
+      weightG: null,
+      birthDate: null,
+    },
+  ],
   declared: {
     stream: 'SEMI_PRESTASI',
     discipline: 'KYORUGI',
@@ -53,16 +67,20 @@ describe('PesertaPage', () => {
     vi.mocked(api.entries).mockReset();
   });
 
-  it('shows a participant with readable category, eligibility and no raw category key', async () => {
+  it('shows a participant with ID, belt, and the SPS-style klasifikasi/divisi/class columns', async () => {
     vi.mocked(api.entries).mockResolvedValue(list([entry()]));
     renderIsolated(<PesertaPage />);
     const row = await screen.findByTestId('entry-row');
     const r = within(row);
+    expect(r.getByText('REG001')).toBeInTheDocument();
     expect(r.getByText('Budi Santoso')).toBeInTheDocument();
     expect(r.getByText('Kota Uji 1')).toBeInTheDocument();
-    expect(r.getByTestId('entry-category')).toHaveTextContent('Kyorugi Semi Prestasi — Cadet Putra — -41 kg');
-    expect(r.getByText('Siap')).toBeInTheDocument();
+    expect(r.getByText('Geup 9 (kuning)')).toBeInTheDocument();
+    expect(r.getByText('Kyorugi Semi Prestasi')).toBeInTheDocument();
+    expect(r.getByText('Cadet')).toBeInTheDocument();
+    expect(r.getByText('Under 41 kg')).toBeInTheDocument();
     expect(r.getByText('Tidak ada')).toBeInTheDocument();
+    expect(r.getByRole('button', { name: 'Perbaiki data Budi Santoso' })).toBeInTheDocument();
     expect(screen.getByTestId('entry-range')).toHaveTextContent('Menampilkan 1–1 dari 1 peserta');
     expect(screen.queryByTestId('entry-format-badge')).not.toBeInTheDocument();
     expect(row.textContent).not.toMatch(/\|/);
@@ -76,8 +94,26 @@ describe('PesertaPage', () => {
           displayName: 'Ani Wijaya / Budi Santoso',
           format: 'PAIR',
           members: [
-            { position: 1, fullName: 'Ani Wijaya', gender: 'FEMALE', beltCode: null },
-            { position: 2, fullName: 'Budi Santoso', gender: 'MALE', beltCode: null },
+            {
+              position: 1,
+              fullName: 'Ani Wijaya',
+              gender: 'FEMALE',
+              beltCode: null,
+              beltLabel: null,
+              heightMm: null,
+              weightG: null,
+              birthDate: null,
+            },
+            {
+              position: 2,
+              fullName: 'Budi Santoso',
+              gender: 'MALE',
+              beltCode: null,
+              beltLabel: null,
+              heightMm: null,
+              weightG: null,
+              birthDate: null,
+            },
           ],
           declared: {
             stream: 'PRESTASI',
@@ -94,9 +130,36 @@ describe('PesertaPage', () => {
           displayName: 'A / B / C',
           format: 'TEAM',
           members: [
-            { position: 1, fullName: 'A', gender: 'MALE', beltCode: null },
-            { position: 2, fullName: 'B', gender: 'MALE', beltCode: null },
-            { position: 3, fullName: 'C', gender: 'MALE', beltCode: null },
+            {
+              position: 1,
+              fullName: 'A',
+              gender: 'MALE',
+              beltCode: null,
+              beltLabel: null,
+              heightMm: null,
+              weightG: null,
+              birthDate: null,
+            },
+            {
+              position: 2,
+              fullName: 'B',
+              gender: 'MALE',
+              beltCode: null,
+              beltLabel: null,
+              heightMm: null,
+              weightG: null,
+              birthDate: null,
+            },
+            {
+              position: 3,
+              fullName: 'C',
+              gender: 'MALE',
+              beltCode: null,
+              beltLabel: null,
+              heightMm: null,
+              weightG: null,
+              birthDate: null,
+            },
           ],
           group: { source: 'EXPLICIT', status: 'CONFIRMED', confidence: 'HIGH' },
         }),
@@ -111,18 +174,17 @@ describe('PesertaPage', () => {
     expect(
       pair.getByText(/Pengelompokan: Diusulkan \(Dugaan sistem, keyakinan rendah\)/),
     ).toBeInTheDocument();
-    expect(pair.getByTestId('entry-category')).toHaveTextContent('Belum ditetapkan');
     const team = within(rows[1] as HTMLElement);
     expect(team.getByTestId('entry-format-badge')).toHaveTextContent('Beregu');
     expect(team.getByText('A / B / C')).toBeInTheDocument();
   });
 
-  it('shows blocked eligibility with persisted reasons and the validation issues', async () => {
+  it('shows the validation issues in plain Indonesian (no raw codes), and offers Perbaiki to fix them', async () => {
     vi.mocked(api.entries).mockResolvedValue(
       list([
         entry({
           eligibilityStatus: 'BLOCKED',
-          eligibilityReasons: ['WEIGHT_OUT_OF_RANGE', 'BRAND_NEW_CODE'],
+          eligibilityReasons: ['WEIGHT_OUT_OF_RANGE'],
           issues: [
             {
               id: 'i1',
@@ -146,14 +208,13 @@ describe('PesertaPage', () => {
       ]),
     );
     renderIsolated(<PesertaPage />);
-    const row = within(await screen.findByTestId('entry-row'));
-    expect(row.getByText('Diblokir')).toBeInTheDocument();
-    const reasons = row.getByRole('list', { name: 'Alasan diblokir' });
-    expect(within(reasons).getByText(/Berat badan di luar batas wajar/)).toBeInTheDocument();
-    expect(within(reasons).getByText('BRAND_NEW_CODE')).toBeInTheDocument();
+    const rowEl = await screen.findByTestId('entry-row');
+    const row = within(rowEl);
     expect(row.getByText('1 kesalahan')).toBeInTheDocument();
     expect(row.getByText(/Kesalahan/, { selector: 'strong' })).toBeInTheDocument();
     expect(row.getByText(/Diakui/)).toBeInTheDocument();
+    expect(row.getByRole('button', { name: 'Perbaiki data Budi Santoso' })).toBeInTheDocument();
+    expect(rowEl.textContent).not.toMatch(/WEIGHT_OUT_OF_RANGE|NAME_WHITESPACE/);
   });
 
   it('applies the search, contingent, discipline, category, eligibility and issue filters to the API query', async () => {
@@ -228,6 +289,102 @@ describe('PesertaPage', () => {
     vi.mocked(api.entries).mockResolvedValueOnce(list([]));
     renderIsolated(<PesertaPage />);
     expect(await screen.findByTestId('entry-empty')).toHaveTextContent(/tidak ada peserta/i);
+  });
+
+  it('opens Perbaiki, edits a field, saves via correctEntry, and reloads the list', async () => {
+    vi.mocked(api.entries).mockResolvedValue(list([entry()]));
+    vi.mocked(api.correctEntry).mockResolvedValue({ ok: true });
+    renderIsolated(<PesertaPage />);
+    await screen.findByTestId('entry-row');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Perbaiki data Budi Santoso' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Perbaiki Data Peserta' });
+    fireEvent.change(within(dialog).getByLabelText('Berat Badan (kg)'), { target: { value: '45.5' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Simpan' }));
+
+    await waitFor(() =>
+      expect(api.correctEntry).toHaveBeenCalledWith(
+        'actor-1',
+        't1',
+        'e1',
+        expect.objectContaining({ weightG: 45500 }),
+      ),
+    );
+    await waitFor(() => expect(api.entries).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole('dialog', { name: 'Perbaiki Data Peserta' })).not.toBeInTheDocument();
+  });
+
+  it('Sabuk/Divisi/Class in Perbaiki are dropdowns sourced from the rule set, and Class depends on the chosen Divisi', async () => {
+    vi.mocked(api.entries).mockResolvedValue(list([entry()]));
+    vi.mocked(api.correctEntry).mockResolvedValue({ ok: true });
+    vi.mocked(api.ruleSetVocabulary).mockResolvedValue({
+      belts: [
+        { code: 'GEUP_9', rank: 1, label: 'Geup 9 (kuning)' },
+        { code: 'GEUP_8', rank: 2, label: 'Geup 8 (kuning strip hijau)' },
+      ],
+      ageDivisions: [
+        { code: 'CADET', label: 'Cadet', order: 4 },
+        { code: 'JUNIOR', label: 'Junior', order: 5 },
+      ],
+      weightClassTables: [
+        {
+          stream: 'SEMI_PRESTASI',
+          ageDivisionCode: 'CADET',
+          gender: 'MALE',
+          classes: [{ code: '-41' }, { code: '-45' }],
+        },
+        {
+          stream: 'SEMI_PRESTASI',
+          ageDivisionCode: 'JUNIOR',
+          gender: 'MALE',
+          classes: [{ code: '-48' }, { code: '-51' }],
+        },
+      ],
+    });
+    renderIsolated(<PesertaPage />);
+    await screen.findByTestId('entry-row');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Perbaiki data Budi Santoso' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Perbaiki Data Peserta' });
+
+    const belt = await within(dialog).findByLabelText('Sabuk');
+    expect(within(belt).getByRole('option', { name: 'Geup 9 (kuning)' })).toBeInTheDocument();
+    expect((belt as HTMLSelectElement).value).toBe('GEUP_9');
+
+    const classSelect = within(dialog).getByLabelText('Class / kelas berat');
+    expect(within(classSelect).getByRole('option', { name: 'Under 41 kg' })).toBeInTheDocument();
+
+    fireEvent.change(within(dialog).getByLabelText('Divisi'), { target: { value: 'JUNIOR' } });
+    await waitFor(() =>
+      expect(within(classSelect).getByRole('option', { name: 'Under 48 kg' })).toBeInTheDocument(),
+    );
+    expect(within(classSelect).queryByRole('option', { name: 'Under 41 kg' })).not.toBeInTheDocument();
+    fireEvent.change(classSelect, { target: { value: '-51' } });
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Simpan' }));
+    await waitFor(() =>
+      expect(api.correctEntry).toHaveBeenCalledWith(
+        'actor-1',
+        't1',
+        'e1',
+        expect.objectContaining({ declaredAgeDivision: 'JUNIOR', declaredClass: '-51' }),
+      ),
+    );
+  });
+
+  it('never labels a value "tidak dikenali" just because the rule set vocabulary failed to load -- shows a clear warning instead', async () => {
+    vi.mocked(api.entries).mockResolvedValue(list([entry()]));
+    vi.mocked(api.ruleSetVocabulary).mockRejectedValue(new Error('rule set not found'));
+    renderIsolated(<PesertaPage />);
+    await screen.findByTestId('entry-row');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Perbaiki data Budi Santoso' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Perbaiki Data Peserta' });
+
+    expect(await within(dialog).findByText(/gagal memuat daftar sabuk\/divisi\/class/i)).toBeInTheDocument();
+    const belt = within(dialog).getByLabelText('Sabuk');
+    expect(within(belt).getByRole('option', { name: 'GEUP_9' })).toBeInTheDocument();
+    expect(within(belt).queryByRole('option', { name: /tidak dikenali/i })).not.toBeInTheDocument();
   });
 
   it('reports a load failure', async () => {

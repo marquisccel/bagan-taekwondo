@@ -13,6 +13,7 @@ function poolQuality(p: PoolDetail): 'GREEN' | 'YELLOW' {
 export function PoolCard({
   pool,
   editable,
+  selectedEntryId,
   onOpenDetail,
   onMoveEntry,
   onSwapEntry,
@@ -21,6 +22,7 @@ export function PoolCard({
 }: {
   pool: PoolDetail;
   editable: boolean;
+  selectedEntryId?: string | null;
   onOpenDetail: (e: EntryDisplay) => void;
   onMoveEntry: (e: EntryDisplay) => void;
   onSwapEntry: (e: EntryDisplay) => void;
@@ -50,39 +52,40 @@ export function PoolCard({
       }}
     >
       <div className="pool-card-header">
-        <span>{pool.poolUid}</span>
+        <span className="pool-card-title" title={pool.poolUid}>
+          <span className="pool-card-name">Pool {pool.ordinal}</span>
+          <span className="pool-card-count">{pool.members.length} peserta</span>
+        </span>
         <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {pool.isWalkover ? (
-            <StatusBadge quality="YELLOW" title="Walkover pool" />
+            <StatusBadge quality="YELLOW" title="Pool walkover" />
           ) : (
             <StatusBadge quality={poolQuality(pool)} />
           )}
         </span>
       </div>
       {editable ? (
-        <div style={{ padding: '4px 12px' }}>
-          <button
-            type="button"
-            className="btn"
-            style={{ fontSize: 11, padding: '2px 8px' }}
-            onClick={() => setShowMove((s) => !s)}
-          >
-            Move pool…
+        <div className="pool-card-tools">
+          {/* Deliberately not "Pindahkan ..." (moves the pool's arena/order, a different action from
+              moving a participant) -- also avoids colliding with each row's own "Pindahkan" button
+              under accessible-name substring matching. */}
+          <button type="button" className="btn btn-quiet" onClick={() => setShowMove((s) => !s)}>
+            Atur Posisi Pool
           </button>
           {showMove ? (
-            <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+            <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
               <input
-                aria-label="Arena code"
+                aria-label="Kode Arena"
                 value={arenaCode}
                 onChange={(e) => setArenaCode(e.target.value)}
-                style={{ width: 50 }}
+                style={{ width: 56 }}
               />
               <input
-                aria-label="Order"
+                aria-label="Urutan"
                 type="number"
                 value={order}
                 onChange={(e) => setOrder(Number(e.target.value))}
-                style={{ width: 50 }}
+                style={{ width: 56 }}
               />
               <button
                 type="button"
@@ -93,26 +96,29 @@ export function PoolCard({
                   setShowMove(false);
                 }}
               >
-                Go
+                Terapkan
               </button>
             </div>
           ) : null}
         </div>
       ) : null}
       {pool.members.length === 0 ? (
-        <div style={{ padding: 12, color: 'var(--text-dim)', fontSize: 12 }}>Empty</div>
+        <div className="pool-card-empty">Belum ada peserta</div>
       ) : (
-        pool.members.map((m) => (
-          <EntryCard
-            key={m.entryId}
-            entry={m}
-            draggable={editable}
-            onOpenDetail={() => onOpenDetail(m)}
-            onMove={editable ? () => onMoveEntry(m) : undefined}
-            onSwap={editable ? () => onSwapEntry(m) : undefined}
-            onDragStart={(e) => e.dataTransfer.setData('text/entry-id', m.entryId)}
-          />
-        ))
+        <div className="pool-card-rows">
+          {pool.members.map((m) => (
+            <EntryCard
+              key={m.entryId}
+              entry={m}
+              draggable={editable}
+              selected={m.entryId === selectedEntryId}
+              onOpenDetail={() => onOpenDetail(m)}
+              onMove={editable ? () => onMoveEntry(m) : undefined}
+              onSwap={editable ? () => onSwapEntry(m) : undefined}
+              onDragStart={(e) => e.dataTransfer.setData('text/entry-id', m.entryId)}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

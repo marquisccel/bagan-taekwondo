@@ -8,5 +8,7 @@ export * from './pipeline.js';
 export * from './report.js';
 export * from './rows.js';
 export * from './snapshot.js';
+export * from './sps-workbook.js';
 export * from './types.js';
 export * from './usage.js';
+export * from './workbook-reader.js';

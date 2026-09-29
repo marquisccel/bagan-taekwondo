@@ -1,3 +1,5 @@
+import { resolveMatchNumbers, type MatchNumberInput } from '@bagantkd/shared';
+
 import type { ExportBracket } from '../model.js';
 import { matchStatusLabel, SEMI_PRESTASI_COMPACT_LABEL } from '../presentation.js';
 import { computeBracketGeometry, ROW_HEIGHT as FULL_ROW_HEIGHT } from './bracket-geometry.js';
@@ -52,6 +54,9 @@ export interface CompactBracketOptions {
     readonly weightClassLabel: string;
     readonly idByEntryId: ReadonlyMap<string, string>;
   };
+  /** FINAL/OFFICIAL only: the pool's own id, used to look up its document-wide number (`documentMatchNumbers`)
+   * for a lone entry -- a bye pairing that collapses to a single leaf with no real match to key a number by. */
+  readonly poolId?: string;
 }
 
 const INTEGRATED_STROKE = '#222';
@@ -65,14 +70,17 @@ const INTEGRATED_CONTINGENT_CHARS = 72;
  * whenever `CompactBracketOptions.columns` is given; a shorter row pitch than the 2-line fallback
  * since there is no wrapped second line. Column x-offsets/char budgets are fixed proportions of
  * `INTEGRATED_COLUMNS_LEAF_WIDTH` (see `OFFICIAL_BRACKET_AREA` in semi-prestasi-compact.ts). */
-const INTEGRATED_ROW_COLUMNS = 24;
+const INTEGRATED_ROW_COLUMNS = 28;
 const LEAF_COLUMNS = [
   { key: 'id', x: 2, chars: 7 },
   { key: 'name', x: 50, chars: 42, bold: true },
   { key: 'gender', x: 320, chars: 11 },
   { key: 'division', x: 404, chars: 18 },
   { key: 'weightClass', x: 542, chars: 7 },
-  { key: 'contingent', x: 592, chars: 24 },
+  // The last column before the leaf area ends (OFFICIAL_BRACKET_AREA.leafWidth) -- a wide enough
+  // budget that a real contingent name is never visibly clipped with an ellipsis, while still
+  // stopping short of the bracket's own connector columns that start right after leafWidth.
+  { key: 'contingent', x: 592, chars: 46 },
 ] as const;
 
 /**
@@ -95,23 +103,58 @@ export function presentationMatchNumbers(
 }
 
 /**
- * Document-level numbering for FINAL/OFFICIAL: ONE contiguous sequence 1, 2, 3, ... across every
- * bracket of the document, in the order the brackets are given (the document's own deterministic
- * category/pool order). Brackets that are not drawn (missing, no matches, too large for the card)
- * take no numbers.
+ * Document-level numbering for FINAL/OFFICIAL: ONE sequence across every pool of the document, in
+ * the order the pools are given (the document's own deterministic category/pool order) and
+ * round/position within each pool's own bracket.
+ *
+ * A pool with no drawable bracket at all (a single-participant "walkover" pool with nobody to pair
+ * it against) still consumes exactly one number, keyed by the pool's own id -- matching the
+ * committee's own SPS sheet, which numbers every pool's line in sequence whether or not it has a
+ * real match (e.g. a lone entry still gets written down as "... 3" in the sheet). A bracket too
+ * large for this compact card (deferred to the separate full-size bracket sheet) takes no number
+ * here instead, since its real match count can't be enumerated from this card alone -- semi-prestasi
+ * pools never actually reach that size in practice (max pool size 4, well under
+ * COMPACT_BRACKET_MAX_SIZE), so this is a defensive fallback, not an expected case.
+ *
+ * A number the team already pinned on screen (`ExportMatch.displayNo`, via SET_MATCH_DISPLAY_NO --
+ * see `resolveMatchNumbers` in @bagantkd/shared) is never displaced or renumbered here: every other
+ * match fills the smallest unused number in this document's own reading order. This is what keeps
+ * an edited match's number identical between the web bracket view and this printed sheet -- the
+ * same guarantee `resolveMatchNumbers` already gives the web session view, applied here over this
+ * document's own pool ordering instead of the revision-wide one `ExportMatch.resolvedDisplayNo` was
+ * computed with (a session/arena-day document's category order is the committee's own schedule
+ * order, not necessarily the revision's weight-ascending order).
  */
 export function documentMatchNumbers(
-  brackets: readonly (ExportBracket | null | undefined)[],
+  pools: readonly { readonly id: string; readonly bracket: ExportBracket | null }[],
 ): Map<string, number> {
-  const all = new Map<string, number>();
-  let next = 1;
-  for (const bracket of brackets) {
-    if (!bracket || !compactBracketFits(bracket)) continue;
+  const inputs: MatchNumberInput[] = [];
+  pools.forEach((pool, poolIndex) => {
+    const bracket = pool.bracket;
+    if (!bracket || bracket.matches.length === 0) {
+      inputs.push({ id: pool.id, displayNo: null, order: [poolIndex, 0, 0] });
+      return;
+    }
+    if (!compactBracketFits(bracket)) return;
+    const displayNoByUid = new Map(bracket.matches.map((m) => [m.matchUid, m.displayNo]));
     const drawn = computeBracketGeometry(bracket.matches, bracket.slots).matches;
-    for (const [uid, n] of presentationMatchNumbers(drawn, next)) all.set(uid, n);
-    next += drawn.length;
-  }
-  return all;
+    if (drawn.length === 0) {
+      // A single entry with a bye is still persisted as a real bracket (size 2, one WALKOVER
+      // match) rather than `bracket: null` -- but a WALKOVER pairing is never a drawn node (see
+      // computeBracketGeometry), so this pool has nothing real to draw either. Same one-line-item
+      // numbering as a pool with no bracket at all, keyed by the pool itself.
+      inputs.push({ id: pool.id, displayNo: null, order: [poolIndex, 0, 0] });
+      return;
+    }
+    for (const { match } of drawn) {
+      inputs.push({
+        id: match.matchUid,
+        displayNo: displayNoByUid.get(match.matchUid) ?? null,
+        order: [poolIndex, match.round, match.position],
+      });
+    }
+  });
+  return new Map(resolveMatchNumbers(inputs));
 }
 
 /** Greedy word wrap into at most two lines; the second is clipped, a single over-long word is clipped. */
@@ -158,13 +201,61 @@ function textEl(
 
 const num = (n: number): string => String(Math.round(n * 100) / 100);
 
+/**
+ * FINAL/OFFICIAL only: a pool with exactly one entry and genuinely no persisted bracket at all (the
+ * draw engine never builds a bye-pairing shape for a truly solo entry -- unlike the bye-collapsed
+ * case `renderCompactBracketSvg`'s own `lone` branch handles, there is no geometry/leaf to read here).
+ * Drawn with the exact same leaf-column layout, row pitch and line-to-number visual language as every
+ * real match so a lone entry reads at the same scale (structural reference: the committee's own SPS
+ * sheet writes a lone entry as a plain numbered row too, never a bordered box).
+ */
+export function renderLoneEntrySvg(
+  entry: { readonly displayName: string; readonly contingent: string; readonly externalRef: string | null },
+  columns: { readonly genderLabel: string; readonly divisionLabel: string; readonly weightClassLabel: string },
+  area: { readonly width: number; readonly leafWidth: number },
+  poolNumber: number | undefined,
+): string {
+  const leafWidth = Math.max(MIN_LEAF_WIDTH, area.leafWidth);
+  const colWidth = area.width - leafWidth - FINAL_STUB;
+  const endX = leafWidth + colWidth + FINAL_STUB;
+  const top = 18;
+  const y = top + INTEGRATED_ROW_COLUMNS / 2;
+  const height = top + INTEGRATED_ROW_COLUMNS + 3;
+  const parts: string[] = [
+    `<line x1="0" y1="${num(y)}" x2="${num(endX)}" y2="${num(y)}" stroke="${INTEGRATED_STROKE}" stroke-width="${INTEGRATED_STROKE_WIDTH}"/>`,
+  ];
+  const values: Record<(typeof LEAF_COLUMNS)[number]['key'], string> = {
+    id: entry.externalRef ?? '',
+    name: entry.displayName,
+    gender: columns.genderLabel,
+    division: columns.divisionLabel,
+    weightClass: columns.weightClassLabel,
+    contingent: entry.contingent,
+  };
+  for (const col of LEAF_COLUMNS) {
+    const text = clip(values[col.key], col.chars);
+    const bold: boolean = 'bold' in col && col.bold;
+    if (text) parts.push(textEl(col.x, y - 3, text, { size: 12, bold }));
+  }
+  if (poolNumber != null) {
+    parts.push(textEl(leafWidth + colWidth + 3, y - 2.5, String(poolNumber), { size: 13, bold: true, fill: '#222' }));
+  }
+  return `<svg width="100%" viewBox="0 0 ${num(area.width)} ${num(height)}" style="display:block;height:auto" xmlns="http://www.w3.org/2000/svg" role="img">${parts.join('')}</svg>`;
+}
+
 /** Returns an inline `<svg>` for the bracket, or `null` when there is nothing to draw (no matches). */
 export function renderCompactBracketSvg(bracket: ExportBracket, opts: CompactBracketOptions): string | null {
   if (!compactBracketFits(bracket)) return null;
   const geometry = computeBracketGeometry(bracket.matches, bracket.slots);
-  if (geometry.matches.length === 0) return null;
-
   const integrated = opts.integrated === true;
+  // A lone entry (a bye pairing collapses to a single leaf with no real match -- see
+  // computeBracketGeometry's WALKOVER handling) still gets drawn in FINAL/OFFICIAL: one straight line
+  // from its leaf through to its own document number, the same visual language as a real match's
+  // final stub, just with nobody to join it to (structural reference: the committee's own SPS sheet
+  // writes a lone entry as a plain numbered row too). PREVIEW keeps its plain "no bracket" note instead.
+  const lone = integrated && geometry.matches.length === 0 && geometry.leaves.length === 1;
+  if (geometry.matches.length === 0 && !lone) return null;
+
   const leafColumns = integrated ? opts.columns : undefined;
   const ROW = integrated ? (leafColumns ? INTEGRATED_ROW_COLUMNS : INTEGRATED_ROW) : COMPACT_ROW;
   const SCALE = ROW / FULL_ROW_HEIGHT;
@@ -222,7 +313,7 @@ export function renderCompactBracketSvg(bracket: ExportBracket, opts: CompactBra
         for (const col of LEAF_COLUMNS) {
           const text = clip(values[col.key], col.chars);
           const bold: boolean = 'bold' in col && col.bold;
-          if (text) parts.push(textEl(col.x, y - 3, text, { size: 9, bold }));
+          if (text) parts.push(textEl(col.x, y - 3, text, { size: 12, bold }));
         }
         continue;
       }
@@ -248,6 +339,17 @@ export function renderCompactBracketSvg(bracket: ExportBracket, opts: CompactBra
     } else {
       parts.push(textEl(labelX, y - 2, clip(leaf.label, opts.nameChars)));
     }
+  }
+
+  const loneLeaf = geometry.leaves[0];
+  if (lone && loneLeaf) {
+    const y = yOf(loneLeaf.y);
+    const endX = xOf(1) + FINAL_STUB;
+    parts.push(
+      `<line x1="${num(leafWidth)}" y1="${num(y)}" x2="${num(endX)}" y2="${num(y)}" stroke="${INTEGRATED_STROKE}" stroke-width="${INTEGRATED_STROKE_WIDTH}"/>`,
+    );
+    const poolNo = opts.poolId != null ? matchNumber.get(opts.poolId) : undefined;
+    if (poolNo != null) parts.push(textEl(xOf(1) + 3, y - 2.5, String(poolNo), { size: 13, bold: true, fill: '#222' }));
   }
 
   for (const node of geometry.matches) {
@@ -291,7 +393,7 @@ export function renderCompactBracketSvg(bracket: ExportBracket, opts: CompactBra
       !integrated && node.match.status !== 'PENDING' ? ` · ${matchStatusLabel(node.match.status)}` : '';
     parts.push(
       textEl(x + 3, labelY, `${code}${status}`, {
-        size: integrated ? 11 : 7,
+        size: integrated ? 13 : 7,
         bold: isFinal || integrated,
         fill: '#222',
       }),

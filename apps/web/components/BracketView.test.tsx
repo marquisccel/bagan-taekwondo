@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { Bracket, BracketMatch } from '../lib/api';
 import { BracketView } from './BracketView';
@@ -31,6 +31,8 @@ function buildBracket(size: number): Bracket {
         round,
         position,
         publicCode: `A${String((round - 1) * count + position).padStart(3, '0')}`,
+        displayNo: null,
+        resolvedDisplayNo: (round - 1) * count + position,
         status: 'PENDING',
         feederA:
           round === 1
@@ -45,13 +47,15 @@ function buildBracket(size: number): Bracket {
 }
 
 describe('BracketView', () => {
-  it('renders every round and every match for a large (64-entry) bracket without crashing', () => {
+  it('renders every match, connected round to round as a bracket tree, for a large (64-entry) bracket without crashing', () => {
     const bracket = buildBracket(64);
     render(<BracketView bracket={bracket} />);
-    expect(screen.getByText('Round 1')).toBeInTheDocument();
-    expect(screen.getByText('Round 6')).toBeInTheDocument();
     // 32 + 16 + 8 + 4 + 2 + 1 = 63 matches total.
-    expect(document.querySelectorAll('.bracket-match')).toHaveLength(63);
+    expect(document.querySelectorAll('.bracket-vertex')).toHaveLength(63);
+    // Every match past round 1 (16+8+4+2+1 = 31) is a branch node connecting two children via a
+    // ".bracket-children" bracket-line connector -- confirming the tree, not flat round columns.
+    expect(document.querySelectorAll('.bracket-node')).toHaveLength(31);
+    expect(document.querySelectorAll('.bracket-children')).toHaveLength(31);
   });
 
   it('resolves round-1 entries through bracket_slot and shows BYE for an empty-but-marked slot', () => {
@@ -64,8 +68,9 @@ describe('BracketView', () => {
       ],
     };
     render(<BracketView bracket={withBye} />);
-    expect(screen.getByText('Athlete 1')).toBeInTheDocument();
+    expect(screen.getByText(/Athlete 1/)).toBeInTheDocument();
     expect(screen.getByText('BYE')).toBeInTheDocument();
+    expect(screen.getByText('R1')).toBeInTheDocument();
   });
 
   it('shows "no matches" for a walkover/single-entry pool instead of an empty bracket', () => {
@@ -73,5 +78,28 @@ describe('BracketView', () => {
       <BracketView bracket={{ id: 'b2', size: 1, rounds: 0, entries: 1, byes: 0, slots: [], matches: [] }} />,
     );
     expect(screen.getByText(/no matches/i)).toBeInTheDocument();
+  });
+
+  it('dragging one round-1 athlete row onto another calls onSwapEntries with both entry ids, only when editable', () => {
+    const bracket = buildBracket(4);
+    const onSwapEntries = vi.fn();
+    render(<BracketView bracket={bracket} editable onSwapEntries={onSwapEntries} />);
+
+    const rowA = screen.getByText(/Athlete 1/).closest('.bracket-name-row')!;
+    const rowB = screen.getByText(/Athlete 3/).closest('.bracket-name-row')!;
+    const dataTransfer = { getData: vi.fn().mockReturnValue('e1'), setData: vi.fn() };
+    fireEvent.dragStart(rowA, { dataTransfer });
+    fireEvent.drop(rowB, { dataTransfer });
+
+    expect(onSwapEntries).toHaveBeenCalledWith('e1', 'e3');
+  });
+
+  it('never wires drag-and-drop when read-only (revision is not DRAFT)', () => {
+    const bracket = buildBracket(4);
+    const onSwapEntries = vi.fn();
+    render(<BracketView bracket={bracket} editable={false} onSwapEntries={onSwapEntries} />);
+
+    const rowA = screen.getByText(/Athlete 1/).closest('.bracket-name-row')!;
+    expect(rowA).toHaveAttribute('draggable', 'false');
   });
 });

@@ -21,6 +21,10 @@ describe('TournamentOverviewPage (read-only)', () => {
       id: 't1',
       code: 'T1',
       name: 'Piala Test',
+      eventStart: '2026-08-27',
+      eventEnd: '2026-08-30',
+      totalEntries: 0,
+      totalContingents: 0,
       activeRuleSetStatus: 'DRAFT',
       latestDrawRun: null,
       latestRevision: null,
@@ -29,15 +33,19 @@ describe('TournamentOverviewPage (read-only)', () => {
       errorCount: 0,
     });
     renderIsolated(<TournamentOverviewPage />);
-    expect(await screen.findByText(/no draw run yet/i)).toBeInTheDocument();
-    expect(screen.getByText(/is DRAFT, not ACTIVE/)).toBeInTheDocument();
+    expect(await screen.findByText(/belum ada bagan/i)).toBeInTheDocument();
+    expect(screen.getByText(/berstatus Draf, belum Aktif/)).toBeInTheDocument();
   });
 
-  it('links to the participant inspection page, the Buat Drawing page and the tournament list', async () => {
+  it('shows the event date range and participation totals', async () => {
     vi.mocked(api.tournament).mockResolvedValue({
       id: 't1',
       code: 'T1',
       name: 'Piala Test',
+      eventStart: '2026-08-27',
+      eventEnd: '2026-08-30',
+      totalEntries: 142,
+      totalContingents: 18,
       activeRuleSetStatus: 'ACTIVE',
       latestDrawRun: null,
       latestRevision: null,
@@ -46,15 +54,10 @@ describe('TournamentOverviewPage (read-only)', () => {
       errorCount: 0,
     });
     renderIsolated(<TournamentOverviewPage />);
-    expect(await screen.findByRole('link', { name: 'Lihat peserta' })).toHaveAttribute(
-      'href',
-      '/tournaments/t1/peserta',
-    );
-    expect(screen.getByRole('link', { name: 'Buat Drawing' })).toHaveAttribute(
-      'href',
-      '/tournaments/t1/drawing',
-    );
-    expect(screen.getByRole('link', { name: 'Semua turnamen' })).toHaveAttribute('href', '/tournaments');
+    expect(await screen.findByText('142')).toBeInTheDocument();
+    expect(screen.getByText('18')).toBeInTheDocument();
+    expect(screen.getByText('Total Peserta')).toBeInTheDocument();
+    expect(screen.getByText('Kontingen')).toBeInTheDocument();
   });
 
   it('shows draw run status, revision status, and blocked/warning counts once a draw run exists', async () => {
@@ -62,6 +65,10 @@ describe('TournamentOverviewPage (read-only)', () => {
       id: 't1',
       code: 'T1',
       name: 'Piala Test',
+      eventStart: '2026-08-27',
+      eventEnd: '2026-08-30',
+      totalEntries: 100,
+      totalContingents: 12,
       activeRuleSetStatus: 'ACTIVE',
       latestDrawRun: {
         id: 'run-1',
@@ -76,13 +83,13 @@ describe('TournamentOverviewPage (read-only)', () => {
       errorCount: 0,
     });
     renderIsolated(<TournamentOverviewPage />);
-    expect(await screen.findByText('SAFE')).toBeInTheDocument();
-    expect(screen.getByText('DRAFT')).toBeInTheDocument();
+    expect(await screen.findByText('Aman')).toBeInTheDocument();
+    expect(screen.getByText('Draf')).toBeInTheDocument();
     expect(screen.getByText('8 / 10')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /browse categories/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /cek & atur bagan/i })).toHaveAttribute(
       'href',
-      '/tournaments/t1/categories',
+      '/tournaments/t1/sesi/rev-1',
     );
   });
 });

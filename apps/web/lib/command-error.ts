@@ -42,9 +42,9 @@ export async function runCommand(fn: () => Promise<CommandOutcome>): Promise<Com
 /** A safe, operator-facing message for a rejection code — never the raw backend text for these. */
 export function friendlyMessage(code: string, fallback: string): string {
   if (code === 'FORBIDDEN_COMMAND' || code === 'UNAUTHORIZED_TOURNAMENT_ACCESS')
-    return 'You do not have permission to do this.';
+    return 'Anda tidak memiliki izin untuk melakukan tindakan ini.';
   if (code === 'REVISION_LOCKED')
-    return 'This revision is no longer editable (locked, published, or amended).';
+    return 'Revisi ini sudah tidak dapat diubah (dikunci, diterbitkan, atau sedang direvisi).';
   if (code === 'RULE_SET_NOT_READY') return fallback;
   return fallback;
 }
@@ -59,6 +59,10 @@ export function friendlyCommandRefusal(result: {
   verdict?: CommandVerdict;
 }): string | null {
   switch (result.code) {
+    case 'INVALID_COMMAND':
+      if (result.message.includes('cannot cross categories'))
+        return 'Peserta tidak bisa dipindah ke kategori (kelas berat) yang berbeda dari sini — itu perubahan kelas, bukan sekadar pindah pool, dan belum didukung sistem ini.';
+      return null;
     case 'HARD_CONSTRAINT_VIOLATED': {
       const codes = result.verdict?.level === 'RED' ? result.verdict.hardViolations : [];
       return `Perubahan ditolak karena melanggar aturan wajib: ${describeImpactCodes(codes)}. Drawing tidak diubah.`;

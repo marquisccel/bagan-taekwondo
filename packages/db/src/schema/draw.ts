@@ -76,6 +76,42 @@ export const category = pgTable(
   (t) => [unique('category_key_uq').on(t.ruleSetId, t.categoryKey)],
 );
 
+/**
+ * The committee's own arena/day schedule (uploaded from the SPS spreadsheet's "Jadwal FIX" tab),
+ * read BEFORE any draw exists: a row here is a plain (discipline, gender, age division, weight
+ * class) fact, not a foreign key to `category`, because `category` rows are only created lazily
+ * the first time a draw run actually produces that categoryKey (draw-run-repository.ts) -- a
+ * brand-new tournament has zero `category` rows. `weightClassCode` is null for a Poomsae entry,
+ * which schedules by `format` instead (kept in that same column, since a schedule row is never
+ * both at once).
+ */
+export const scheduleEntry = pgTable(
+  'schedule_entry',
+  {
+    id: id(),
+    tournamentId: tournamentRef(),
+    dayNumber: smallint('day_number').notNull(),
+    /** The calendar date only; the weekday is always computed from it at display time, never stored. */
+    date: text('date').notNull(),
+    arenaId: uuid('arena_id')
+      .notNull()
+      .references(() => arena.id),
+    /** 0-based row order within this arena/day, exactly as the committee's own sheet listed it. */
+    orderIndex: integer('order_index').notNull(),
+    stream: streamEnum('stream').notNull(),
+    discipline: disciplineEnum('discipline').notNull(),
+    gender: categoryGenderEnum('gender').notNull(),
+    ageDivisionCode: text('age_division_code').notNull(),
+    /** A Kyorugi weight class ("-45") or a Poomsae format ("INDIVIDUAL"/"PAIR"/"TEAM"), matching
+     * whichever the sheet's 4th column held for this row. */
+    weightClassOrFormat: text('weight_class_or_format').notNull(),
+  },
+  (t) => [
+    unique('schedule_entry_order_uq').on(t.tournamentId, t.arenaId, t.dayNumber, t.orderIndex),
+    check('schedule_entry_day_ck', sql`${t.dayNumber} >= 1`),
+  ],
+);
+
 // ---------------------------------------------------------------------------------------
 // Draw runs (immutable once finished) and their candidate results
 // ---------------------------------------------------------------------------------------
@@ -356,6 +392,14 @@ export const match = pgTable(
     arenaId: uuid('arena_id').references(() => arena.id),
     orderNo: integer('order_no'),
     publicCode: text('public_code'),
+    /**
+     * Presentation-only display number the drawing team can set for the FINAL/OFFICIAL bracket
+     * sheet (e.g. "1", "2", "3" printed on the document), completely independent of `publicCode`/
+     * `matchUid`, which stay the stable internal identity. Null means "use the deterministic
+     * document-order default" (see documentMatchNumbers in packages/export). Never read by the
+     * draw engine or any safety invariant -- display only.
+     */
+    displayNo: integer('display_no'),
     status: matchStatusEnum('status').notNull().default('PENDING'),
   },
   (t) => [
@@ -371,6 +415,7 @@ export const match = pgTable(
       'match_public_code_ck',
       sql`${t.publicCode} is null or ${t.publicCode} ~ '^[A-Z]{1,3}[0-9]{3,4}[A-Z]?$'`,
     ),
+    check('match_display_no_ck', sql`${t.displayNo} is null or ${t.displayNo} >= 1`),
   ],
 );
 

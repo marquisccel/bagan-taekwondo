@@ -19,13 +19,13 @@ export function SwapEntryDialog({
       <div
         className="drawer"
         role="dialog"
-        aria-label={`Swap ${entry.displayName}`}
+        aria-label={`Tukar Peserta ${entry.displayName}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ marginTop: 0 }}>Swap {entry.displayName} with…</h2>
+        <h2 style={{ marginTop: 0 }}>Tukar {entry.displayName} dengan…</h2>
         {pools.map((p) => (
           <div key={p.id} style={{ marginBottom: 10 }}>
-            <div style={{ color: 'var(--text-dim)', fontSize: 12, marginBottom: 4 }}>{p.poolUid}</div>
+            <div style={{ color: 'var(--text-dim)', fontSize: 12, marginBottom: 4 }}>Pool {p.ordinal}</div>
             {p.members
               .filter((m) => m.entryId !== entry.entryId)
               .map((m) => (
@@ -42,7 +42,7 @@ export function SwapEntryDialog({
           </div>
         ))}
         <button type="button" className="btn" onClick={onCancel}>
-          Cancel
+          Batal
         </button>
       </div>
     </div>

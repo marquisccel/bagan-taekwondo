@@ -11,6 +11,7 @@ export * from './intake-repository.js';
 export * from './match-code-repository.js';
 export * from './nik-crypto.js';
 export * from './rule-set-repository.js';
+export * from './sps-upload-repository.js';
 
 /** Absolute path of the SQL migrations folder (drizzle journal format). */
 export const MIGRATIONS_FOLDER = fileURLToPath(new URL('../migrations', import.meta.url));

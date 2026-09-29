@@ -4,6 +4,13 @@ const DISCIPLINES = ['', 'KYORUGI', 'POOMSAE'];
 const READINESS = ['', 'READY', 'BLOCKED'];
 const QUALITY = ['', 'GREEN', 'YELLOW', 'RED'];
 
+const READINESS_LABEL: Record<string, string> = { READY: 'Siap', BLOCKED: 'Diblokir' };
+const QUALITY_LABEL: Record<string, string> = {
+  GREEN: 'Aman',
+  YELLOW: 'Perlu Perhatian',
+  RED: 'Tidak Dapat Diterapkan',
+};
+
 export function CategoryFilters({
   value,
   onChange,
@@ -14,41 +21,41 @@ export function CategoryFilters({
   return (
     <div className="filters">
       <input
-        aria-label="Search category"
-        placeholder="Search category key…"
+        aria-label="Cari kategori"
+        placeholder="Cari kategori…"
         value={value.search}
         onChange={(e) => onChange({ ...value, search: e.target.value })}
       />
       <select
-        aria-label="Discipline"
+        aria-label="Disiplin"
         value={value.discipline}
         onChange={(e) => onChange({ ...value, discipline: e.target.value })}
       >
         {DISCIPLINES.map((d) => (
           <option key={d} value={d}>
-            {d || 'All disciplines'}
+            {d ? d.charAt(0) + d.slice(1).toLowerCase() : 'Semua disiplin'}
           </option>
         ))}
       </select>
       <select
-        aria-label="Readiness"
+        aria-label="Kesiapan"
         value={value.readiness}
         onChange={(e) => onChange({ ...value, readiness: e.target.value })}
       >
         {READINESS.map((r) => (
           <option key={r} value={r}>
-            {r || 'All readiness'}
+            {r ? READINESS_LABEL[r] : 'Semua kesiapan'}
           </option>
         ))}
       </select>
       <select
-        aria-label="Quality"
+        aria-label="Kualitas"
         value={value.quality}
         onChange={(e) => onChange({ ...value, quality: e.target.value })}
       >
         {QUALITY.map((q) => (
           <option key={q} value={q}>
-            {q || 'All quality'}
+            {q ? QUALITY_LABEL[q] : 'Semua kualitas'}
           </option>
         ))}
       </select>

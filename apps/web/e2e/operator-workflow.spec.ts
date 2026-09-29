@@ -51,8 +51,11 @@ test.describe('operator workflow', () => {
     await row.click();
 
     // Category detail: pool + bracket are visible with safe (non-NIK) entry display fields.
-    await expect(page.getByRole('heading', { name: /KYORUGI/ })).toBeVisible();
-    await expect(page.getByText('Brackets')).toBeVisible();
+    const pools = page.locator('.pool-card, [aria-label^="Pool"]');
+    await expect(pools.first()).toBeVisible();
+    await page.getByRole('tab', { name: 'Bagan Pertandingan' }).click();
+    await expect(page.locator('.bracket-match').first()).toBeVisible();
+    await page.getByRole('tab', { name: 'Pool & Peserta' }).click();
     // The fixture's synthetic display names spell out "NIK" as part of the data-quality test case
     // they describe (e.g. "REG CASE NIK DOT") — that is the label, not a real NIK. What must never
     // appear is an actual NIK-shaped value (16 digits) or the raw encrypted/blind-index columns.
@@ -61,11 +64,11 @@ test.describe('operator workflow', () => {
     expect(bodyText.toLowerCase()).not.toMatch(/nik_ciphertext|nik_blind_index/);
 
     // Move an entry via the keyboard-accessible dialog (same command a drag-and-drop drop fires).
-    const moveButtons = page.getByRole('button', { name: 'Move…' });
+    const moveButtons = page.getByRole('button', { name: 'Pindahkan' });
     await moveButtons.first().click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByRole('button', { name: /\(current\)/ })).toBeVisible();
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('button', { name: /\(saat ini\)/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Batal' }).click();
 
     // Swap two entries within the pool — a real command, applied by the server and reflected back
     // after the refetch. Synchronize on the observable state (the command's response, the revision's
@@ -85,8 +88,8 @@ test.describe('operator workflow', () => {
     const refetch = page.waitForResponse(
       (r) => /\/revisions\/[^/]+\/categories\/[^/]+$/.test(r.url()) && r.request().method() === 'GET',
     );
-    await page.getByRole('button', { name: 'Swap…' }).first().click();
-    await page.getByRole('dialog').getByRole('button').filter({ hasNotText: 'Cancel' }).first().click();
+    await page.getByRole('button', { name: 'Tukar Peserta' }).first().click();
+    await page.getByRole('dialog').getByRole('button').filter({ hasNotText: 'Batal' }).first().click();
     const swapped = await swapResponse;
     expect(swapped.status()).toBe(201);
     expect(await swapped.json()).toMatchObject({ outcome: 'APPLIED' });
@@ -96,26 +99,26 @@ test.describe('operator workflow', () => {
 
     // Lifecycle: submit for review (officer), then switch to a Technical Delegate for the rest.
     await page.goto(`/tournaments/${seed.tournament}/categories`);
-    await page.getByRole('button', { name: 'Submit for review' }).click();
-    await expect(page.getByRole('button', { name: 'Approve' })).toBeVisible();
+    await page.getByRole('button', { name: 'Ajukan untuk Ditinjau' }).click();
+    await expect(page.getByRole('button', { name: 'Setujui' })).toBeVisible();
 
     await page.evaluate((td) => localStorage.setItem('bagantkd.dev.actorId', td), seed.td);
     await page.reload();
-    await page.getByRole('button', { name: 'Approve' }).click();
-    await expect(page.getByRole('button', { name: 'Lock' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Lock' }).click();
-    await expect(page.getByRole('button', { name: 'Publish' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Publish' }).click();
-    await expect(page.getByLabel('Amendment reason')).toBeVisible();
+    await page.getByRole('button', { name: 'Setujui' }).click();
+    await expect(page.getByRole('button', { name: 'Kunci Drawing' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Kunci Drawing' }).click();
+    await expect(page.getByRole('button', { name: 'Terbitkan Drawing' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Terbitkan Drawing' }).click();
+    await expect(page.getByLabel('Alasan revisi')).toBeVisible();
 
     // Amend stays disabled until a reason is entered (a required audit field, not optional).
-    await expect(page.getByRole('button', { name: 'Amend', exact: true })).toBeDisabled();
-    await page.getByLabel('Amendment reason').fill('E2E amendment reason');
-    await expect(page.getByRole('button', { name: 'Amend', exact: true })).toBeEnabled();
-    await page.getByRole('button', { name: 'Amend', exact: true }).click();
-    // Amend produces a new child revision; the categories page does a full navigation (same URL)
-    // to pick it up. Let that settle before navigating away, or the two navigations race.
-    await expect(page.getByText('AMENDED')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('button', { name: 'Buat Revisi', exact: true })).toBeDisabled();
+    await page.getByLabel('Alasan revisi').fill('E2E amendment reason');
+    await expect(page.getByRole('button', { name: 'Buat Revisi', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: 'Buat Revisi', exact: true }).click();
+    // Amend produces a new child revision (DRAFT); the categories page does a full navigation (same
+    // URL) to pick it up. Let that settle before navigating away, or the two navigations race.
+    await expect(page.locator('.lifecycle-step.current')).toHaveText('Draf', { timeout: 15_000 });
     await page.waitForLoadState('networkidle');
 
     // Audit history reflects every command in order.

@@ -11,7 +11,10 @@ function renderIsolated(ui: React.ReactElement) {
   return render(<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>{ui}</SWRConfig>);
 }
 
-vi.mock('next/navigation', () => ({ useParams: () => ({ id: 't1', categoryId: 'cat-1' }) }));
+vi.mock('next/navigation', () => ({
+  useParams: () => ({ id: 't1', categoryId: 'cat-1' }),
+  useRouter: () => ({ push: vi.fn() }),
+}));
 vi.mock('../../../../../lib/api', () => ({
   api: {
     tournament: vi.fn(),
@@ -40,6 +43,10 @@ const tournament = {
   id: 't1',
   code: 'T1',
   name: 'Test',
+  eventStart: '2026-08-27',
+  eventEnd: '2026-08-30',
+  totalEntries: 0,
+  totalContingents: 0,
   activeRuleSetStatus: 'ACTIVE',
   latestDrawRun: { id: 'run-1', status: 'SAFE', kind: 'CANDIDATE', requestedAt: '', finishedAt: null },
   latestRevision: { id: 'rev-1', revision_no: 1, lifecycle: 'DRAFT', lock_version: 3 },
@@ -138,8 +145,8 @@ describe('CategoryDetailPage', () => {
     });
     renderIsolated(<CategoryDetailPage />);
 
-    fireEvent.click((await screen.findAllByRole('button', { name: /move…/i }))[0]!);
-    fireEvent.click(await screen.findByRole('button', { name: /POOL-B/ }));
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Pindahkan' }))[0]!);
+    fireEvent.click(await screen.findByRole('button', { name: /Pool 2/ }));
 
     expect(api.moveEntry).toHaveBeenCalledWith(
       'actor-1',
@@ -160,10 +167,10 @@ describe('CategoryDetailPage', () => {
     });
     renderIsolated(<CategoryDetailPage />);
 
-    fireEvent.click((await screen.findAllByRole('button', { name: /move…/i }))[0]!);
-    fireEvent.click(await screen.findByRole('button', { name: /POOL-B/ }));
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Pindahkan' }))[0]!);
+    fireEvent.click(await screen.findByRole('button', { name: /Pool 2/ }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/changed by another operator/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/diperbarui oleh pengguna lain/i);
   });
 
   it('shows a safe message on FORBIDDEN_COMMAND, not a raw error', async () => {
@@ -178,10 +185,10 @@ describe('CategoryDetailPage', () => {
     });
     renderIsolated(<CategoryDetailPage />);
 
-    fireEvent.click((await screen.findAllByRole('button', { name: /move…/i }))[0]!);
-    fireEvent.click(await screen.findByRole('button', { name: /POOL-B/ }));
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Pindahkan' }))[0]!);
+    fireEvent.click(await screen.findByRole('button', { name: /Pool 2/ }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/do not have permission/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/tidak memiliki izin/i);
   });
 
   it('shows blocked reasons and no editable actions when the category is BLOCKED', async () => {
@@ -198,7 +205,7 @@ describe('CategoryDetailPage', () => {
     });
     renderIsolated(<CategoryDetailPage />);
 
-    expect(await screen.findByRole('heading', { name: 'Blocked' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Diblokir' })).toBeInTheDocument();
     expect(screen.getByText(/NO_ELIGIBLE_ENTRIES/)).toBeInTheDocument();
   });
 
@@ -212,7 +219,53 @@ describe('CategoryDetailPage', () => {
     vi.mocked(api.category).mockResolvedValue(detail);
     renderIsolated(<CategoryDetailPage />);
 
-    expect(await screen.findByText('read-only')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /move…/i })).not.toBeInTheDocument();
+    expect(await screen.findByText('Hanya Baca')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Pindahkan' })).not.toBeInTheDocument();
+  });
+});
+
+describe('CategoryDetailPage — UX slice 0 (visual foundation + workspace)', () => {
+  it('never shows a raw lifecycle enum value — only the translated label', async () => {
+    setupHappyPath();
+    renderIsolated(<CategoryDetailPage />);
+    expect((await screen.findAllByText('Draf')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('DRAFT')).not.toBeInTheDocument();
+    expect(screen.queryByText('REVIEW')).not.toBeInTheDocument();
+    expect(screen.queryByText('LOCKED')).not.toBeInTheDocument();
+  });
+
+  it('never shows a raw GREEN/YELLOW/RED quality value — only the translated badge text', async () => {
+    setupHappyPath();
+    renderIsolated(<CategoryDetailPage />);
+    expect((await screen.findAllByText('Aman')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('GREEN')).not.toBeInTheDocument();
+    expect(screen.queryByText('YELLOW')).not.toBeInTheDocument();
+    expect(screen.queryByText('RED')).not.toBeInTheDocument();
+  });
+
+  it('the participant inspector is closed by default', async () => {
+    setupHappyPath();
+    renderIsolated(<CategoryDetailPage />);
+    await screen.findAllByText('Draf');
+    expect(screen.queryByRole('dialog', { name: /Detail Peserta/ })).not.toBeInTheDocument();
+  });
+
+  it('selecting a participant opens the inspector; closing it restores the workspace', async () => {
+    setupHappyPath();
+    renderIsolated(<CategoryDetailPage />);
+    fireEvent.click(await screen.findByRole('group', { name: /budi/i }));
+
+    const dialog = await screen.findByRole('dialog', { name: /Detail Peserta: Budi/ });
+    expect(dialog).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tutup' }));
+    expect(screen.queryByRole('dialog', { name: /Detail Peserta/ })).not.toBeInTheDocument();
+  });
+
+  it('exposes "Tukar Peserta" for the SwapEntries command, never the raw word "Swap"', async () => {
+    setupHappyPath();
+    renderIsolated(<CategoryDetailPage />);
+    expect((await screen.findAllByRole('button', { name: 'Tukar Peserta' }))[0]).toBeInTheDocument();
+    expect(screen.queryByText(/\bSwap\b/)).not.toBeInTheDocument();
   });
 });

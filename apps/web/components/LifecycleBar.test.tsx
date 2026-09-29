@@ -27,7 +27,7 @@ const mockAuth = (role: string | null) =>
 describe('LifecycleBar', () => {
   afterEach(() => vi.clearAllMocks());
 
-  it('shows the next action for the current lifecycle state (LOCKED -> Publish)', () => {
+  it('shows the next action for the current lifecycle state (LOCKED -> Terbitkan Drawing)', () => {
     mockAuth('TECHNICAL_DELEGATE');
     render(
       <LifecycleBar
@@ -38,10 +38,10 @@ describe('LifecycleBar', () => {
         onConflict={() => undefined}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Publish' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Terbitkan Drawing' })).toBeEnabled();
   });
 
-  it('disables the action and explains the required role when the current actor is below it', () => {
+  it('disables the action and explains the required role (in Indonesian) when the current actor is below it', () => {
     mockAuth('DRAWING_OFFICER');
     render(
       <LifecycleBar
@@ -52,8 +52,8 @@ describe('LifecycleBar', () => {
         onConflict={() => undefined}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Publish' })).toBeDisabled();
-    expect(screen.getByText(/Requires TECHNICAL_DELEGATE/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Terbitkan Drawing' })).toBeDisabled();
+    expect(screen.getByText(/Minimal peran: Delegasi Teknis/)).toBeInTheDocument();
   });
 
   it('calls onChanged when the command is applied', async () => {
@@ -76,7 +76,7 @@ describe('LifecycleBar', () => {
         onConflict={() => undefined}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Lock' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Kunci Drawing' }));
     await waitFor(() => expect(onChanged).toHaveBeenCalledOnce());
   });
 
@@ -101,7 +101,7 @@ describe('LifecycleBar', () => {
         onConflict={onConflict}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Lock' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Kunci Drawing' }));
     await waitFor(() => expect(onConflict).toHaveBeenCalledOnce());
     expect(onChanged).not.toHaveBeenCalled();
   });
@@ -125,7 +125,7 @@ describe('LifecycleBar', () => {
         onConflict={() => undefined}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Lock' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(/do not have permission/i);
+    fireEvent.click(screen.getByRole('button', { name: 'Kunci Drawing' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/tidak memiliki izin/i);
   });
 });

@@ -29,8 +29,8 @@ export function ParticipantSearch({ tournamentId }: { tournamentId: string }) {
   return (
     <div style={{ position: 'relative', maxWidth: 320 }}>
       <input
-        aria-label="Search participant or contingent"
-        placeholder="Search participant or contingent…"
+        aria-label="Cari peserta atau kontingen"
+        placeholder="Cari peserta atau kontingen…"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         onFocus={() => setOpen(true)}
@@ -63,15 +63,15 @@ export function ParticipantSearch({ tournamentId }: { tournamentId: string }) {
                   href={`/tournaments/${tournamentId}/categories/${r.category_id}`}
                   style={{ display: 'block', padding: '6px 8px', borderRadius: 4 }}
                 >
-                  <strong>{r.external_ref ?? r.entry_id}</strong> — {r.contingent}
+                  <strong>{r.external_ref ?? r.entry_id}</strong> · {r.contingent}
                   <br />
                   <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>
-                    {r.category_key ?? 'unassigned category'}
+                    {r.category_key ?? 'Belum punya kategori'}
                   </span>
                 </a>
               ) : (
                 <span style={{ display: 'block', padding: '6px 8px', color: 'var(--text-dim)' }}>
-                  {r.external_ref ?? r.entry_id} — {r.contingent} (no category yet)
+                  {r.external_ref ?? r.entry_id} · {r.contingent} (belum punya kategori)
                 </span>
               )}
             </li>
