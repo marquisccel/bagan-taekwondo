@@ -29,6 +29,7 @@ export function ExportPanel({
   availableTypes,
   categoryId,
   poolId,
+  bare,
 }: {
   revisionId: string;
   /** Picks the export mode automatically -- see the `mode` comment below. */
@@ -36,6 +37,9 @@ export function ExportPanel({
   availableTypes: readonly ExportType[];
   categoryId?: string;
   poolId?: string;
+  /** Renders just the type selector + "Buat Ekspor" row, no wrapping panel/heading of its own --
+   * for embedding inside another card (the dashboard's greeting card) that already provides both. */
+  bare?: boolean;
 }) {
   const { actorId, role } = useDevAuth();
   const [exportType, setExportType] = useState<ExportType>(availableTypes[0] ?? 'TOURNAMENT_DRAW_BOOK');
@@ -101,9 +105,8 @@ export function ExportPanel({
 
   if (role === null) return null;
 
-  return (
-    <div className="panel" style={{ marginBottom: 16 }}>
-      <h3 style={{ marginTop: 0, marginBottom: 12 }}>Ekspor</h3>
+  const body = (
+    <>
       {error ? (
         <div className="banner banner-conflict" role="alert">
           <span>{error}</span>
@@ -128,6 +131,15 @@ export function ExportPanel({
           {busy ? 'Memproses…' : 'Buat Ekspor'}
         </button>
       </div>
+    </>
+  );
+
+  if (bare) return body;
+
+  return (
+    <div className="panel" style={{ marginBottom: 16 }}>
+      <h3 style={{ marginTop: 0, marginBottom: 12 }}>Ekspor</h3>
+      {body}
     </div>
   );
 }

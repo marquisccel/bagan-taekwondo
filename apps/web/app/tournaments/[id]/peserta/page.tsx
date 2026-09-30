@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -92,7 +92,7 @@ function IssueSummary({ entry }: { entry: EntryListItem }) {
       const r = triggerRef.current?.getBoundingClientRect();
       if (r) {
         const left = Math.min(r.left, window.innerWidth - POPOVER_WIDTH - VIEWPORT_MARGIN);
-        setPos({ top: r.bottom + 6, left: Math.max(VIEWPORT_MARGIN, left) });
+        setPos({ top: r.bottom + 10, left: Math.max(VIEWPORT_MARGIN, left) });
       }
     }
     setOpen((o) => !o);
@@ -219,7 +219,14 @@ function EntryRow({ e, onCorrect }: { e: EntryListItem; onCorrect: (e: EntryList
 export default function PesertaPage() {
   const { id } = useParams<{ id: string }>();
   const { actorId } = useDevAuth();
-  const [filters, setFilters] = useState<Filters>(EMPTY);
+  const searchParams = useSearchParams();
+  // Lets the dashboard's "Perlu Ditinjau" card link straight to the filtered list
+  // (`?review=NEEDS_REVIEW`) instead of landing here and making the team re-apply it by hand. Read
+  // once, on the initial render, like any other deep link -- not kept in sync afterward.
+  const [filters, setFilters] = useState<Filters>(() => ({
+    ...EMPTY,
+    review: searchParams.get('review') === 'NEEDS_REVIEW' ? 'NEEDS_REVIEW' : '',
+  }));
   const [offset, setOffset] = useState(0);
   const [correcting, setCorrecting] = useState<EntryListItem | null>(null);
 

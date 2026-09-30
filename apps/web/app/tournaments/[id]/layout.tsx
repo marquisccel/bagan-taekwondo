@@ -4,7 +4,6 @@ import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 
 import { BrandMark } from '../../../components/BrandMark';
-import { PersonaSwitcher } from '../../../components/PersonaSwitcher';
 import { api } from '../../../lib/api';
 import { useDevAuth } from '../../../lib/dev-auth';
 import { TOURNAMENT_TABS } from '../../../lib/nav-tabs';
@@ -58,7 +57,6 @@ export default function TournamentLayout({ children }: { children: ReactNode }) 
         <span className="topbar-divider" aria-hidden="true" />
         <span className="topbar-tournament">{tournament?.name ?? ' '}</span>
         <span className="topbar-spacer" />
-        <PersonaSwitcher />
       </div>
       <div className="subbar">
         <nav className="tabs">

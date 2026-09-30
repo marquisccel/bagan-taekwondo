@@ -321,17 +321,26 @@ textarea {
 .issue-summary-trigger {
   background: none;
   border: none;
-  padding: 0;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: -2px -4px;
   font: inherit;
   cursor: pointer;
+  outline: none;
   text-decoration: underline;
   text-decoration-color: transparent;
-  transition: text-decoration-color 0.15s var(--ease);
+  transition:
+    text-decoration-color 0.15s var(--ease),
+    box-shadow 0.15s var(--ease);
 }
 
 .issue-summary-trigger:hover,
 .issue-summary-trigger:focus-visible {
   text-decoration-color: currentColor;
+}
+
+.issue-summary-trigger:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-soft, rgba(20, 71, 230, 0.25));
 }
 
 .issue-summary-scrim {
@@ -343,13 +352,25 @@ textarea {
 .issue-summary-popover {
   position: fixed;
   z-index: 41;
-  min-width: 220px;
+  min-width: 240px;
   max-width: 320px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  padding: 10px 12px;
+  box-shadow: var(--shadow-lg, var(--shadow-md));
+  padding: 12px 14px;
+  animation: issue-summary-pop-in 0.12s var(--ease);
+}
+
+@keyframes issue-summary-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .issue-summary-popover ul {
@@ -359,10 +380,11 @@ textarea {
 
 .issue-summary-popover li {
   font-size: 13px;
+  line-height: 1.4;
 }
 
 .issue-summary-popover li + li {
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .stat-row {
@@ -406,7 +428,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 14px 18px;
-  min-width: 150px;
+  flex: 1 1 150px;
   box-shadow: var(--shadow-sm);
   transition:
     box-shadow 180ms var(--ease),
@@ -432,6 +454,68 @@ textarea {
   letter-spacing: 0.05em;
   font-weight: 600;
   margin-top: 2px;
+}
+
+a.stat-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.stat-link-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 8px;
+  transition: gap 150ms var(--ease);
+}
+
+a.stat-link:hover .stat-link-hint {
+  gap: 6px;
+}
+
+.greeting-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 22px 26px;
+}
+
+.greeting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.greeting-text {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.greeting-clock {
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.greeting-date {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.greeting-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .num {

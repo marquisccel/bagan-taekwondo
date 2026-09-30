@@ -1,11 +1,19 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import type { ReadonlyURLSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { SWRConfig } from 'swr';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { api, type EntryList, type EntryListItem } from '../../../../lib/api';
 import PesertaPage from './page';
 
-vi.mock('next/navigation', () => ({ useParams: () => ({ id: 't1' }) }));
+const searchParamsOf = (query = ''): ReadonlyURLSearchParams =>
+  new URLSearchParams(query) as unknown as ReadonlyURLSearchParams;
+
+vi.mock('next/navigation', () => ({
+  useParams: () => ({ id: 't1' }),
+  useSearchParams: vi.fn(() => new URLSearchParams() as unknown as ReadonlyURLSearchParams),
+}));
 vi.mock('../../../../lib/api', () => ({
   api: { entries: vi.fn(), correctEntry: vi.fn(), ruleSetVocabulary: vi.fn() },
   ApiClientError: class extends Error {},
@@ -65,6 +73,16 @@ const list = (items: EntryListItem[], over: Partial<EntryList> = {}): EntryList 
 describe('PesertaPage', () => {
   beforeEach(() => {
     vi.mocked(api.entries).mockReset();
+    vi.mocked(useSearchParams).mockReturnValue(searchParamsOf());
+  });
+
+  it('pre-applies the "perlu ditinjau" filter from a ?review=NEEDS_REVIEW deep link', async () => {
+    vi.mocked(useSearchParams).mockReturnValue(searchParamsOf('review=NEEDS_REVIEW'));
+    vi.mocked(api.entries).mockResolvedValue(list([entry()]));
+    renderIsolated(<PesertaPage />);
+    await waitFor(() =>
+      expect(api.entries).toHaveBeenCalledWith('actor-1', 't1', expect.objectContaining({ hasIssues: true })),
+    );
   });
 
   it('shows a participant with ID, belt, and the SPS-style klasifikasi/divisi/class columns', async () => {

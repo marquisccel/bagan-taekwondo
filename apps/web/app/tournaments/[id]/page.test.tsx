@@ -95,6 +95,33 @@ describe('TournamentOverviewPage (read-only)', () => {
       'href',
       '/tournaments/t1/sesi/rev-1',
     );
+    // Ekspor is embedded in the greeting card, not a separate panel of its own.
+    expect(screen.getByRole('button', { name: 'Buat Ekspor' })).toBeInTheDocument();
+    // The "Perlu Ditinjau" card links straight to the filtered participant list.
+    expect(screen.getByRole('link', { name: /perlu ditinjau/i })).toHaveAttribute(
+      'href',
+      '/tournaments/t1/peserta?review=NEEDS_REVIEW',
+    );
+  });
+
+  it('greets the operator by time of day instead of a static Admin badge', async () => {
+    vi.mocked(api.tournament).mockResolvedValue({
+      id: 't1',
+      code: 'T1',
+      name: 'Piala Test',
+      eventStart: '2026-08-27',
+      eventEnd: '2026-08-30',
+      totalEntries: 0,
+      totalContingents: 0,
+      activeRuleSetStatus: 'ACTIVE',
+      latestDrawRun: null,
+      latestRevision: null,
+      categoryCounts: { total: 0, ready: 0, blocked: 0 },
+      warningCount: 0,
+      errorCount: 0,
+    });
+    renderIsolated(<TournamentOverviewPage />);
+    expect(await screen.findByText(/selamat (pagi|siang|sore|malam), admin/i)).toBeInTheDocument();
   });
 
   it('tells a committee member a draw needs review, in plain language, without exposing the engine kind/status words', async () => {

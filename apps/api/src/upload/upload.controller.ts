@@ -33,6 +33,27 @@ import { ApiError } from '../errors/api-error';
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
+/** "INDONESIA SUPER FIGHT 4" -> "indonesia-super-fight-4", for use as `tournament.code` (its URL
+ * segment -- see ActorGuard). Falls back to a generic label on a name with no latin/digit characters
+ * at all, so the result is never empty. */
+export function slugify(name: string): string {
+  const slug = name
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+    .replace(/-+$/g, '');
+  return slug.length > 0 ? slug : 'turnamen';
+}
+
+/** Postgres' unique-constraint violation code -- the only failure worth retrying `tournamentCode`
+ * for; anything else propagates as-is. */
+function isUniqueViolation(e: unknown): boolean {
+  return typeof e === 'object' && e !== null && 'code' in e && e.code === '23505';
+}
+
 /** The one rule set this upload flow bootstraps every tournament with -- calibrated on, and this
  * session verified against, the committee's own real 2026 registration data. Building a rule-set
  * editor is a separate, larger task; this keeps the upload flow usable today. */
@@ -260,21 +281,28 @@ export class UploadController {
       throw new ApiError('NIK_KEY_MISSING', 'server is missing NIK_ENCRYPTION_KEY/NIK_BLIND_INDEX_KEY');
     }
 
-    // A random suffix keeps `tournament.code` unique (it has a UNIQUE constraint) across multiple
-    // uploads on the same day -- the date alone collided the moment a second SPS was uploaded today.
-    // The tournament's real name (the SPS's own title banner, e.g. "INDONESIA SUPER FIGHT 4", falling
-    // back to the shared rule-set fixture's name only when the sheet has none) is used instead of a
-    // generic "Turnamen <date>" label, since the team reads this name everywhere in the UI.
-    const tag = new Date().toISOString().slice(0, 10);
-    const suffix = randomBytes(3).toString('hex');
-    const result = await persistSpsUpload(this.db, {
-      tournamentName,
-      tournamentCode: `T${tag.replaceAll('-', '')}-${suffix}`,
-      ruleSet,
-      scheduleRows,
-      participantCsv: new TextEncoder().encode(participantCsv),
-      nikKeys,
-    });
+    // `tournament.code` doubles as the tournament's URL segment (see ActorGuard), so it's derived
+    // from the SPS's own real name (e.g. "INDONESIA SUPER FIGHT 4" -> "indonesia-super-fight-4")
+    // instead of a date+random label -- a team member can actually read it in the address bar. The
+    // slug alone is tried first since it has a UNIQUE constraint; a random suffix is appended only if
+    // that exact slug is already taken (the same name uploaded more than once).
+    const baseSlug = slugify(tournamentName);
+    let result: SpsUploadResult | undefined;
+    for (let attempt = 0; !result; attempt++) {
+      const tournamentCode = attempt === 0 ? baseSlug : `${baseSlug}-${randomBytes(2).toString('hex')}`;
+      try {
+        result = await persistSpsUpload(this.db, {
+          tournamentName,
+          tournamentCode,
+          ruleSet,
+          scheduleRows,
+          participantCsv: new TextEncoder().encode(participantCsv),
+          nikKeys,
+        });
+      } catch (e) {
+        if (attempt >= 4 || !isUniqueViolation(e)) throw e;
+      }
+    }
     return { ...result, scheduleIssues };
   }
 }
