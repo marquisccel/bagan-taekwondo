@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { EntryCorrectionDialog } from '../../../../components/EntryCorrectionDialog';
@@ -46,6 +46,9 @@ const EMPTY: Filters = {
   review: '',
 };
 
+const POPOVER_WIDTH = 320;
+const VIEWPORT_MARGIN = 12;
+
 /**
  * Shown as a notification-style popover instead of an inline `<details>` expansion: the table sits in
  * a horizontally-scrolling `.panel` (`overflow-x: auto`), and per the CSS overflow spec a container
@@ -59,6 +62,18 @@ function IssueSummary({ entry }: { entry: EntryListItem }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  // The initial `left` is only a guess (the popover's real width isn't known until it renders, and
+  // CSS lets it size anywhere between min- and max-width). Once it's actually on screen, pull it back
+  // in by however much it overflows the right edge -- never based on an assumed width, so it can
+  // never end up flush against (or past) the edge regardless of how long its content turns out to be.
+  useLayoutEffect(() => {
+    if (!open || !pos || !popoverRef.current) return;
+    const rect = popoverRef.current.getBoundingClientRect();
+    const overflow = rect.right - (window.innerWidth - VIEWPORT_MARGIN);
+    if (overflow > 0.5) setPos((p) => (p ? { ...p, left: p.left - overflow } : p));
+  }, [open, pos]);
 
   useEffect(() => {
     if (!open) return;
@@ -83,9 +98,6 @@ function IssueSummary({ entry }: { entry: EntryListItem }) {
     info > 0 ? `${info} info` : null,
   ].filter(Boolean);
   const summary = parts.length > 0 ? parts.join(', ') : `${entry.issues.length} sudah ditangani`;
-
-  const POPOVER_WIDTH = 320;
-  const VIEWPORT_MARGIN = 12;
 
   const toggle = () => {
     if (!open) {
@@ -115,6 +127,7 @@ function IssueSummary({ entry }: { entry: EntryListItem }) {
             <>
               <div className="issue-summary-scrim" onClick={() => setOpen(false)} />
               <div
+                ref={popoverRef}
                 role="dialog"
                 aria-label={`Masalah data ${entry.displayName}`}
                 className="issue-summary-popover"
@@ -342,57 +355,56 @@ export default function PesertaPage() {
             Tidak ada peserta yang cocok dengan filter ini.
           </div>
         ) : (
-          <div className="panel" style={{ overflowX: 'auto' }}>
-            <table aria-label="Daftar peserta">
-              <thead>
-                <tr>
-                  <th>ID Atlet</th>
-                  <th>Nama</th>
-                  <th>Kontingen</th>
-                  <th>Kelamin</th>
-                  <th>Tgl. Lahir</th>
-                  <th>TB</th>
-                  <th>BB</th>
-                  <th>Sabuk</th>
-                  <th>Klasifikasi</th>
-                  <th>Divisi</th>
-                  <th>Class</th>
-                  <th>Masalah data</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.items.map((e) => (
-                  <EntryRow key={e.entryId} e={e} onCorrect={setCorrecting} />
-                ))}
-              </tbody>
-            </table>
+          <div className="panel">
+            <div style={{ overflowX: 'auto' }}>
+              <table aria-label="Daftar peserta">
+                <thead>
+                  <tr>
+                    <th>ID Atlet</th>
+                    <th>Nama</th>
+                    <th>Kontingen</th>
+                    <th>Kelamin</th>
+                    <th>Tgl. Lahir</th>
+                    <th>TB</th>
+                    <th>BB</th>
+                    <th>Sabuk</th>
+                    <th>Klasifikasi</th>
+                    <th>Divisi</th>
+                    <th>Class</th>
+                    <th>Masalah data</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.items.map((e) => (
+                    <EntryRow key={e.entryId} e={e} onCorrect={setCorrecting} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="entry-pagination">
+              <span data-testid="entry-range">
+                Menampilkan {from}–{to} dari {total} peserta
+              </span>
+              <button
+                type="button"
+                className="btn"
+                disabled={offset === 0}
+                onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+              >
+                Sebelumnya
+              </button>
+              <button
+                type="button"
+                className="btn"
+                disabled={offset + PAGE_SIZE >= total}
+                onClick={() => setOffset(offset + PAGE_SIZE)}
+              >
+                Berikutnya
+              </button>
+            </div>
           </div>
         )
-      ) : null}
-
-      {data ? (
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 12 }}>
-          <span data-testid="entry-range">
-            Menampilkan {from}–{to} dari {total} peserta
-          </span>
-          <button
-            type="button"
-            className="btn"
-            disabled={offset === 0}
-            onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-          >
-            Sebelumnya
-          </button>
-          <button
-            type="button"
-            className="btn"
-            disabled={offset + PAGE_SIZE >= total}
-            onClick={() => setOffset(offset + PAGE_SIZE)}
-          >
-            Berikutnya
-          </button>
-        </div>
       ) : null}
 
       {correcting ? (

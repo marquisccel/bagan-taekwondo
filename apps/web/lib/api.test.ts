@@ -30,6 +30,7 @@ describe('api client', () => {
       categoryCounts: { total: 0, ready: 0, blocked: 0 },
       warningCount: 0,
       errorCount: 0,
+      participantsNeedingReview: 0,
     });
     const result = await api.tournament('actor-1', 't1');
     expect(result.id).toBe('t1');

@@ -197,6 +197,18 @@ describe.skipIf(!adminUrl)('API contract — postgres', () => {
     expect(res.body.categoryCounts.total).toBeGreaterThan(0);
   });
 
+  it('GET /tournaments/:id counts participantsNeedingReview exactly as many as the hasIssues=true entries filter', async () => {
+    const summary = await request(server).get(`/tournaments/${tournament}`).set('x-actor-id', officer);
+    expect(summary.status).toBe(200);
+    expect(summary.body.participantsNeedingReview).toBeGreaterThan(0);
+
+    const withIssues = await request(server)
+      .get(`/tournaments/${tournament}/entries?hasIssues=true&limit=1`)
+      .set('x-actor-id', officer);
+    expect(withIssues.status).toBe(200);
+    expect(summary.body.participantsNeedingReview).toBe(withIssues.body.total);
+  });
+
   it('GET /tournaments/:id accepts the tournament code in place of its uuid, for pretty URLs', async () => {
     const res = await request(server).get(`/tournaments/${tournamentCode}`).set('x-actor-id', officer);
     expect(res.status).toBe(200);

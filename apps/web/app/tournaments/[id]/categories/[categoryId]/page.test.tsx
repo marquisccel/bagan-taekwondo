@@ -53,6 +53,7 @@ const tournament = {
   categoryCounts: { total: 1, ready: 1, blocked: 0 },
   warningCount: 0,
   errorCount: 0,
+  participantsNeedingReview: 0,
 };
 const revision = {
   id: 'rev-1',

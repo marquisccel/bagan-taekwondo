@@ -31,6 +31,7 @@ describe('TournamentOverviewPage (read-only)', () => {
       categoryCounts: { total: 0, ready: 0, blocked: 0 },
       warningCount: 0,
       errorCount: 0,
+      participantsNeedingReview: 0,
     });
     renderIsolated(<TournamentOverviewPage />);
     expect(await screen.findByText(/belum ada bagan/i)).toBeInTheDocument();
@@ -52,6 +53,7 @@ describe('TournamentOverviewPage (read-only)', () => {
       categoryCounts: { total: 0, ready: 0, blocked: 0 },
       warningCount: 0,
       errorCount: 0,
+      participantsNeedingReview: 0,
     });
     renderIsolated(<TournamentOverviewPage />);
     expect(await screen.findByText('142')).toBeInTheDocument();
@@ -60,7 +62,7 @@ describe('TournamentOverviewPage (read-only)', () => {
     expect(screen.getByText('Kontingen')).toBeInTheDocument();
   });
 
-  it('summarizes a successful draw run in plain language, and combines blocked/error/warning counts into one attention figure', async () => {
+  it('offers Cek & Atur Bagan and Ekspor as the primary actions once a revision exists, without repeating the quiet-success sentence', async () => {
     vi.mocked(api.tournament).mockResolvedValue({
       id: 't1',
       code: 'T1',
@@ -81,23 +83,23 @@ describe('TournamentOverviewPage (read-only)', () => {
       categoryCounts: { total: 10, ready: 8, blocked: 2 },
       warningCount: 3,
       errorCount: 0,
+      participantsNeedingReview: 5,
     });
     renderIsolated(<TournamentOverviewPage />);
-    expect(await screen.findByText(/Bagan berhasil dibuat/)).toHaveTextContent('Status: Draf');
-    expect(screen.getByText('8 / 10')).toBeInTheDocument();
+    expect(await screen.findByText('8 / 10')).toBeInTheDocument();
     expect(screen.getByText('Kategori Siap')).toBeInTheDocument();
-    // 2 blocked + 0 errors + 3 warnings = 5, shown as one "needs a look" figure, not 3 separate ones.
-    expect(screen.getByText('5')).toBeInTheDocument();
-    expect(screen.getByText('Perlu Ditinjau')).toBeInTheDocument();
-    expect(screen.queryByText('Kategori Diblokir')).not.toBeInTheDocument();
-    expect(screen.queryByText('Error')).not.toBeInTheDocument();
+    // A quietly-successful (SAFE) run isn't repeated as a sentence -- the button below already says it.
+    expect(screen.queryByText(/Bagan berhasil dibuat/)).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /cek & atur bagan/i })).toHaveAttribute(
       'href',
       '/tournaments/t1/sesi/rev-1',
     );
     // Ekspor is embedded in the greeting card, not a separate panel of its own.
     expect(screen.getByRole('button', { name: 'Buat Ekspor' })).toBeInTheDocument();
-    // The "Perlu Ditinjau" card links straight to the filtered participant list.
+    // "Perlu Ditinjau" counts (and links to) the exact same participants Peserta's own
+    // ?review=NEEDS_REVIEW filter shows -- never the draw's own blocked/error/warning figures.
+    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText('Perlu Ditinjau')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /perlu ditinjau/i })).toHaveAttribute(
       'href',
       '/tournaments/t1/peserta?review=NEEDS_REVIEW',
@@ -119,6 +121,7 @@ describe('TournamentOverviewPage (read-only)', () => {
       categoryCounts: { total: 0, ready: 0, blocked: 0 },
       warningCount: 0,
       errorCount: 0,
+      participantsNeedingReview: 0,
     });
     renderIsolated(<TournamentOverviewPage />);
     expect(await screen.findByText(/selamat (pagi|siang|sore|malam), admin/i)).toBeInTheDocument();
@@ -145,6 +148,7 @@ describe('TournamentOverviewPage (read-only)', () => {
       categoryCounts: { total: 10, ready: 8, blocked: 2 },
       warningCount: 0,
       errorCount: 0,
+      participantsNeedingReview: 0,
     });
     renderIsolated(<TournamentOverviewPage />);
     expect(await screen.findByText(/perlu ditinjau sebelum dipakai/i)).toBeInTheDocument();

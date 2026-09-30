@@ -1,28 +1,25 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { useApiSWR } from '../../../lib/use-api-swr';
 
 import { ExportPanel } from '../../../components/ExportPanel';
 import { api, type TournamentSummary } from '../../../lib/api';
 import { useDevAuth } from '../../../lib/dev-auth';
-import { formatDateRange, revisionLifecycleLabel, ruleSetStatusLabel } from '../../../lib/id-labels';
+import { formatDateRange, ruleSetStatusLabel } from '../../../lib/id-labels';
+import { useNow } from '../../../lib/use-now';
 
 /** A plain sentence for the latest draw run -- no engine jargon ("Kandidat"/"Aman") in the headline;
- * a committee member cares whether the bracket is ready to use, not the engine's internal run kind. */
-function drawRunSummary(
-  run: NonNullable<TournamentSummary['latestDrawRun']>,
-  rev: TournamentSummary['latestRevision'],
-): string {
+ * a committee member cares whether the bracket is ready to use, not the engine's internal run kind.
+ * Only shown for a run that ISN'T quietly successful: once a revision exists, "Cek & Atur Bagan" and
+ * the stat cards above already say everything a plain "berhasil dibuat" sentence would repeat. */
+function drawRunSummary(run: NonNullable<TournamentSummary['latestDrawRun']>): string | null {
   const when = new Date(run.requestedAt).toLocaleString('id-ID');
   if (run.status === 'QUEUED' || run.status === 'RUNNING') return `Bagan sedang dibuat sejak ${when}…`;
-  if (run.status === 'FAILED') {
+  if (run.status === 'FAILED')
     return `Pembuatan bagan terakhir (${when}) gagal. Coba buat ulang dari Jadwal.`;
-  }
   if (run.status === 'UNSAFE') return `Bagan dibuat ${when}, tapi ada yang perlu ditinjau sebelum dipakai.`;
-  const statusWord = rev ? ` · Status: ${revisionLifecycleLabel(rev.lifecycle)}` : '';
-  return `Bagan berhasil dibuat ${when}${statusWord}.`;
+  return null;
 }
 
 function greetingForHour(hour: number): string {
@@ -32,21 +29,12 @@ function greetingForHour(hour: number): string {
   return 'Selamat malam';
 }
 
-/** A live wall clock, ticking every second -- so the greeting card never shows a stale time. */
-function useNow(): Date {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return now;
-}
-
 /**
- * The dashboard's hero: replaces both the old static "Admin" badge (a clock-aware greeting is a
- * warmer way to say the same thing) and the standalone "Bagan Terakhir" panel -- its one actual
- * action, "Cek & Atur Bagan", belongs here as the page's primary call to action, next to Ekspor
- * (also relocated here) rather than in a panel of its own.
+ * The dashboard's hero: replaces the old static "Admin" badge (a clock-aware greeting is a warmer
+ * way to say the same thing -- the clock itself now lives in the topbar, shared by every tournament
+ * page) and the standalone "Bagan Terakhir" panel -- its one actual action, "Cek & Atur Bagan",
+ * belongs here as the page's primary call to action, next to Ekspor (also relocated here) rather
+ * than in a panel of its own.
  */
 function GreetingCard({
   id,
@@ -58,39 +46,27 @@ function GreetingCard({
   rev: TournamentSummary['latestRevision'];
 }) {
   const now = useNow();
-  const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const date = now.toLocaleDateString('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  const runNote = run ? drawRunSummary(run) : null;
 
   return (
     <div className="panel greeting-card">
       <div className="greeting-info">
         <h2 className="greeting-text">{greetingForHour(now.getHours())}, Admin</h2>
-        <div className="greeting-clock">{time}</div>
-        <div className="greeting-date">{date}</div>
-      </div>
-      <div className="greeting-actions">
-        {run ? (
-          <>
-            <p className="state-empty" style={{ margin: 0 }}>
-              {drawRunSummary(run, rev)}
-            </p>
-            {rev ? (
-              <a className="btn btn-primary" href={`/tournaments/${id}/sesi/${rev.id}`}>
-                Cek &amp; Atur Bagan
-              </a>
-            ) : null}
-          </>
-        ) : (
-          <p className="state-empty" style={{ margin: 0 }}>
+        {!run ? (
+          <p className="greeting-note">
             Belum ada bagan. Buat jadwal terlebih dahulu di tab{' '}
             <a href={`/tournaments/${id}/jadwal`}>Jadwal</a>.
           </p>
-        )}
+        ) : runNote ? (
+          <p className="greeting-note">{runNote}</p>
+        ) : null}
+      </div>
+      <div className="greeting-actions">
+        {rev ? (
+          <a className="btn btn-primary" href={`/tournaments/${id}/sesi/${rev.id}`}>
+            Cek &amp; Atur Bagan
+          </a>
+        ) : null}
         {rev ? (
           <ExportPanel
             bare
@@ -121,16 +97,6 @@ export default function TournamentOverviewPage() {
 
   const run = data.latestDrawRun;
   const rev = data.latestRevision;
-  // One general "needs attention" figure instead of three separate developer-facing counters
-  // (blocked categories, errors, warnings) -- a committee member needs to know whether SOMETHING
-  // needs a look, not the engine's own breakdown of why.
-  const needsAttention = data.categoryCounts.blocked + data.errorCount + data.warningCount;
-  const attentionColor =
-    data.errorCount > 0 || data.categoryCounts.blocked > 0
-      ? 'var(--red)'
-      : data.warningCount > 0
-        ? 'var(--yellow)'
-        : undefined;
 
   return (
     <main className="content page-stack">
@@ -166,8 +132,11 @@ export default function TournamentOverviewPage() {
           <div className="label">Kategori Siap</div>
         </div>
         <a className="stat stat-link" href={`/tournaments/${id}/peserta?review=NEEDS_REVIEW`}>
-          <div className="value" style={{ color: attentionColor }}>
-            {needsAttention}
+          <div
+            className="value"
+            style={{ color: data.participantsNeedingReview > 0 ? 'var(--yellow)' : undefined }}
+          >
+            {data.participantsNeedingReview}
           </div>
           <div className="label">Perlu Ditinjau</div>
           <div className="stat-link-hint">

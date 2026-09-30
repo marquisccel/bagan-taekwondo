@@ -8,6 +8,21 @@ import { api } from '../../../lib/api';
 import { useDevAuth } from '../../../lib/dev-auth';
 import { TOURNAMENT_TABS } from '../../../lib/nav-tabs';
 import { useApiSWR } from '../../../lib/use-api-swr';
+import { useNow } from '../../../lib/use-now';
+
+/** Sits where the old static "Admin" badge used to -- the top-right corner of every tournament page,
+ * not just the dashboard, since it's a page-independent fact of "when is it right now". */
+function TopbarClock() {
+  const now = useNow();
+  const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const date = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+  return (
+    <div className="topbar-clock">
+      <div className="topbar-clock-time">{time}</div>
+      <div className="topbar-clock-date">{date}</div>
+    </div>
+  );
+}
 
 export default function TournamentLayout({ children }: { children: ReactNode }) {
   const params = useParams<{ id: string }>();
@@ -57,6 +72,7 @@ export default function TournamentLayout({ children }: { children: ReactNode }) 
         <span className="topbar-divider" aria-hidden="true" />
         <span className="topbar-tournament">{tournament?.name ?? ' '}</span>
         <span className="topbar-spacer" />
+        <TopbarClock />
       </div>
       <div className="subbar">
         <nav className="tabs">

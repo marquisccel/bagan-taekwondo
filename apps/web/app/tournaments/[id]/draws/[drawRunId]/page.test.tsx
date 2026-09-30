@@ -72,6 +72,7 @@ describe('DrawRunPage — a waiting room, not a destination', () => {
       categoryCounts: { total: 0, ready: 0, blocked: 0 },
       warningCount: 0,
       errorCount: 0,
+      participantsNeedingReview: 0,
     });
     renderIsolated(<DrawRunPage />);
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/tournaments/t1/sesi/rev-1'));

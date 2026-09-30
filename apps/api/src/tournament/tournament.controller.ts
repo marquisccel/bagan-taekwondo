@@ -85,6 +85,34 @@ export class TournamentController {
       [id],
     );
 
+    // The dashboard's "Perlu Ditinjau" card links straight into Peserta filtered to `hasIssues=true`
+    // (see entry-inspection.controller's ISSUE_MATCH) -- this counts exactly the same set of entries,
+    // so the number on the card is never out of step with what clicking it actually shows.
+    const [participantIssues] = await this.db.query<{ needing_review: string }>(
+      `select count(distinct e.id) needing_review
+       from entry e
+       where e.tournament_id = $1
+         and exists (
+           select 1 from validation_issue vi
+           where vi.tournament_id = e.tournament_id
+             and vi.status = 'OPEN'
+             and (
+               (vi.subject_type = 'ENTRY' and vi.subject_id = e.id)
+               or (vi.subject_type = 'ATHLETE' and vi.subject_id in (
+                 select em.athlete_id from entry_member em where em.entry_id = e.id
+               ))
+               or (vi.subject_type = 'IMPORT_ROW' and (
+                 vi.subject_id = e.import_row_id
+                 or vi.subject_id in (
+                   select a.source_import_row_id from entry_member em join athlete a on a.id = em.athlete_id
+                   where em.entry_id = e.id
+                 )
+               ))
+             )
+         )`,
+      [id],
+    );
+
     return {
       id: tournament.id,
       code: tournament.code,
@@ -111,6 +139,7 @@ export class TournamentController {
       },
       warningCount: warningCounts?.warning_count ?? 0,
       errorCount: warningCounts?.error_count ?? 0,
+      participantsNeedingReview: Number(participantIssues?.needing_review ?? 0),
     };
   }
 

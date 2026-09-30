@@ -73,6 +73,9 @@ export interface TournamentSummary {
   readonly categoryCounts: { readonly total: number; readonly ready: number; readonly blocked: number };
   readonly warningCount: number;
   readonly errorCount: number;
+  /** Distinct participants with at least one OPEN validation issue -- exactly the set Peserta shows
+   * for `?review=NEEDS_REVIEW`, so the dashboard's "Perlu Ditinjau" card never disagrees with it. */
+  readonly participantsNeedingReview: number;
 }
 
 export interface TournamentMember {
