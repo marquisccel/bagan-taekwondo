@@ -47,10 +47,16 @@ export async function newSnapshot(
 }
 
 /** An isolated tournament with a Technical Delegate, a Drawing Officer, a Viewer and a rule-set header row. */
-export async function newTournament(
-  db: Db,
-): Promise<{ tournament: string; ruleSet: string; td: string; officer: string; viewer: string }> {
+export async function newTournament(db: Db): Promise<{
+  tournament: string;
+  tournamentCode: string;
+  ruleSet: string;
+  td: string;
+  officer: string;
+  viewer: string;
+}> {
   const tag = randomUUID().slice(0, 8);
+  const tournamentCode = `T_${tag}`;
   const user = async (role: string) =>
     (
       await db.query<{ id: string }>(
@@ -65,7 +71,7 @@ export async function newTournament(
     (
       await db.query<{ id: string }>(
         `insert into tournament (code, name, event_start, event_end, timezone) values ($1, 'T', '2026-08-27', '2026-08-30', 'Asia/Jakarta') returning id`,
-        [`T_${tag}`],
+        [tournamentCode],
       )
     )[0]?.id ?? '';
   await db.query(
@@ -80,7 +86,7 @@ export async function newTournament(
         [tournament],
       )
     )[0]?.id ?? '';
-  return { tournament, ruleSet, td, officer, viewer };
+  return { tournament, tournamentCode, ruleSet, td, officer, viewer };
 }
 
 /** Fixed, test-only NIK keys (never used outside tests). */

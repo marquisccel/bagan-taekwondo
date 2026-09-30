@@ -95,7 +95,7 @@ export default function JadwalPage() {
 
   return (
     <main className="content grid">
-      <h1>Jadwal &amp; Buat Bagan</h1>
+      <h1>Jadwal</h1>
       <p style={{ color: 'var(--text-dim)' }}>
         Pilih arena dan hari, lalu tekan Lihat Bagan. Sistem hanya menggambar kategori yang siap (peserta
         lengkap) untuk slot tersebut.
@@ -103,7 +103,7 @@ export default function JadwalPage() {
       {[...byDay.entries()].map(([dayNumber, daySlots]) => (
         <section key={dayNumber} className="panel grid">
           <h2>
-            Hari {dayNumber} · {formatDate(daySlots[0]?.date ?? '')}
+            DAY {dayNumber} · {formatDate(daySlots[0]?.date ?? '')}
           </h2>
           <table>
             <thead>

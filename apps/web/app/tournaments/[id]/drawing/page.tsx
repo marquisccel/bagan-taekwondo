@@ -46,7 +46,7 @@ function reasonParts(r: unknown): { code: string; params: unknown } {
   return { code: typeof r === 'string' ? r : 'UNKNOWN', params: null };
 }
 
-function Preflight({ p }: { p: DrawPreflight }) {
+function Preflight({ p, tournamentId }: { p: DrawPreflight; tournamentId: string }) {
   const lock = p.ruleSetLock;
   return (
     <section className="panel grid" aria-label="Ringkasan sebelum drawing" data-testid="draw-preflight">
@@ -82,7 +82,7 @@ function Preflight({ p }: { p: DrawPreflight }) {
       </div>
       <div style={{ color: 'var(--text-dim)' }}>
         Masalah terbuka: {p.openIssues.error} kesalahan, {p.openIssues.warning} peringatan. Peserta diblokir
-        tidak ikut diundi. <a href={`/tournaments/${p.tournament.id}/peserta`}>Lihat peserta</a>
+        tidak ikut diundi. <a href={`/tournaments/${tournamentId}/peserta`}>Lihat peserta</a>
       </div>
 
       <div data-testid="preflight-ruleset">
@@ -289,7 +289,7 @@ export default function DrawingPage() {
         Buat drawing <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>· {p.tournament.name}</span>
       </h1>
 
-      <Preflight p={p} />
+      <Preflight p={p} tournamentId={id} />
 
       {!p.canRequest ? (
         <div className="banner banner-conflict" role="alert" data-testid="draw-forbidden">

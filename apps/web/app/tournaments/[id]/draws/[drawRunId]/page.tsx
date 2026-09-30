@@ -46,11 +46,11 @@ export default function DrawRunPage() {
         <h1>Bagan Tidak Bisa Dibuat</h1>
         <div className="banner banner-conflict">
           Bagan untuk slot ini {run.status === 'UNSAFE' ? 'tidak aman untuk dipakai' : 'gagal dibuat'}.
-          Silakan coba lagi dari halaman Jadwal &amp; Buat Bagan.
+          Silakan coba lagi dari halaman Jadwal.
         </div>
         <p>
           <a className="btn btn-primary" href={`/tournaments/${id}/jadwal`}>
-            Kembali ke Jadwal &amp; Buat Bagan
+            Kembali ke Jadwal
           </a>
         </p>
       </main>

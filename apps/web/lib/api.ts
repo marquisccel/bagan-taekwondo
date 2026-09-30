@@ -525,6 +525,7 @@ export interface ScheduleSlotSummary {
 
 export interface SpsUploadResult {
   readonly tournamentId: string;
+  readonly tournamentCode: string;
   readonly actorId: string;
   readonly ruleSetId: string;
   readonly intakeSnapshotId: string;

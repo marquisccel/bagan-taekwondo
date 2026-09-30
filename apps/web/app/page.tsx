@@ -69,9 +69,9 @@ export default function HomePage() {
       const res = await uploadSps(crypto.randomUUID(), pendingFile);
       setResult(res);
       setActor(res.actorId);
-      setTournament(res.tournamentId);
+      setTournament(res.tournamentCode);
       setStage('done');
-      setTimeout(() => router.push(`/tournaments/${res.tournamentId}`), 1200);
+      setTimeout(() => router.push(`/tournaments/${res.tournamentCode}`), 1200);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setStage('reviewing');

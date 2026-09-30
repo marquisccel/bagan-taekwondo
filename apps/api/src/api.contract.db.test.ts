@@ -40,6 +40,7 @@ describe.skipIf(!adminUrl)('API contract — postgres', () => {
   let dropDb: () => Promise<void>;
   let server: Server;
   let tournament: string;
+  let tournamentCode: string;
   let officer: string;
   let viewer: string;
   let ruleSetId: string;
@@ -64,6 +65,7 @@ describe.skipIf(!adminUrl)('API contract — postgres', () => {
     db = poolDb(pool);
     const t = await newTournament(db);
     tournament = t.tournament;
+    tournamentCode = t.tournamentCode;
     officer = t.officer;
     viewer = t.viewer;
     await newArena(db, tournament);
@@ -193,6 +195,26 @@ describe.skipIf(!adminUrl)('API contract — postgres', () => {
     expect(res.body.latestDrawRun).toMatchObject({ id: drawRunId, status: 'SAFE' });
     expect(res.body.latestRevision).toMatchObject({ id: revisionId, lifecycle: 'DRAFT' });
     expect(res.body.categoryCounts.total).toBeGreaterThan(0);
+  });
+
+  it('GET /tournaments/:id accepts the tournament code in place of its uuid, for pretty URLs', async () => {
+    const res = await request(server).get(`/tournaments/${tournamentCode}`).set('x-actor-id', officer);
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(tournament);
+  });
+
+  it('rejects an unknown tournament code the same way as an unknown uuid', async () => {
+    const res = await request(server).get(`/tournaments/no-such-code`).set('x-actor-id', officer);
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('TOURNAMENT_NOT_FOUND');
+  });
+
+  it('still enforces membership when a request addresses the tournament by its code', async () => {
+    const res = await request(server)
+      .get(`/tournaments/${tournamentCode}`)
+      .set('x-actor-id', '00000000-0000-0000-0000-000000000000');
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('UNAUTHORIZED_TOURNAMENT_ACCESS');
   });
 
   it('GET /tournaments/:id/members lists the tournament roster for the dev persona switcher', async () => {

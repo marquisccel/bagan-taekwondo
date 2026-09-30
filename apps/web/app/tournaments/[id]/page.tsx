@@ -17,7 +17,7 @@ function drawRunSummary(
   const when = new Date(run.requestedAt).toLocaleString('id-ID');
   if (run.status === 'QUEUED' || run.status === 'RUNNING') return `Bagan sedang dibuat sejak ${when}…`;
   if (run.status === 'FAILED') {
-    return `Pembuatan bagan terakhir (${when}) gagal. Coba buat ulang dari Jadwal & Buat Bagan.`;
+    return `Pembuatan bagan terakhir (${when}) gagal. Coba buat ulang dari Jadwal.`;
   }
   if (run.status === 'UNSAFE') return `Bagan dibuat ${when}, tapi ada yang perlu ditinjau sebelum dipakai.`;
   const statusWord = rev ? ` · Status: ${revisionLifecycleLabel(rev.lifecycle)}` : '';
@@ -107,7 +107,7 @@ export default function TournamentOverviewPage() {
         ) : (
           <p className="state-empty" style={{ margin: 0 }}>
             Belum ada bagan untuk turnamen ini. Buat jadwal terlebih dahulu di tab{' '}
-            <a href={`/tournaments/${id}/jadwal`}>Jadwal &amp; Buat Bagan</a>.
+            <a href={`/tournaments/${id}/jadwal`}>Jadwal</a>.
           </p>
         )}
       </div>

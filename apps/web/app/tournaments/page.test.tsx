@@ -74,7 +74,7 @@ describe('TournamentListPage', () => {
     const first = within(rows[0] as HTMLElement);
     expect(first.getByRole('link', { name: 'Piala Gubernur 2026' })).toHaveAttribute(
       'href',
-      '/tournaments/t1',
+      '/tournaments/PG-2026',
     );
     expect(first.getByText('142')).toBeInTheDocument();
     expect(first.getByText('18')).toBeInTheDocument();
@@ -82,14 +82,14 @@ describe('TournamentListPage', () => {
     expect(first.getByText(/2 diblokir/)).toBeInTheDocument();
     expect(first.getByRole('link', { name: 'Buka Piala Gubernur 2026' })).toHaveAttribute(
       'href',
-      '/tournaments/t1',
+      '/tournaments/PG-2026',
     );
 
     const second = within(rows[1] as HTMLElement);
     expect(second.getByText('Belum ada')).toBeInTheDocument(); // Kategori Siap, no draw run yet
     expect(second.getByRole('link', { name: 'Buka Kejuaraan Kota' })).toHaveAttribute(
       'href',
-      '/tournaments/t2',
+      '/tournaments/KK',
     );
     expect(api.tournaments).toHaveBeenCalledWith('actor-1');
   });

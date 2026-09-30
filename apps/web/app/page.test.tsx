@@ -38,6 +38,7 @@ const preview = (over: Partial<SpsUploadPreview> = {}): SpsUploadPreview => ({
 
 const uploadResult = (): SpsUploadResult => ({
   tournamentId: 't1',
+  tournamentCode: 'T20260918-abc123',
   actorId: 'actor-1',
   ruleSetId: 'rs1',
   intakeSnapshotId: 'snap1',
@@ -92,7 +93,7 @@ describe('HomePage (SPS upload)', () => {
     await waitFor(() => expect(uploadSps).toHaveBeenCalledTimes(1));
     const [, uploadedFile] = vi.mocked(uploadSps).mock.calls[0] as [string, File];
     expect(uploadedFile).toBe(file);
-    await waitFor(() => expect(setTournament).toHaveBeenCalledWith('t1'));
+    await waitFor(() => expect(setTournament).toHaveBeenCalledWith('T20260918-abc123'));
     expect(setActor).toHaveBeenCalledWith('actor-1');
   });
 

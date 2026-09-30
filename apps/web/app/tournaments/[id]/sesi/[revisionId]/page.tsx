@@ -319,7 +319,7 @@ export default function SesiPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
         <h1>Cek &amp; Atur Bagan</h1>
         <a className="btn" href={`/tournaments/${id}/jadwal`}>
-          Kembali ke Jadwal &amp; Buat Bagan
+          Kembali ke Jadwal
         </a>
       </div>
       <p style={{ color: 'var(--text-dim)' }}>

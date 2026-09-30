@@ -34,6 +34,7 @@ export interface SpsUploadArgs {
 
 export interface SpsUploadResult {
   readonly tournamentId: string;
+  readonly tournamentCode: string;
   readonly actorId: string;
   readonly ruleSetId: string;
   readonly intakeSnapshotId: string;
@@ -143,6 +144,7 @@ export async function persistSpsUpload(db: Db, args: SpsUploadArgs): Promise<Sps
 
     return {
       tournamentId,
+      tournamentCode: args.tournamentCode,
       actorId,
       ruleSetId: persistedRuleSet.ruleSetId,
       intakeSnapshotId: saved.snapshotId,

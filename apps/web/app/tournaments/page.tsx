@@ -130,14 +130,14 @@ export default function TournamentListPage() {
                   <th title="Jumlah kategori yang datanya sudah lengkap dan siap diundi, dari total kategori pada bagan terakhir">
                     Kategori Siap
                   </th>
-                  <th />
+                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {data.map((t) => (
                   <tr key={t.id} data-testid="tournament-row">
                     <td>
-                      <a href={`/tournaments/${t.id}`} style={{ fontWeight: 600 }}>
+                      <a href={`/tournaments/${t.code}`} style={{ fontWeight: 600 }}>
                         {t.name}
                       </a>
                     </td>
@@ -161,7 +161,7 @@ export default function TournamentListPage() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        <a className="btn" href={`/tournaments/${t.id}`} aria-label={`Buka ${t.name}`}>
+                        <a className="btn" href={`/tournaments/${t.code}`} aria-label={`Buka ${t.name}`}>
                           Buka
                         </a>
                         <button

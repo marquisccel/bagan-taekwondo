@@ -53,7 +53,7 @@ export default function CategoriesPage() {
     return (
       <main className="content state-empty">
         Belum ada bagan yang dibuat untuk turnamen ini. Buka tab{' '}
-        <a href={`/tournaments/${id}/jadwal`}>Jadwal &amp; Buat Bagan</a> untuk membuatnya.
+        <a href={`/tournaments/${id}/jadwal`}>Jadwal</a> untuk membuatnya.
       </main>
     );
   if (isLoading) return <main className="content state-loading">Memuat kategori…</main>;
