@@ -291,6 +291,42 @@ describe('extractParticipantCsv', () => {
     expect(() => extractParticipantCsv(matrix)).toThrow(/missing required column/);
   });
 
+  it('never throws over a missing "nama_tim" -- some committee templates drop it entirely, so its value is copied from "tim_kontingen" instead of failing the whole upload', () => {
+    const matrix = [
+      [
+        ...'id_athlete,tim_kontingen,nik,namalengkap,jeniskelamin,tanggallahir,tinggibadan,beratbadan,sabuk,klasifikasi,divisi,class'.split(
+          ',',
+        ),
+      ],
+      [
+        '5474',
+        'Klub Uji',
+        // Synthetic (region 99 -- ADR-0014's PII audit requires every NIK-shaped test value to use
+        // this non-existent province code, never a real person's), not a real athlete's NIK.
+        '9901242707170001',
+        'Contoh Peserta',
+        'Laki-laki',
+        '2017-07-27',
+        '130.00',
+        '28.00',
+        'GEUP 8 - KUNING STRIP HIJAU',
+        'KYORUGI SEMI PRESTASI',
+        'PRA CADET C',
+        '-30',
+      ],
+    ];
+    const csv = extractParticipantCsv(matrix);
+    const [header, row] = csv.trim().split('\n');
+    expect(header).toBe(
+      'id_athlete,nama_tim,nik,namalengkap,jeniskelamin,tanggallahir,tinggibadan,beratbadan,sabuk,klasifikasi,divisi,class,tim_kontingen',
+    );
+    // "nama_tim" (2nd field) is not blank -- it's a copy of "tim_kontingen" ("Klub Uji"), so the
+    // CONTINGENT_FIELDS_DIFFER cross-check in rows.ts never fires a false warning for this row.
+    expect(row).toBe(
+      '5474,Klub Uji,9901242707170001,Contoh Peserta,Laki-laki,2017-07-27,130.00,28.00,GEUP 8 - KUNING STRIP HIJAU,KYORUGI SEMI PRESTASI,PRA CADET C,-30,Klub Uji',
+    );
+  });
+
   it('quotes a field containing a comma', () => {
     const header =
       'id_athlete,nama_tim,nik,namalengkap,jeniskelamin,tanggallahir,tinggibadan,beratbadan,sabuk,klasifikasi,divisi,class,tim_kontingen'.split(

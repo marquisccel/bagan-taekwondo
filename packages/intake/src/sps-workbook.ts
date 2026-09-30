@@ -260,6 +260,16 @@ export function parseJadwalFixSheet(
 }
 
 /**
+ * "nama_tim" is never actually a separate fact from "tim_kontingen" -- it exists only so
+ * `processRow` (rows.ts) can cross-check the two and warn (CONTINGENT_FIELDS_DIFFER) when a sheet's
+ * own two contingent-name columns disagree. Some of the committee's own SPS templates drop the
+ * column entirely instead of duplicating "tim_kontingen" into it, so it is optional here: when
+ * absent, its CSV value is synthesized as an exact copy of "tim_kontingen" (never blank), so the
+ * cross-check trivially agrees instead of firing a false warning on every single row.
+ */
+const OPTIONAL_COLUMNS: ReadonlySet<(typeof KOLEKTIF_2026_COLUMNS)[number]> = new Set(['nama_tim']);
+
+/**
  * Extracts the participant roster from a sheet shaped like the "semi-prestasi"/"prestasi" tabs
  * into CSV text matching `KOLEKTIF_2026_COLUMNS` exactly -- the same shape `runIntake` already
  * consumes, so nothing downstream of this function needs to change. Column order in the source
@@ -269,20 +279,29 @@ export function parseJadwalFixSheet(
 export function extractParticipantCsv(matrix: readonly (readonly (string | number | null)[])[]): string {
   const header = (matrix[0] ?? []).map((h) => cell(h));
   const indexOf = new Map(header.map((h, i) => [vocabularyKey(h), i] as const));
-  const missing = KOLEKTIF_2026_COLUMNS.filter((c) => !indexOf.has(vocabularyKey(c)));
+  const missing = KOLEKTIF_2026_COLUMNS.filter(
+    (c) => !indexOf.has(vocabularyKey(c)) && !OPTIONAL_COLUMNS.has(c),
+  );
   if (missing.length > 0) {
     throw new Error(`sheet is missing required column(s): ${missing.join(', ')}`);
   }
   const escape = (v: string): string => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  const valueFor = (
+    row: readonly (string | number | null)[],
+    col: (typeof KOLEKTIF_2026_COLUMNS)[number],
+  ) => {
+    const idx = indexOf.get(vocabularyKey(col));
+    if (idx !== undefined) return cell(row[idx]);
+    const fallbackIdx = col === 'nama_tim' ? indexOf.get(vocabularyKey('tim_kontingen')) : undefined;
+    return fallbackIdx !== undefined ? cell(row[fallbackIdx]) : '';
+  };
   const lines = [KOLEKTIF_2026_COLUMNS.join(',')];
   for (let r = 1; r < matrix.length; r += 1) {
     const row = matrix[r] ?? [];
     if (isBlankRow(row)) continue;
     const idCell = row[indexOf.get(vocabularyKey('id_athlete')) ?? 0];
     if (cell(idCell) === '') continue;
-    lines.push(
-      KOLEKTIF_2026_COLUMNS.map((col) => escape(cell(row[indexOf.get(vocabularyKey(col)) ?? -1]))).join(','),
-    );
+    lines.push(KOLEKTIF_2026_COLUMNS.map((col) => escape(valueFor(row, col))).join(','));
   }
   return `${lines.join('\n')}\n`;
 }
