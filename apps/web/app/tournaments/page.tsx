@@ -6,13 +6,7 @@ import { useState } from 'react';
 import { BrandMark } from '../../components/BrandMark';
 import { api } from '../../lib/api';
 import { useDevAuth } from '../../lib/dev-auth';
-import {
-  drawRunStatusLabel,
-  formatDateRange,
-  revisionLifecycleLabel,
-  ruleSetStatusLabel,
-  tournamentStatusLabel,
-} from '../../lib/id-labels';
+import { formatDateRange } from '../../lib/id-labels';
 import { TOURNAMENT_TABS } from '../../lib/nav-tabs';
 import { useApiSWR } from '../../lib/use-api-swr';
 
@@ -131,11 +125,11 @@ export default function TournamentListPage() {
                 <tr>
                   <th>Turnamen</th>
                   <th>Tanggal</th>
-                  <th>Status Turnamen</th>
-                  <th>Status Aturan</th>
-                  <th>Bagan Terakhir</th>
-                  <th>Status Revisi</th>
-                  <th>Kategori Siap</th>
+                  <th className="num">Total Peserta</th>
+                  <th className="num">Kontingen</th>
+                  <th title="Jumlah kategori yang datanya sudah lengkap dan siap diundi, dari total kategori pada bagan terakhir">
+                    Kategori Siap
+                  </th>
                   <th />
                 </tr>
               </thead>
@@ -148,30 +142,8 @@ export default function TournamentListPage() {
                       </a>
                     </td>
                     <td>{formatDateRange(t.eventStart, t.eventEnd)}</td>
-                    <td>{tournamentStatusLabel(t.status)}</td>
-                    <td>{ruleSetStatusLabel(t.activeRuleSetStatus)}</td>
-                    <td>
-                      {t.latestDrawRun ? (
-                        <>
-                          {drawRunStatusLabel(t.latestDrawRun.status)}{' '}
-                          <span style={{ color: 'var(--text-dim)' }}>
-                            ({new Date(t.latestDrawRun.requestedAt).toLocaleString('id-ID')})
-                          </span>
-                        </>
-                      ) : (
-                        <span style={{ color: 'var(--text-dim)' }}>Belum ada</span>
-                      )}
-                    </td>
-                    <td>
-                      {t.latestRevision ? (
-                        <>
-                          #{t.latestRevision.revision_no} ·{' '}
-                          {revisionLifecycleLabel(t.latestRevision.lifecycle)}
-                        </>
-                      ) : (
-                        <span style={{ color: 'var(--text-dim)' }}>Belum ada</span>
-                      )}
-                    </td>
+                    <td className="num">{t.totalEntries}</td>
+                    <td className="num">{t.totalContingents}</td>
                     <td>
                       {t.categoryCounts.total > 0 ? (
                         <>

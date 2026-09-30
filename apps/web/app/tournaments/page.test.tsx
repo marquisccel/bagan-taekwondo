@@ -21,6 +21,8 @@ const item = (over: Partial<TournamentListItem> = {}): TournamentListItem => ({
   eventStart: '2026-08-27',
   eventEnd: '2026-08-30',
   activeRuleSetStatus: 'ACTIVE',
+  totalEntries: 142,
+  totalContingents: 18,
   latestDrawRun: {
     id: 'run-1',
     status: 'SAFE',
@@ -48,7 +50,7 @@ describe('TournamentListPage', () => {
     expect(api.tournaments).not.toHaveBeenCalled();
   });
 
-  it('lists each tournament with name, dates, draw and revision state, and a link to open it', async () => {
+  it('lists each tournament with name, dates, participant/contingent totals, category readiness, and a link to open it', async () => {
     vi.mocked(api.tournaments).mockResolvedValue([
       item(),
       item({
@@ -57,6 +59,8 @@ describe('TournamentListPage', () => {
         code: 'KK',
         status: 'DRAFT',
         activeRuleSetStatus: 'NONE',
+        totalEntries: 0,
+        totalContingents: 0,
         latestDrawRun: null,
         latestRevision: null,
         categoryCounts: { total: 0, ready: 0, blocked: 0 },
@@ -72,9 +76,8 @@ describe('TournamentListPage', () => {
       'href',
       '/tournaments/t1',
     );
-    expect(first.getAllByText('Aktif', { selector: 'td' })).toHaveLength(2); // tournament status + rule set
-    expect(first.getByText(/Aman/)).toBeInTheDocument();
-    expect(first.getByText(/#2 · Dalam Peninjauan/)).toBeInTheDocument();
+    expect(first.getByText('142')).toBeInTheDocument();
+    expect(first.getByText('18')).toBeInTheDocument();
     expect(first.getByText(/8 \/ 10/)).toBeInTheDocument();
     expect(first.getByText(/2 diblokir/)).toBeInTheDocument();
     expect(first.getByRole('link', { name: 'Buka Piala Gubernur 2026' })).toHaveAttribute(
@@ -83,7 +86,7 @@ describe('TournamentListPage', () => {
     );
 
     const second = within(rows[1] as HTMLElement);
-    expect(second.getAllByText('Belum ada', { selector: 'span' }).length).toBeGreaterThan(0);
+    expect(second.getByText('Belum ada')).toBeInTheDocument(); // Kategori Siap, no draw run yet
     expect(second.getByRole('link', { name: 'Buka Kejuaraan Kota' })).toHaveAttribute(
       'href',
       '/tournaments/t2',

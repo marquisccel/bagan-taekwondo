@@ -628,6 +628,9 @@ export interface TournamentListItem {
   readonly eventStart: string;
   readonly eventEnd: string;
   readonly activeRuleSetStatus: string;
+  /** Semi-prestasi only -- this system doesn't draw Prestasi/Freestyle categories yet. */
+  readonly totalEntries: number;
+  readonly totalContingents: number;
   readonly latestDrawRun: TournamentSummary['latestDrawRun'];
   readonly latestRevision: TournamentSummary['latestRevision'];
   readonly categoryCounts: TournamentSummary['categoryCounts'];

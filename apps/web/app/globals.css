@@ -284,8 +284,10 @@ textarea {
  * tables to wrap or truncate. */
 .content-wide {
   max-width: none;
-  padding-left: 16px;
-  padding-right: 16px;
+  /* Same 24px as .topbar/.subbar (which span the full viewport width, unlike the centered .content)
+   * so a wide page's own heading starts directly under the brand mark, not offset from it. */
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 .dev-auth-banner {

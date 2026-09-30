@@ -168,6 +168,18 @@ describe.skipIf(!adminUrl)('UAT read contracts — postgres', () => {
       });
       expect(res.body[0].code).toMatch(/^T_/);
 
+      // Semi-prestasi only (AUD-008 list refinement) -- cross-checked against the database directly
+      // rather than a hardcoded number, so this stays correct regardless of the fixture's own mix of
+      // semi-prestasi/prestasi entries; the point is the SQL's own stream filter, not a fixed count.
+      const [expectedTotals] = await db.query<{ entries: string; contingents: string }>(
+        `select count(distinct id) as entries, count(distinct contingent_id) as contingents
+         from entry where tournament_id = $1 and declared_stream = 'SEMI_PRESTASI'`,
+        [tournament],
+      );
+      expect(res.body[0].totalEntries).toBe(Number(expectedTotals?.entries ?? 0));
+      expect(res.body[0].totalContingents).toBe(Number(expectedTotals?.contingents ?? 0));
+      expect(res.body[0].totalEntries).toBeGreaterThan(0);
+
       const other = await get('/tournaments', otherTd);
       expect((other.body as { id: string }[]).map((t) => t.id)).toEqual([otherTournament]);
     });

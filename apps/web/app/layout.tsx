@@ -6,7 +6,7 @@ import './globals.css';
 
 const font = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-plus-jakarta-sans', display: 'swap' });
 
-export const metadata = { title: 'BaganTKD Operator' };
+export const metadata = { title: 'Taekwondo Bracket Generator' };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

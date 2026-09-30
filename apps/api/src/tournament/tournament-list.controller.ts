@@ -26,6 +26,8 @@ interface ListRow {
   cat_total: number;
   cat_ready: number;
   cat_blocked: number;
+  total_entries: string;
+  total_contingents: string;
 }
 
 /**
@@ -51,7 +53,8 @@ export class TournamentListController {
               lr.id as run_id, lr.status as run_status, lr.kind as run_kind,
               lr.requested_at as run_requested_at, lr.finished_at as run_finished_at,
               rev.id as rev_id, rev.revision_no as rev_no, rev.lifecycle as rev_lifecycle, rev.lock_version as rev_lock_version,
-              coalesce(cc.total, 0)::int as cat_total, coalesce(cc.ready, 0)::int as cat_ready, coalesce(cc.blocked, 0)::int as cat_blocked
+              coalesce(cc.total, 0)::int as cat_total, coalesce(cc.ready, 0)::int as cat_ready, coalesce(cc.blocked, 0)::int as cat_blocked,
+              coalesce(pt.entries, 0) as total_entries, coalesce(pt.contingents, 0) as total_contingents
        from tournament t
        left join lateral (
          select id, status, kind, requested_at, finished_at from draw_run
@@ -67,6 +70,12 @@ export class TournamentListController {
                 count(*) filter (where readiness = 'BLOCKED') as blocked
          from draw_run_category where draw_run_id = lr.id
        ) cc on true
+       left join lateral (
+         -- Semi-prestasi only: this system doesn't draw Prestasi/Freestyle categories yet, so
+         -- counting them here would overstate what this tournament view actually manages.
+         select count(distinct e.id) as entries, count(distinct e.contingent_id) as contingents
+         from entry e where e.tournament_id = t.id and e.declared_stream = 'SEMI_PRESTASI'
+       ) pt on true
        where t.status <> 'ARCHIVED'
          and exists (select 1 from tournament_member tm where tm.tournament_id = t.id and tm.user_id::text = $1)
        order by t.event_start desc, t.name, t.id`,
@@ -80,6 +89,8 @@ export class TournamentListController {
       eventStart: r.event_start,
       eventEnd: r.event_end,
       activeRuleSetStatus: r.active_rule_set_status,
+      totalEntries: Number(r.total_entries),
+      totalContingents: Number(r.total_contingents),
       latestDrawRun: r.run_id
         ? {
             id: r.run_id,
