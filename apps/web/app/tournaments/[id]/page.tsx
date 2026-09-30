@@ -56,7 +56,7 @@ function GreetingCard({
           {greetingForHour(now.getHours())}, <strong>Admin.</strong>
         </h2>
         <p className="greeting-tagline">
-          Pantau peserta, kategori, dan status bagan turnamen dalam satu tampilan kerja.
+          Otomatisasi pembuatan bagan turnamen — cepat, adil, dan tanpa ribet.
         </p>
         {!run ? (
           <p className="greeting-note">
@@ -68,10 +68,6 @@ function GreetingCard({
         ) : null}
       </div>
       <div className="greeting-controls">
-        <div className="greeting-controls-label">
-          <div className="greeting-eyebrow">Ekspor &amp; Bagan</div>
-          <p className="greeting-controls-subtitle">Kelola dokumen dan buka bagan turnamen</p>
-        </div>
         <div className="greeting-actions">
           {rev ? (
             <a className="btn btn-primary" href={`/tournaments/${id}/sesi/${rev.id}`}>

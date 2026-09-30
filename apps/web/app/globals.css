@@ -564,16 +564,6 @@ a.stat-link:hover .stat-link-hint {
   min-width: 260px;
 }
 
-.greeting-controls-label {
-  text-align: right;
-}
-
-.greeting-controls-subtitle {
-  margin: 3px 0 0;
-  font-size: 12px;
-  color: var(--text-dim);
-}
-
 .greeting-actions {
   display: flex;
   align-items: center;
