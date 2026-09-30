@@ -51,7 +51,13 @@ function GreetingCard({
   return (
     <div className="panel greeting-card">
       <div className="greeting-info">
-        <h2 className="greeting-text">{greetingForHour(now.getHours())}, Admin</h2>
+        <div className="greeting-eyebrow">Dashboard Turnamen</div>
+        <h2 className="greeting-text">
+          {greetingForHour(now.getHours())}, <strong>Admin.</strong>
+        </h2>
+        <p className="greeting-tagline">
+          Pantau peserta, kategori, dan status bagan turnamen dalam satu tampilan kerja.
+        </p>
         {!run ? (
           <p className="greeting-note">
             Belum ada bagan. Buat jadwal terlebih dahulu di tab{' '}
@@ -61,12 +67,18 @@ function GreetingCard({
           <p className="greeting-note">{runNote}</p>
         ) : null}
       </div>
-      <div className="greeting-actions">
-        {rev ? (
-          <a className="btn btn-primary" href={`/tournaments/${id}/sesi/${rev.id}`}>
-            Cek &amp; Atur Bagan
-          </a>
-        ) : null}
+      <div className="greeting-controls">
+        <div className="greeting-controls-label">
+          <div className="greeting-eyebrow">Ekspor &amp; Bagan</div>
+          <p className="greeting-controls-subtitle">Kelola dokumen dan buka bagan turnamen</p>
+        </div>
+        <div className="greeting-actions">
+          {rev ? (
+            <a className="btn btn-primary" href={`/tournaments/${id}/sesi/${rev.id}`}>
+              Cek &amp; Atur Bagan
+            </a>
+          ) : null}
+        </div>
         {rev ? (
           <ExportPanel
             bare

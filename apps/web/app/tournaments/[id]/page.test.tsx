@@ -124,7 +124,15 @@ describe('TournamentOverviewPage (read-only)', () => {
       participantsNeedingReview: 0,
     });
     renderIsolated(<TournamentOverviewPage />);
-    expect(await screen.findByText(/selamat (pagi|siang|sore|malam), admin/i)).toBeInTheDocument();
+    // The name is bolded via a nested <strong>, splitting the sentence across two text nodes -- match
+    // on the heading's combined textContent instead of a single text node.
+    expect(
+      await screen.findByText(
+        (_, element) =>
+          element?.tagName === 'H2' &&
+          /selamat (pagi|siang|sore|malam), admin\.?/i.test(element.textContent ?? ''),
+      ),
+    ).toBeInTheDocument();
   });
 
   it('tells a committee member a draw needs review, in plain language, without exposing the engine kind/status words', async () => {

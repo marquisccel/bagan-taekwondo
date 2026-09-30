@@ -510,24 +510,44 @@ a.stat-link:hover .stat-link-hint {
 
 .greeting-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 24px;
+  gap: 32px;
   flex-wrap: wrap;
-  padding: 22px 26px;
+  padding: 28px 30px;
 }
 
 .greeting-info {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 7px;
+  max-width: 480px;
+}
+
+.greeting-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
 .greeting-text {
   margin: 0;
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 27px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+.greeting-text strong {
+  font-weight: 800;
+}
+
+.greeting-tagline {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--text-dim);
+  line-height: 1.5;
 }
 
 .greeting-note {
@@ -536,11 +556,30 @@ a.stat-link:hover .stat-link-hint {
   color: var(--text-dim);
 }
 
+.greeting-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  min-width: 260px;
+}
+
+.greeting-controls-label {
+  text-align: right;
+}
+
+.greeting-controls-subtitle {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
 .greeting-actions {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .num {
