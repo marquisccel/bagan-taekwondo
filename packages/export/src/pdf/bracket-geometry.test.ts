@@ -94,6 +94,25 @@ describe('computeBracketGeometry (visual bracket — ACCEPTANCE §4)', () => {
     expect(feederYUsed).toBe(advancingLeaf?.y);
   });
 
+  it("draws a lone entry's (WALKOVER) line LAST -- at the bottom of the diagram, never the top -- even though the engine seeds the bye at the lowest slot position (byes face the top seed by rule; that stays untouched, only the drawing order changes)", () => {
+    const bracket = bracketFor(3); // size 4, 1 BYE, 1 WALKOVER match in round 1
+    const walkover = bracket.matches.find((m) => m.status === 'WALKOVER');
+    expect(walkover).toBeDefined();
+    if (!walkover) return;
+    const realSlot = bracket.slots.find(
+      (s) =>
+        !s.isBye &&
+        ((walkover.feederA.kind === 'slot' && walkover.feederA.slot === s.position) ||
+          (walkover.feederB.kind === 'slot' && walkover.feederB.slot === s.position)),
+    );
+    const geometry = computeBracketGeometry(bracket.matches, bracket.slots);
+    const advancingLeaf = geometry.leaves.find((l) => l.key === `slot:${realSlot?.position}`);
+    expect(advancingLeaf).toBeDefined();
+    const maxY = Math.max(...geometry.leaves.map((l) => l.y));
+    expect(advancingLeaf?.y).toBe(maxY);
+    expect(advancingLeaf?.y).not.toBe(0);
+  });
+
   it('is a pure function: identical input produces identical geometry', () => {
     const bracket = bracketFor(16);
     const a = computeBracketGeometry(bracket.matches, bracket.slots);

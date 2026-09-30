@@ -59,7 +59,19 @@ export function computeBracketGeometry(
 ): BracketGeometry {
   const matchByUid = new Map(matches.map((m) => [m.matchUid, m]));
   const slotByPos = new Map(slots.map((s) => [s.position, s]));
-  const sorted = [...matches].sort((a, b) => a.round - b.round || a.position - b.position);
+  // WALKOVER (bye) pairings are processed -- and so have their leaf registered, which decides its
+  // vertical position -- AFTER every real pairing in the same round, regardless of their engine-
+  // assigned `position` (seeding puts the bye opposite the top seed, i.e. at the lowest `position`
+  // number, deliberately -- that seeding rule is untouched here). Presentation only: a lone entry
+  // who visibly plays no first-round match reads as "sat out this round", not "played and is shown
+  // first", when their line renders at the BOTTOM of the diagram instead of the top (structural
+  // reference: the committee's own printed sheet always draws its lone byes last).
+  const sorted = [...matches].sort((a, b) => {
+    if (a.round !== b.round) return a.round - b.round;
+    const aBye = a.status === 'WALKOVER' ? 1 : 0;
+    const bBye = b.status === 'WALKOVER' ? 1 : 0;
+    return aBye - bBye || a.position - b.position;
+  });
   const minRound = sorted.length > 0 ? Math.min(...sorted.map((m) => m.round)) : 1;
 
   const leaves: GeometryLeaf[] = [];
