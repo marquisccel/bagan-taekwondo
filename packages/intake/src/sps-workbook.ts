@@ -114,6 +114,15 @@ export function resolveSpsSheetNames(sheetNames: readonly string[]): ResolvedSps
 
 const DAY_HEADER_RE = /^DAY\s+(\d+)$/i;
 const ARENA_HEADER_RE = /^ARENA\s+([A-Z0-9]+)$/i;
+/** Some committee templates open the "Jadwal FIX" tab with a decorative title line (e.g. "JADWAL
+ * KEJUARAAN TAEKWONDO INDONESIA SUPER FIGHT 4") -- never a schedule fact, so it is recognized and
+ * skipped silently (extractTournamentTitle reads its own name from this same line elsewhere). */
+const TITLE_BANNER_RE = /^JADWAL\s+KEJUARAAN\s+TAEKWONDO\b/i;
+/** "JUMAT s/d MINGGU, 2 - 4 OKTOBER 2026" -- a whole-event date-RANGE banner, distinct from the
+ * per-day single-date line every arena/day block starts with. Recognized ahead of the single-date
+ * regex so it is never misread as one specific day (which it would be: that regex only requires ONE
+ * day/month/year to appear anywhere in the string, and happily matches the range's second half). */
+const DATE_RANGE_BANNER_RE = /\d{1,2}\s*-\s*\d{1,2}\s+[A-Za-zÀ-ÿ]+\s+\d{4}/;
 const MONTHS_ID: Readonly<Record<string, number>> = {
   JANUARI: 1,
   FEBRUARI: 2,
@@ -210,6 +219,7 @@ export function parseJadwalFixSheet(
         orderIndex = 0;
         continue;
       }
+      if (TITLE_BANNER_RE.test(a) || DATE_RANGE_BANNER_RE.test(a)) continue;
       const parsedDate = parseIndonesianDateLine(a);
       if (parsedDate) {
         date = parsedDate;
@@ -257,6 +267,25 @@ export function parseJadwalFixSheet(
     });
   }
   return { rows, issues };
+}
+
+/**
+ * The committee's own name for the event (e.g. "INDONESIA SUPER FIGHT 4"), read from the "Jadwal
+ * FIX" tab's own title banner ("JADWAL KEJUARAAN TAEKWONDO <name>") when the template has one --
+ * never guessed, and never the rule set's own tournament name, which is one fixed fixture shared by
+ * every upload (a rule-set editor is a separate, larger task) and so cannot name each event uploaded
+ * against it. `null` when the sheet has no such banner (an older template), so the caller can fall
+ * back to the rule set's name instead of showing a blank.
+ */
+export function extractTournamentTitle(
+  matrix: readonly (readonly (string | number | null)[])[],
+): string | null {
+  for (const row of matrix) {
+    const a = cell(row[0]);
+    const m = TITLE_BANNER_RE.exec(a);
+    if (m) return a.slice(m[0].length).trim() || null;
+  }
+  return null;
 }
 
 /**

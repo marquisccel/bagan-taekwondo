@@ -4,7 +4,12 @@ import { fileURLToPath } from 'node:url';
 import type { RuleSet } from '@bagantkd/rules';
 import { describe, expect, it } from 'vitest';
 
-import { extractParticipantCsv, parseJadwalFixSheet, resolveSpsSheetNames } from './sps-workbook.js';
+import {
+  extractParticipantCsv,
+  extractTournamentTitle,
+  parseJadwalFixSheet,
+  resolveSpsSheetNames,
+} from './sps-workbook.js';
 
 /**
  * Structural reference: the committee's real "Jadwal FIX" tab (SPS spreadsheet) --
@@ -147,6 +152,55 @@ describe('parseJadwalFixSheet', () => {
       ['KYORUGI SEMI PRESTASI', 'Laki-laki', 'JUNIOR', '-45'],
     ];
     expect(parseJadwalFixSheet(matrix, rs)).toEqual(parseJadwalFixSheet(matrix, rs));
+  });
+
+  it("skips the sheet's own title banner and a whole-event date-range banner, never misreading the range as one specific day", () => {
+    const matrix = [
+      ['JADWAL KEJUARAAN TAEKWONDO INDONESIA SUPER FIGHT 4', null, null, null],
+      ['JUMAT s/d MINGGU, 2 - 4 OKTOBER 2026', null, null, null],
+      [null, null, null, null],
+      ['Jumat, 2 Oktober 2026', null, null, null],
+      ['DAY 1', null, null, null],
+      ['ARENA A', null, null, null],
+      ['KYORUGI PRESTASI', 'Laki-laki', 'SENIOR', '-54'],
+    ];
+    const { rows, issues } = parseJadwalFixSheet(matrix, rs);
+    expect(issues).toEqual([]);
+    // The date-range banner never overwrote `date` with a misread "4 Oktober 2026" -- the real row's
+    // date is the one explicit single-day line that actually precedes it.
+    expect(rows).toEqual([
+      {
+        sheetRow: 7,
+        dayNumber: 1,
+        date: '2026-10-02',
+        arenaCode: 'A',
+        orderIndex: 0,
+        stream: 'PRESTASI',
+        discipline: 'KYORUGI',
+        gender: 'MALE',
+        ageDivisionCode: 'SENIOR',
+        weightClassOrFormat: '-54',
+      },
+    ]);
+  });
+});
+
+describe('extractTournamentTitle', () => {
+  it('reads the event name from the "JADWAL KEJUARAAN TAEKWONDO <name>" banner', () => {
+    const matrix = [
+      ['JADWAL KEJUARAAN TAEKWONDO INDONESIA SUPER FIGHT 4', null, null, null],
+      ['JUMAT s/d MINGGU, 2 - 4 OKTOBER 2026', null, null, null],
+    ];
+    expect(extractTournamentTitle(matrix)).toBe('INDONESIA SUPER FIGHT 4');
+  });
+
+  it('returns null (never guesses) when the sheet has no such banner, e.g. an older template', () => {
+    const matrix = [
+      ['ARENA A', null, null, null],
+      ['JUMAT, 18 SEPTEMBER 2026', null, null, null],
+      ['KYORUGI SEMI PRESTASI', 'Laki-laki', 'JUNIOR', '-45'],
+    ];
+    expect(extractTournamentTitle(matrix)).toBeNull();
   });
 });
 

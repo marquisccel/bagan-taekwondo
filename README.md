@@ -19,10 +19,10 @@ separation, explainability, a review/editing web UI, and PDF/XLSX export.
 pnpm dev
 ```
 
-Cuma itu. Satu perintah ini otomatis: nyalain database, (run pertama doang) install semua dependency
-dan download Chromium buat export PDF, build, jalanin migration, lalu jalanin API + worker + web
-app-nya bareng di satu terminal. Run pertama agak lama (beberapa menit, karena instalasi); run
-berikutnya cepat.
+Cuma itu. Satu perintah ini otomatis: nyalain database, (run pertama doang) install semua dependency,
+pastikan Chromium buat export PDF sudah ter-download (dicek tiap run, cepat kalau sudah ada), build,
+jalanin migration, lalu jalanin API + worker + web app-nya bareng di satu terminal. Run pertama agak
+lama (beberapa menit, karena instalasi); run berikutnya cepat.
 
 Begitu muncul baris `web app: http://localhost:3001`, buka **http://localhost:3001** — pakai
 `localhost`, bukan `127.0.0.1` atau alamat IP lain (lihat bagian Troubleshooting kalau lupa kenapa).
@@ -33,8 +33,42 @@ Lebih suka 3 jendela terpisah (API/worker/web masing-masing punya jendela sendir
 terminal gabungan? Di Windows, jalanin `powershell -ExecutionPolicy Bypass -File scripts/start-all.ps1`
 (berhenti dengan `scripts/stop-all.ps1`).
 
+### Coba sampai dapat hasil ekspor PDF pertama
+
+Langkah ini bukti bahwa setup-nya beneran jalan end-to-end, dari nol sampai ada file PDF di
+Downloads. Butuh satu file SPS (`.xlsx`) komite (tab jadwal + tab peserta).
+
+1. Buka **http://localhost:3001** (setelah `pnpm dev` selesai start, lihat bagian di atas).
+2. Klik atau seret file SPS `.xlsx` ke kotak unggah.
+3. Sistem **memeriksa dulu** file-nya (tanpa bikin apa pun) dan menampilkan ringkasan: jumlah
+   peserta, kategori, baris jadwal, arena. Kalau ada baris "Belum bisa dilanjutkan", benerin dulu
+   spreadsheet-nya sesuai pesan yang ditampilkan, lalu unggah ulang.
+4. Kalau ringkasannya sudah sesuai, klik **"Lanjutkan & Buat Turnamen"** — ini baru benar-benar
+   membuat turnamennya, dan otomatis membuka halaman Ringkasan turnamen tersebut.
+5. Buka tab **"Jadwal & Buat Bagan"**, pilih salah satu baris hari/arena, klik **"Lihat Bagan"** —
+   ini men-generate bagan (draw run) pertama untuk kategori-kategori di slot itu. Tunggu sampai
+   statusnya selesai (halaman menunggu otomatis lanjut begitu siap).
+6. Kalau perlu, sesuaikan urutan/pool di **"Cek & Atur Bagan"**, lalu kembali ke halaman Ringkasan
+   turnamen (tab **"Ringkasan"**).
+7. Di panel **"Ekspor"**, pilih jenis dokumen dari dropdown, lalu klik **"Buat Ekspor"**. Tunggu
+   beberapa detik — begitu selesai, file PDF-nya **otomatis ter-download** ke folder Downloads
+   browser (tidak perlu klik apa pun lagi).
+
+Kalau langkah 7 gagal dengan pesan `EXPORT_GENERATION_FAILED`, lihat Troubleshooting di bawah.
+
 ### Troubleshooting
 
+- **Ekspor PDF gagal dengan `EXPORT_GENERATION_FAILED`.** PDF di-render pakai Chromium headless
+  (Playwright), yang sekarang otomatis dipastikan ter-download setiap kali `pnpm dev` dijalankan.
+  Kalau masih gagal:
+  - Pastikan kamu benar-benar **me-restart** `pnpm dev` (Ctrl+C, tunggu berhenti total, jalanin lagi)
+    setelah `git pull` — `scripts/dev.mjs` dibaca ulang dari disk tiap kali dijalankan, jadi restart
+    saja sudah cukup, tidak perlu build manual.
+  - Kalau masih gagal juga, jalanin manual sekali:
+    ```bash
+    pnpm --filter @bagantkd/export exec playwright install chromium
+    ```
+    lalu restart `pnpm dev` dan coba ekspor lagi.
 - **Buka `localhost:3001`, jangan `127.0.0.1` atau alamat IP lain.** API cuma izinin origin
   `localhost`/`127.0.0.1`; alamat lain bikin semua request ke API gagal diam-diam (CORS), biasanya
   kelihatan sebagai "Failed to fetch" atau tombol yang seperti tidak melakukan apa-apa.

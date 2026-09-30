@@ -123,21 +123,25 @@ spawnSync('docker', ['compose', 'exec', '-T', 'postgres', 'createdb', '-U', 'bag
 
 if (!existsSync(join(repoRoot, 'node_modules'))) {
   step('install dependencies (first run only)', 'npx', ['-y', 'pnpm@10.34.5', 'install']);
-  // PDF export renders through headless Chromium (Playwright), which `pnpm install` does not
-  // download on its own -- without this, the first PDF export a teammate tries fails with
-  // EXPORT_GENERATION_FAILED, days after they set the project up, with no obvious connection back
-  // to "did you install anything else?". Doing it here keeps `pnpm dev` a genuine one-command setup.
-  step('download Chromium for PDF export (first run only)', 'npx', [
-    '-y',
-    'pnpm@10.34.5',
-    '--filter',
-    '@bagantkd/export',
-    'exec',
-    'playwright',
-    'install',
-    'chromium',
-  ]);
 }
+
+// PDF export renders through headless Chromium (Playwright), which `pnpm install` does not download
+// on its own -- without this, a PDF export attempt fails with EXPORT_GENERATION_FAILED, with no
+// obvious connection back to "did you install anything else?". Checked on every run, not just when
+// node_modules is first created: anyone who ran `pnpm install`/`pnpm dev` before this check existed
+// has node_modules already, so a "first run only" gate here would never reach them. Playwright's own
+// install command is fast and idempotent once the browser is already downloaded, so this adds only a
+// brief check to every startup, not a repeated download.
+step('ensure Chromium is downloaded for PDF export', 'npx', [
+  '-y',
+  'pnpm@10.34.5',
+  '--filter',
+  '@bagantkd/export',
+  'exec',
+  'playwright',
+  'install',
+  'chromium',
+]);
 
 step('build API and worker', 'npx', ['-y', 'pnpm@10.34.5', 'build']);
 step('apply database migrations', 'npx', ['-y', 'pnpm@10.34.5', '--filter', '@bagantkd/db', 'migrate'], {

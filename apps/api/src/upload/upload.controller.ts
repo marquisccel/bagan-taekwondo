@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { nikKeysFromEnv, persistSpsUpload, type Db, type SpsUploadResult } from '@bagantkd/db';
 import {
   extractParticipantCsv,
+  extractTournamentTitle,
   listWorkbookSheetNames,
   parseJadwalFixSheet,
   readWorkbookSheet,
@@ -75,6 +76,10 @@ export interface SpsUploadPreview {
  * `blockers` entry instead, so a caller can show ALL of them at once rather than one at a time. */
 function parseSpsWorkbook(bytes: Uint8Array): {
   readonly ruleSet: RuleSet;
+  /** The event's own name, read from the "Jadwal FIX" tab's own title banner when the committee's
+   * template has one (extractTournamentTitle); falls back to the shared rule-set fixture's name
+   * (which is the same for every upload) only when the sheet has no such banner. */
+  readonly tournamentName: string;
   readonly jadwalSheet: string | null;
   readonly participantSheet: string | null;
   readonly scheduleRows: readonly ScheduleRow[];
@@ -92,6 +97,7 @@ function parseSpsWorkbook(bytes: Uint8Array): {
     blockers.push('File ini tidak bisa dibaca sebagai workbook .xlsx.');
     return {
       ruleSet,
+      tournamentName: ruleSet.tournament.name,
       jadwalSheet: null,
       participantSheet: null,
       scheduleRows: [],
@@ -111,6 +117,7 @@ function parseSpsWorkbook(bytes: Uint8Array): {
     );
     return {
       ruleSet,
+      tournamentName: ruleSet.tournament.name,
       jadwalSheet,
       participantSheet,
       scheduleRows: [],
@@ -120,13 +127,12 @@ function parseSpsWorkbook(bytes: Uint8Array): {
     };
   }
 
-  const { rows: scheduleRows, issues: scheduleIssues } = parseJadwalFixSheet(
-    readWorkbookSheet(bytes, jadwalSheet),
-    ruleSet,
-  );
+  const jadwalMatrix = readWorkbookSheet(bytes, jadwalSheet);
+  const { rows: scheduleRows, issues: scheduleIssues } = parseJadwalFixSheet(jadwalMatrix, ruleSet);
   if (scheduleRows.length === 0) {
     blockers.push(`Tab "${jadwalSheet}" tidak menghasilkan satu pun baris jadwal yang bisa dibaca.`);
   }
+  const tournamentName = extractTournamentTitle(jadwalMatrix) ?? ruleSet.tournament.name;
 
   let participantCsv: string | null = null;
   try {
@@ -135,7 +141,16 @@ function parseSpsWorkbook(bytes: Uint8Array): {
     blockers.push(e instanceof Error ? e.message : `Tidak bisa membaca tab "${participantSheet}".`);
   }
 
-  return { ruleSet, jadwalSheet, participantSheet, scheduleRows, scheduleIssues, participantCsv, blockers };
+  return {
+    ruleSet,
+    tournamentName,
+    jadwalSheet,
+    participantSheet,
+    scheduleRows,
+    scheduleIssues,
+    participantCsv,
+    blockers,
+  };
 }
 
 /** Same (day, arena) facts `persistSpsUpload` itself derives from the schedule rows -- computed here
@@ -178,8 +193,16 @@ export class UploadController {
   previewSps(@UploadedFile() file: Express.Multer.File | undefined): SpsUploadPreview {
     if (!file) throw new BadRequestException('file is required (multipart field "file")');
     const bytes = new Uint8Array(file.buffer);
-    const { ruleSet, jadwalSheet, participantSheet, scheduleRows, scheduleIssues, participantCsv, blockers } =
-      parseSpsWorkbook(bytes);
+    const {
+      ruleSet,
+      tournamentName,
+      jadwalSheet,
+      participantSheet,
+      scheduleRows,
+      scheduleIssues,
+      participantCsv,
+      blockers,
+    } = parseSpsWorkbook(bytes);
 
     let participantCount = 0;
     let categoryCount = 0;
@@ -206,7 +229,7 @@ export class UploadController {
     return {
       ok: blockers.length === 0,
       blockers,
-      tournamentName: ruleSet.tournament.name,
+      tournamentName,
       jadwalSheet,
       participantSheet,
       ...scheduleFacts(scheduleRows),
@@ -223,7 +246,8 @@ export class UploadController {
   async uploadSps(@UploadedFile() file: Express.Multer.File | undefined): Promise<SpsUploadResponse> {
     if (!file) throw new BadRequestException('file is required (multipart field "file")');
     const bytes = new Uint8Array(file.buffer);
-    const { ruleSet, scheduleRows, scheduleIssues, participantCsv, blockers } = parseSpsWorkbook(bytes);
+    const { ruleSet, tournamentName, scheduleRows, scheduleIssues, participantCsv, blockers } =
+      parseSpsWorkbook(bytes);
     if (blockers.length > 0) throw new BadRequestException(blockers.join(' '));
     // `parseSpsWorkbook` only pushes to `blockers` when `participantCsv` ends up null, so this is
     // unreachable once the check above passes -- kept explicit rather than a non-null assertion.
@@ -238,12 +262,13 @@ export class UploadController {
 
     // A random suffix keeps `tournament.code` unique (it has a UNIQUE constraint) across multiple
     // uploads on the same day -- the date alone collided the moment a second SPS was uploaded today.
-    // The tournament's real name (from the rule set, e.g. "Piala Gubernur ... 2026") is used instead
-    // of a generic "Turnamen <date>" label, since the team reads this name everywhere in the UI.
+    // The tournament's real name (the SPS's own title banner, e.g. "INDONESIA SUPER FIGHT 4", falling
+    // back to the shared rule-set fixture's name only when the sheet has none) is used instead of a
+    // generic "Turnamen <date>" label, since the team reads this name everywhere in the UI.
     const tag = new Date().toISOString().slice(0, 10);
     const suffix = randomBytes(3).toString('hex');
     const result = await persistSpsUpload(this.db, {
-      tournamentName: ruleSet.tournament.name,
+      tournamentName,
       tournamentCode: `T${tag.replaceAll('-', '')}-${suffix}`,
       ruleSet,
       scheduleRows,

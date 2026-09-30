@@ -72,15 +72,19 @@ if (-not (Test-Path (Join-Path $RepoRoot 'node_modules'))) {
   Write-Host '[3/5] First run: installing dependencies (this can take a few minutes)...' -ForegroundColor Cyan
   & npx -y pnpm@10.34.5 install
   if ($LASTEXITCODE -ne 0) { Write-Host 'pnpm install failed.' -ForegroundColor Red; exit 1 }
-
-  # PDF export renders through headless Chromium (Playwright), which `pnpm install` does not
-  # download on its own -- without this, the first PDF export fails with EXPORT_GENERATION_FAILED.
-  Write-Host '[3/5] First run: downloading Chromium for PDF export...' -ForegroundColor Cyan
-  & npx -y pnpm@10.34.5 --filter @bagantkd/export exec playwright install chromium
-  if ($LASTEXITCODE -ne 0) { Write-Host 'Chromium download failed.' -ForegroundColor Red; exit 1 }
 } else {
   Write-Host '[3/5] Dependencies already installed, skipping.' -ForegroundColor Cyan
 }
+
+# PDF export renders through headless Chromium (Playwright), which `pnpm install` does not download
+# on its own -- without this, a PDF export attempt fails with EXPORT_GENERATION_FAILED. Checked on
+# every run, not gated behind the node_modules check above: anyone who ran this script (or
+# `pnpm install`) before this check existed already has node_modules, so a "first run only" gate
+# here would never reach them. Playwright's own install command is fast and idempotent once the
+# browser is already downloaded.
+Write-Host '[3/5] Ensuring Chromium is downloaded for PDF export...' -ForegroundColor Cyan
+& npx -y pnpm@10.34.5 --filter @bagantkd/export exec playwright install chromium
+if ($LASTEXITCODE -ne 0) { Write-Host 'Chromium download failed.' -ForegroundColor Red; exit 1 }
 
 Write-Host '[3/5] Building the API and worker...' -ForegroundColor Cyan
 & npx -y pnpm@10.34.5 build
