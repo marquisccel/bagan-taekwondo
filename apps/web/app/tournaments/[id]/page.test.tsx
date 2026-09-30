@@ -62,7 +62,7 @@ describe('TournamentOverviewPage (read-only)', () => {
     expect(screen.getByText('Kontingen')).toBeInTheDocument();
   });
 
-  it('offers Cek & Atur Bagan and Ekspor as the primary actions once a revision exists, without repeating the quiet-success sentence', async () => {
+  it('offers Ekspor once a revision exists, without repeating the quiet-success sentence', async () => {
     vi.mocked(api.tournament).mockResolvedValue({
       id: 't1',
       code: 'T1',
@@ -88,12 +88,8 @@ describe('TournamentOverviewPage (read-only)', () => {
     renderIsolated(<TournamentOverviewPage />);
     expect(await screen.findByText('8 / 10')).toBeInTheDocument();
     expect(screen.getByText('Kategori Siap')).toBeInTheDocument();
-    // A quietly-successful (SAFE) run isn't repeated as a sentence -- the button below already says it.
+    // A quietly-successful (SAFE) run isn't repeated as a sentence.
     expect(screen.queryByText(/Bagan berhasil dibuat/)).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /cek & atur bagan/i })).toHaveAttribute(
-      'href',
-      '/tournaments/t1/sesi/rev-1',
-    );
     // Ekspor is embedded in the greeting card, not a separate panel of its own.
     expect(screen.getByRole('button', { name: 'Buat Ekspor' })).toBeInTheDocument();
     // "Perlu Ditinjau" counts (and links to) the exact same participants Peserta's own

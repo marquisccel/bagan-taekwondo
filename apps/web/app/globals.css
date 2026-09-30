@@ -510,18 +510,9 @@ a.stat-link:hover .stat-link-hint {
 
 .greeting-card {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 32px;
-  flex-wrap: wrap;
-  padding: 28px 30px;
-}
-
-.greeting-info {
-  display: flex;
   flex-direction: column;
   gap: 7px;
-  max-width: 480px;
+  padding: 28px 30px;
 }
 
 .greeting-eyebrow {
@@ -543,6 +534,24 @@ a.stat-link:hover .stat-link-hint {
   font-weight: 800;
 }
 
+/* Puts the tagline and the export controls on the same line, vertically centered on each other --
+   not the tagline sitting under the heading while the controls float up by the eyebrow instead. */
+.greeting-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.greeting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 480px;
+}
+
 .greeting-tagline {
   margin: 0;
   font-size: 13.5px;
@@ -557,19 +566,7 @@ a.stat-link:hover .stat-link-hint {
 }
 
 .greeting-controls {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
-  min-width: 260px;
-}
-
-.greeting-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .num {

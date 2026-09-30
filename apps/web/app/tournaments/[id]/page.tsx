@@ -11,8 +11,8 @@ import { useNow } from '../../../lib/use-now';
 
 /** A plain sentence for the latest draw run -- no engine jargon ("Kandidat"/"Aman") in the headline;
  * a committee member cares whether the bracket is ready to use, not the engine's internal run kind.
- * Only shown for a run that ISN'T quietly successful: once a revision exists, "Cek & Atur Bagan" and
- * the stat cards above already say everything a plain "berhasil dibuat" sentence would repeat. */
+ * Only shown for a run that ISN'T quietly successful: once a revision exists, the stat cards above
+ * already say everything a plain "berhasil dibuat" sentence would repeat. */
 function drawRunSummary(run: NonNullable<TournamentSummary['latestDrawRun']>): string | null {
   const when = new Date(run.requestedAt).toLocaleString('id-ID');
   if (run.status === 'QUEUED' || run.status === 'RUNNING') return `Bagan sedang dibuat sejak ${when}…`;
@@ -32,9 +32,8 @@ function greetingForHour(hour: number): string {
 /**
  * The dashboard's hero: replaces the old static "Admin" badge (a clock-aware greeting is a warmer
  * way to say the same thing -- the clock itself now lives in the topbar, shared by every tournament
- * page) and the standalone "Bagan Terakhir" panel -- its one actual action, "Cek & Atur Bagan",
- * belongs here as the page's primary call to action, next to Ekspor (also relocated here) rather
- * than in a panel of its own.
+ * page) and the standalone "Bagan Terakhir" panel -- Ekspor (relocated here) is the one action left
+ * once a revision exists.
  */
 function GreetingCard({
   id,
@@ -50,39 +49,34 @@ function GreetingCard({
 
   return (
     <div className="panel greeting-card">
-      <div className="greeting-info">
-        <div className="greeting-eyebrow">Dashboard Turnamen</div>
-        <h2 className="greeting-text">
-          {greetingForHour(now.getHours())}, <strong>Admin.</strong>
-        </h2>
-        <p className="greeting-tagline">
-          Otomatisasi pembuatan bagan turnamen — cepat, adil, dan tanpa ribet.
-        </p>
-        {!run ? (
-          <p className="greeting-note">
-            Belum ada bagan. Buat jadwal terlebih dahulu di tab{' '}
-            <a href={`/tournaments/${id}/jadwal`}>Jadwal</a>.
+      <div className="greeting-eyebrow">Dashboard Turnamen</div>
+      <h2 className="greeting-text">
+        {greetingForHour(now.getHours())}, <strong>Admin.</strong>
+      </h2>
+      <div className="greeting-footer">
+        <div className="greeting-info">
+          <p className="greeting-tagline">
+            Otomatisasi pembuatan bagan turnamen yang cepat, adil, dan reliable.
           </p>
-        ) : runNote ? (
-          <p className="greeting-note">{runNote}</p>
-        ) : null}
-      </div>
-      <div className="greeting-controls">
-        <div className="greeting-actions">
-          {rev ? (
-            <a className="btn btn-primary" href={`/tournaments/${id}/sesi/${rev.id}`}>
-              Cek &amp; Atur Bagan
-            </a>
+          {!run ? (
+            <p className="greeting-note">
+              Belum ada bagan. Buat jadwal terlebih dahulu di tab{' '}
+              <a href={`/tournaments/${id}/jadwal`}>Jadwal</a>.
+            </p>
+          ) : runNote ? (
+            <p className="greeting-note">{runNote}</p>
           ) : null}
         </div>
-        {rev ? (
-          <ExportPanel
-            bare
-            revisionId={rev.id}
-            revisionLifecycle={rev.lifecycle}
-            availableTypes={['TOURNAMENT_DRAW_BOOK', 'XLSX_WORKBOOK', 'SEMI_PRESTASI_COMPACT_DRAW_SHEET']}
-          />
-        ) : null}
+        <div className="greeting-controls">
+          {rev ? (
+            <ExportPanel
+              bare
+              revisionId={rev.id}
+              revisionLifecycle={rev.lifecycle}
+              availableTypes={['TOURNAMENT_DRAW_BOOK', 'XLSX_WORKBOOK', 'SEMI_PRESTASI_COMPACT_DRAW_SHEET']}
+            />
+          ) : null}
+        </div>
       </div>
     </div>
   );
