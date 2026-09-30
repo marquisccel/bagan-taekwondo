@@ -318,6 +318,53 @@ textarea {
   gap: 14px;
 }
 
+.issue-summary-trigger {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.15s var(--ease);
+}
+
+.issue-summary-trigger:hover,
+.issue-summary-trigger:focus-visible {
+  text-decoration-color: currentColor;
+}
+
+.issue-summary-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.issue-summary-popover {
+  position: fixed;
+  z-index: 41;
+  min-width: 220px;
+  max-width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 10px 12px;
+}
+
+.issue-summary-popover ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.issue-summary-popover li {
+  font-size: 13px;
+}
+
+.issue-summary-popover li + li {
+  margin-top: 4px;
+}
+
 .stat-row {
   display: flex;
   gap: 12px;

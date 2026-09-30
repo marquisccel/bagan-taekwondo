@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 
 import { BrandMark } from '../../../components/BrandMark';
@@ -13,6 +13,7 @@ import { useApiSWR } from '../../../lib/use-api-swr';
 export default function TournamentLayout({ children }: { children: ReactNode }) {
   const params = useParams<{ id: string }>();
   const pathname = usePathname();
+  const router = useRouter();
   const auth = useDevAuth();
 
   const { setTournament } = auth;
@@ -24,6 +25,16 @@ export default function TournamentLayout({ children }: { children: ReactNode }) 
     auth.actorId && params.id ? ['tournament', params.id, auth.actorId] : null,
     () => api.tournament(auth.actorId, params.id),
   );
+
+  // An older link/bookmark, or a tab left open from before tournament codes existed, can still carry
+  // the tournament's raw uuid in the address bar. The backend accepts either (see ActorGuard), but
+  // the uuid is what a bookmark or a shared link then keeps forever unless we swap it out ourselves
+  // once we know the real code -- so the address bar always settles on the readable form.
+  useEffect(() => {
+    if (tournament && tournament.code && tournament.code !== params.id) {
+      router.replace(pathname.replace(params.id, tournament.code));
+    }
+  }, [tournament, params.id, pathname, router]);
 
   if (!auth.actorId) {
     return (

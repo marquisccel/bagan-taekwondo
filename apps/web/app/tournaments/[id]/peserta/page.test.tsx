@@ -210,11 +210,17 @@ describe('PesertaPage', () => {
     renderIsolated(<PesertaPage />);
     const rowEl = await screen.findByTestId('entry-row');
     const row = within(rowEl);
-    expect(row.getByText('1 kesalahan')).toBeInTheDocument();
-    expect(row.getByText(/Kesalahan/, { selector: 'strong' })).toBeInTheDocument();
-    expect(row.getByText(/Diakui/)).toBeInTheDocument();
+    const trigger = row.getByRole('button', { name: '1 kesalahan' });
     expect(row.getByRole('button', { name: 'Perbaiki data Budi Santoso' })).toBeInTheDocument();
     expect(rowEl.textContent).not.toMatch(/WEIGHT_OUT_OF_RANGE|NAME_WHITESPACE/);
+
+    // The detail list opens as a popover (portaled to <body>), not inline -- so it never distorts the
+    // row's own height, unlike the old <details>/<summary> expansion it replaced.
+    expect(rowEl.querySelector('.issue-summary-popover')).not.toBeInTheDocument();
+    fireEvent.click(trigger);
+    expect(screen.getByText(/Kesalahan/, { selector: 'strong' })).toBeInTheDocument();
+    expect(screen.getByText(/Diakui/)).toBeInTheDocument();
+    expect(rowEl.querySelector('.issue-summary-popover')).not.toBeInTheDocument();
   });
 
   it('applies the search, contingent, discipline, category, eligibility and review filters live, with no separate apply step', async () => {

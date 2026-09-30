@@ -1,7 +1,8 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { EntryCorrectionDialog } from '../../../../components/EntryCorrectionDialog';
 import { api, type EntryListItem, type EntryListParams } from '../../../../lib/api';
@@ -45,8 +46,36 @@ const EMPTY: Filters = {
   review: '',
 };
 
+/**
+ * Shown as a notification-style popover instead of an inline `<details>` expansion: the table sits in
+ * a horizontally-scrolling `.panel` (`overflow-x: auto`), and per the CSS overflow spec a container
+ * can't mix `overflow-x: auto` with `overflow-y: visible` -- the y axis silently becomes `auto` too,
+ * clipping anything that expands downward in place. Portaling to `document.body` with a
+ * viewport-`fixed` position sidesteps that entirely, and also stops an open row from pushing every
+ * row below it down the page.
+ */
 function IssueSummary({ entry }: { entry: EntryListItem }) {
   const { error, warning, info } = entry.openIssueCounts;
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
   if (entry.issues.length === 0) return <span style={{ color: 'var(--text-dim)' }}>Tidak ada</span>;
   const parts = [
     error > 0 ? `${error} kesalahan` : null,
@@ -54,25 +83,57 @@ function IssueSummary({ entry }: { entry: EntryListItem }) {
     info > 0 ? `${info} info` : null,
   ].filter(Boolean);
   const summary = parts.length > 0 ? parts.join(', ') : `${entry.issues.length} sudah ditangani`;
+
+  const POPOVER_WIDTH = 320;
+  const VIEWPORT_MARGIN = 12;
+
+  const toggle = () => {
+    if (!open) {
+      const r = triggerRef.current?.getBoundingClientRect();
+      if (r) {
+        const left = Math.min(r.left, window.innerWidth - POPOVER_WIDTH - VIEWPORT_MARGIN);
+        setPos({ top: r.bottom + 6, left: Math.max(VIEWPORT_MARGIN, left) });
+      }
+    }
+    setOpen((o) => !o);
+  };
+
   return (
-    <details>
-      <summary
-        style={{
-          cursor: 'pointer',
-          color: error > 0 ? 'var(--red)' : warning > 0 ? 'var(--yellow)' : undefined,
-        }}
+    <>
+      <button
+        type="button"
+        ref={triggerRef}
+        onClick={toggle}
+        aria-expanded={open}
+        className="issue-summary-trigger"
+        style={{ color: error > 0 ? 'var(--red)' : warning > 0 ? 'var(--yellow)' : undefined }}
       >
         {summary}
-      </summary>
-      <ul style={{ margin: '4px 0 0', paddingLeft: 16 }}>
-        {entry.issues.map((i) => (
-          <li key={i.id}>
-            <strong>{issueSeverityLabel(i.severity)}</strong>: {issueCodeLabel(i.code)}
-            {i.status !== 'OPEN' ? ` · ${issueStatusLabel(i.status)}` : null}
-          </li>
-        ))}
-      </ul>
-    </details>
+      </button>
+      {open && pos
+        ? createPortal(
+            <>
+              <div className="issue-summary-scrim" onClick={() => setOpen(false)} />
+              <div
+                role="dialog"
+                aria-label={`Masalah data ${entry.displayName}`}
+                className="issue-summary-popover"
+                style={{ top: pos.top, left: pos.left }}
+              >
+                <ul>
+                  {entry.issues.map((i) => (
+                    <li key={i.id}>
+                      <strong>{issueSeverityLabel(i.severity)}</strong>: {issueCodeLabel(i.code)}
+                      {i.status !== 'OPEN' ? ` · ${issueStatusLabel(i.status)}` : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }
 
