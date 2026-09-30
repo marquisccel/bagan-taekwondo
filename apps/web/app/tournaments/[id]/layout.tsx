@@ -42,7 +42,7 @@ export default function TournamentLayout({ children }: { children: ReactNode }) 
       <div className="topbar">
         <span className="brand">
           <BrandMark />
-          Taekwondo Indonesia
+          Taekwondo Bracket Generator
         </span>
         <span className="topbar-divider" aria-hidden="true" />
         <span className="topbar-tournament">{tournament?.name ?? ' '}</span>

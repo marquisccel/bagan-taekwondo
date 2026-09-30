@@ -94,13 +94,7 @@ export default function HomePage() {
     <main className="upload-hero">
       <div className="upload-hero-brand">
         <BrandMark size="hero" />
-        <div>
-          <h1>Taekwondo Indonesia</h1>
-          <p className="upload-hero-eyebrow" style={{ marginTop: 4 }}>
-            Unggah file SPS (jadwal &amp; peserta) untuk mulai. Sistem otomatis membuat bagan turnamen dari
-            data di dalamnya — presisi, bisa diedit, tanpa perlu isi apa pun secara manual.
-          </p>
-        </div>
+        <h1>Taekwondo Bracket Generator</h1>
       </div>
 
       <div className="upload-card">
@@ -131,15 +125,7 @@ export default function HomePage() {
             {stage === 'previewing' ? (
               <p style={{ fontWeight: 600 }}>Memeriksa isi file…</p>
             ) : (
-              <>
-                <p style={{ fontWeight: 700, marginBottom: 6, fontSize: 14.5 }}>
-                  Klik atau seret file SPS (.xlsx) ke sini
-                </p>
-                <p style={{ color: 'var(--text-dim)', fontSize: '0.9em', maxWidth: 380, margin: '0 auto' }}>
-                  Sistem otomatis mencari tab jadwal (nama mengandung &quot;Jadwal&quot; dan &quot;FIX&quot;)
-                  dan tab peserta (&quot;semi-prestasi&quot;) — tidak perlu nama tab persis sama.
-                </p>
-              </>
+              <p style={{ fontWeight: 700, fontSize: 14.5 }}>Klik atau seret file SPS (.xlsx) ke sini</p>
             )}
           </div>
         ) : null}

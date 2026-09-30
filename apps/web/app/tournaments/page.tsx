@@ -31,7 +31,7 @@ function Shell({ tournamentId, children }: { tournamentId: string; children: Rea
       <div className="topbar">
         <span className="brand">
           <BrandMark />
-          Taekwondo Indonesia
+          Taekwondo Bracket Generator
         </span>
       </div>
       <div className="subbar">
