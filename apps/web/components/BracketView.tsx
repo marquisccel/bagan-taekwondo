@@ -391,17 +391,13 @@ function useBracketLines(
         // `.bracket-name-row` stretches to fill `.bracket-names`' full width (a flex column's default
         // cross-axis stretch), so each row's own right edge already sits at that container's right
         // edge regardless of the name's actual length -- exactly the convergence point this pair's
-        // lines need. Each line starts from its own row's underline (bottomRight), not the row's
-        // vertical middle. The elbow's own y is the true midpoint between those two underlines, NOT
-        // `target`'s measured y -- the "No." field centers against the whole vertex box (including
-        // its top/bottom padding), which lands it on row0's own underline rather than halfway between
-        // the two rows, and reusing that y drew the exit line from the top of the pair instead of its
-        // middle. Only `target`'s x (the field's actual horizontal position) still comes from it.
-        if (row0 && row1) {
-          const p0 = pointOf(row0).bottomRight;
-          const p1 = pointOf(row1).bottomRight;
-          connect(p0, p1, { x: target.x, y: (p0.y + p1.y) / 2 });
-        }
+        // lines need, with `target` (the "No." field's own real position) reached the same way any
+        // other round is. Each line starts from its own row's underline (bottomRight), not the row's
+        // vertical middle. `target` must stay the field's own measured position here, not a
+        // recomputed midpoint of the two underlines -- that field is the actual visible pill the
+        // lines have to land on, and a separately-computed midpoint drifts away from it by however
+        // much its padding differs from exactly half a row height, pulling the line off the pill.
+        if (row0 && row1) connect(pointOf(row0).bottomRight, pointOf(row1).bottomRight, target);
         return v.right;
       }
       const a = visit(round - 1, position * 2 - 1);
