@@ -1316,7 +1316,11 @@ textarea:focus {
   flex-direction: column;
   line-height: 1.3;
   width: 960px;
-  padding: 5px 24px 5px 2px;
+  /* No vertical padding: with two adjacent vertices placed flush (.bracket-vertex has margin: 0), any
+     top/bottom padding here would stack into a gap between two DIFFERENT matches' rows that the gap
+     between the two rows of the SAME match doesn't have, making one pool's groups look unevenly
+     spaced. */
+  padding: 0 24px 0 2px;
 }
 
 /* A spreadsheet-style row: ID atlet / Nama / Kelamin / Divisi / Class / Kontingen in fixed-width
