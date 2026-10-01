@@ -100,6 +100,61 @@ async function loadRevision(tx: SqlExecutor, revisionId: string): Promise<Revisi
   return row ?? null;
 }
 
+/**
+ * Swaps two entries' positions within an already-built bracket, in place -- used for a same-pool
+ * SWAP_ENTRIES (dragging one athlete onto another inside the Bracket tab), as opposed to
+ * `rebuildPoolBracket`'s full re-derivation from the pool's member set and the draw's seed.
+ *
+ * Why this has to exist separately: a same-pool swap leaves `pool_member` completely unchanged (the
+ * same two entries are still members of the same pool, just in a different arrangement), so
+ * `buildBracket` -- a pure function of the entry set, seed and label -- would deterministically
+ * reproduce the exact same bracket every time it's asked to rebuild this pool. The operator's actual
+ * intent, dragging entry A onto entry B's spot, is "exchange where these two sit", which only a
+ * targeted slot swap (not a from-scratch rebuild) can express. This is also why this bug could only
+ * ever show its first drag-and-drop as "working": that lone rebuild differed from the ORIGINAL
+ * draw-time bracket (different seed derivation -- draw.ts uses a relative seed, this path a raw
+ * one), and every rebuild after that first one reproduced that same new-but-now-stable layout with no
+ * further visible change, matching the "only works once" bug report exactly.
+ *
+ * `match` rows reference bracket position (`feeder_a_slot`/`feeder_b_slot`), never `entry_id`
+ * directly, so swapping who occupies a position is the entire change -- no match/bracket_slot
+ * structure needs touching. The two rows are deleted and reinserted (rather than updated in place)
+ * because `bracket_slot` has a `UNIQUE(bracket_id, entry_id)` constraint that isn't deferrable: two
+ * sequential UPDATEs would collide the instant one row briefly holds the other's entry_id.
+ *
+ * Returns false (never throws) when either entry has no bracket_slot yet -- the caller treats that
+ * as ENTRY_NOT_FOUND, since there is nothing in the bracket to swap.
+ */
+async function swapBracketSlots(
+  tx: SqlExecutor,
+  poolId: string,
+  entryA: string,
+  entryB: string,
+): Promise<boolean> {
+  const [bracket] = await tx.query<{ id: string }>(`select id from bracket where pool_id = $1`, [poolId]);
+  if (!bracket) return false;
+  const slots = await tx.query<{ position: number; entry_id: string | null; seed_no: number | null }>(
+    `select position, entry_id, seed_no from bracket_slot where bracket_id = $1 and entry_id in ($2, $3)`,
+    [bracket.id, entryA, entryB],
+  );
+  const slotA = slots.find((s) => s.entry_id === entryA);
+  const slotB = slots.find((s) => s.entry_id === entryB);
+  if (!slotA || !slotB) return false;
+
+  await tx.query(`delete from bracket_slot where bracket_id = $1 and position in ($2, $3)`, [
+    bracket.id,
+    slotA.position,
+    slotB.position,
+  ]);
+  await tx.query(
+    `insert into bracket_slot (bracket_id, position, entry_id, seed_no, bye_reason) values
+       ($1, $2, $3, $4, null),
+       ($1, $5, $6, $7, null)`,
+    [bracket.id, slotA.position, entryB, slotB.seed_no, slotB.position, entryA, slotA.seed_no],
+  );
+  return true;
+}
+
 /** Rebuilds one pool's bracket (frozen engine functions; no algorithm change) from its current members. */
 async function rebuildPoolBracket(
   tx: SqlExecutor,
@@ -286,7 +341,19 @@ async function applyContent(
       const a = await poolOfEntry(tx, rev.id, cmd.entryA);
       const b = await poolOfEntry(tx, rev.id, cmd.entryB);
       if (!a || !b) return { rejected: 'ENTRY_NOT_FOUND', hard: ['both entries must be in this revision'] };
-      if (a.poolId === b.poolId) return { touchedPools: [a.poolId] };
+      if (a.poolId === b.poolId) {
+        // Same pool: pool_member has nothing to change (see swapBracketSlots' own comment for why a
+        // rebuild from here would be a deterministic no-op) -- swap the two bracket positions
+        // directly instead, and skip rebuildPoolBracket entirely for this pool (touchedPools: []),
+        // since a rebuild immediately after would overwrite the swap we just made.
+        const swapped = await swapBracketSlots(tx, a.poolId, cmd.entryA, cmd.entryB);
+        if (!swapped)
+          return {
+            rejected: 'ENTRY_NOT_FOUND',
+            hard: ['no bracket exists yet for this pool -- nothing to swap'],
+          };
+        return { touchedPools: [] };
+      }
       await tx.query(`delete from pool_member where pool_id = $1 and entry_id = $2`, [a.poolId, cmd.entryA]);
       await tx.query(`delete from pool_member where pool_id = $1 and entry_id = $2`, [b.poolId, cmd.entryB]);
       await tx.query(`insert into pool_member (pool_id, revision_id, entry_id) values ($1,$2,$3)`, [

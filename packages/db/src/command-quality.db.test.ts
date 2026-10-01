@@ -293,5 +293,51 @@ for (const backend of testBackends()) {
       expect(out).toMatchObject({ outcome: 'APPLIED' });
       expect(out.verdict).toEqual({ level: 'GREEN' });
     }, 120_000);
+
+    // Regression (High severity bug report): dragging one athlete onto another's bracket slot, within
+    // the SAME pool, used to only ever visibly move anything on the very first drag -- every swap
+    // after that silently did nothing. Root cause: a same-pool SWAP_ENTRIES left pool_member
+    // untouched and rebuilt the bracket from scratch, which is a pure function of the (unchanged)
+    // member set and seed, so it deterministically reproduced the exact same layout every time.
+    it('swaps two entries bracket slots for a same-pool swap, and keeps swapping correctly on repeat (regression: used to only work once)', async () => {
+      const s = await scenario([
+        ...[150, 151, 152, 153].map((h, i) =>
+          athlete(`Pendek ${i + 1}`, `Kota ${'ABAC'[i]}`, { heightCm: h }),
+        ),
+      ]);
+      const [pool] = await s.pools();
+      const [m1, m2] = pool?.members ?? [];
+      if (!m1 || !m2) throw new Error('expected at least 2 members in one pool');
+
+      const slotEntryIds = async (): Promise<{ position: number; entry_id: string | null }[]> =>
+        db.query<{ position: number; entry_id: string | null }>(
+          `select bs.position, bs.entry_id
+           from bracket_slot bs
+           join bracket b on b.id = bs.bracket_id
+           join pool p on p.id = b.pool_id
+           where p.pool_uid = $1 and p.revision_id = $2
+           order by bs.position`,
+          [pool?.poolUid, s.revisionId],
+        );
+
+      const before = await slotEntryIds();
+      const slotA = before.find((r) => r.entry_id === m1.entryId);
+      const slotB = before.find((r) => r.entry_id === m2.entryId);
+      if (!slotA || !slotB) throw new Error('expected both entries to already have a bracket slot');
+
+      const swap1 = await s.swap(m1.entryId, m2.entryId);
+      expect(swap1).toMatchObject({ outcome: 'APPLIED' });
+      const afterFirst = await slotEntryIds();
+      expect(afterFirst.find((r) => r.position === slotA.position)?.entry_id).toBe(m2.entryId);
+      expect(afterFirst.find((r) => r.position === slotB.position)?.entry_id).toBe(m1.entryId);
+
+      // The second drag-and-drop in the bug report -- the one that used to silently no-op. Swapping
+      // the same pair back must move them back, not leave the first swap's layout in place.
+      const swap2 = await s.swap(m1.entryId, m2.entryId);
+      expect(swap2).toMatchObject({ outcome: 'APPLIED' });
+      const afterSecond = await slotEntryIds();
+      expect(afterSecond.find((r) => r.position === slotA.position)?.entry_id).toBe(m1.entryId);
+      expect(afterSecond.find((r) => r.position === slotB.position)?.entry_id).toBe(m2.entryId);
+    }, 120_000);
   });
 }
