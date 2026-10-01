@@ -1310,19 +1310,35 @@ textarea:focus {
   min-width: 150px;
 }
 
-/* Fixed WIDTH (not min-width) so every round-1 box is identical regardless of name length -- a
- * longer name previously stretched its own box wider than its neighbors, which pushed that row's
- * "No." field out of alignment with every other row's. Wide enough that a full name + gender +
- * contingent stays on one line (the team's own printed bracket sheet never wraps a row) instead of
- * wrapping or clipping. */
+/* Fixed WIDTH (not min-width) so every round-1 entry lines up identically regardless of name length
+ * -- a longer name previously stretched wider than its neighbors, which pushed that row's "No."
+ * field out of alignment with every other row's. Wide enough that a full name + gender + contingent
+ * stays on one line instead of wrapping or clipping. No box/border around the pair (per the team's
+ * own reference bracket chart) -- the tree's connecting lines alone carry the structure, the same
+ * way a classic competition bracket diagram reads. */
 .bracket-names {
+  position: relative;
   display: flex;
   flex-direction: column;
   line-height: 1.3;
   width: 460px;
-  border: 1px solid var(--bracket-line);
-  border-radius: 2px;
-  padding: 5px 8px;
+  padding: 5px 24px 5px 2px;
+}
+
+/* Joins the pair into the tree with the exact same bracket-shaped connector used between every other
+ * round (see .bracket-children::before) -- a leaf's two names are "paired by a line" the same way
+ * any other match's two feeders are, instead of a box standing in for that relationship. */
+.bracket-names::after {
+  content: '';
+  position: absolute;
+  top: 25%;
+  bottom: 25%;
+  right: 0;
+  width: 18px;
+  border-top: 2px solid var(--bracket-line);
+  border-bottom: 2px solid var(--bracket-line);
+  border-right: 2px solid var(--bracket-line);
+  border-radius: 0 4px 4px 0;
 }
 
 .bracket-name-row {
@@ -1346,9 +1362,9 @@ textarea:focus {
   outline-offset: -2px;
 }
 
-/* The divider between the two athletes inside one round-1 box, matching gambar 5's printed sheet. */
+/* A little extra air between the pair, now that a border no longer visually separates them. */
 .bracket-name-row:first-child {
-  border-bottom: 1px solid var(--bracket-line);
+  margin-bottom: 4px;
 }
 
 .bracket-name-id {
