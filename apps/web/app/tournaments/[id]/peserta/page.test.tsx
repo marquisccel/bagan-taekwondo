@@ -236,7 +236,8 @@ describe('PesertaPage', () => {
     // row's own height, unlike the old <details>/<summary> expansion it replaced.
     expect(rowEl.querySelector('.issue-summary-popover')).not.toBeInTheDocument();
     fireEvent.click(trigger);
-    expect(screen.getByText(/Kesalahan/, { selector: 'strong' })).toBeInTheDocument();
+    // Just the plain issue text -- no "Kesalahan:"/"Peringatan:" severity prefix.
+    expect(screen.getByText(/Berat badan di luar batas wajar/)).toBeInTheDocument();
     expect(screen.getByText(/Diakui/)).toBeInTheDocument();
     expect(rowEl.querySelector('.issue-summary-popover')).not.toBeInTheDocument();
   });
@@ -261,7 +262,8 @@ describe('PesertaPage', () => {
     );
     renderIsolated(<PesertaPage />);
     const rowEl = await screen.findByTestId('entry-row');
-    expect(within(rowEl).getByText(/Peringatan/, { selector: 'strong' })).toBeInTheDocument();
+    // Just the plain issue text -- no "Peringatan:" severity prefix.
+    expect(within(rowEl).getByText('Format NIK tidak valid')).toBeInTheDocument();
     // No button, no popover -- just the one issue's text, right in the cell.
     expect(within(rowEl).queryByRole('button', { name: /peringatan/i })).not.toBeInTheDocument();
     expect(rowEl.querySelector('.issue-summary-popover')).not.toBeInTheDocument();

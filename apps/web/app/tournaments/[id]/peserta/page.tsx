@@ -17,7 +17,6 @@ import {
   groupStatusLabel,
   humanizeCode,
   issueCodeLabel,
-  issueSeverityLabel,
   issueStatusLabel,
   streamLabel,
   weightClassDisplayLabel,
@@ -112,7 +111,7 @@ function IssueSummary({ entry }: { entry: EntryListItem }) {
                 : undefined,
         }}
       >
-        <strong>{issueSeverityLabel(singleIssue.severity)}</strong>: {issueCodeLabel(singleIssue.code)}
+        {issueCodeLabel(singleIssue.code)}
         {singleIssue.status !== 'OPEN' ? ` · ${issueStatusLabel(singleIssue.status)}` : null}
       </span>
     );
@@ -159,9 +158,11 @@ function IssueSummary({ entry }: { entry: EntryListItem }) {
               >
                 <ul>
                   {actionable.map((i) => (
-                    <li key={i.id}>
-                      <strong>{issueSeverityLabel(i.severity)}</strong>: {issueCodeLabel(i.code)}
-                      {i.status !== 'OPEN' ? ` · ${issueStatusLabel(i.status)}` : null}
+                    <li key={i.id} style={{ color: i.severity === 'ERROR' ? 'var(--red)' : 'var(--yellow)' }}>
+                      {issueCodeLabel(i.code)}
+                      {i.status !== 'OPEN' ? (
+                        <span style={{ color: 'var(--text-dim)' }}> · {issueStatusLabel(i.status)}</span>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
