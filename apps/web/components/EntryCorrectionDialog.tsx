@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 
 import { api, ApiClientError, type EntryListItem } from '../lib/api';
@@ -46,18 +45,12 @@ export function EntryCorrectionDialog({
   actorId,
   onClose,
   onSaved,
-  subtitle,
-  extraActions,
 }: {
   entry: EntryListItem;
   tournamentId: string;
   actorId: string;
   onClose: () => void;
   onSaved: () => void;
-  /** Progress context for a bulk walkthrough (BulkCorrectionDialog), e.g. "Peserta 3 dari 42". */
-  subtitle?: ReactNode;
-  /** Extra buttons next to Simpan/Batal, e.g. a bulk walkthrough's "Lewati". */
-  extraActions?: ReactNode;
 }) {
   const first = entry.members[0];
   const [fullName, setFullName] = useState(first?.fullName ?? '');
@@ -148,14 +141,9 @@ export function EntryCorrectionDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="inspector-header">
-          <div>
-            <h2 className="inspector-title" style={{ marginBottom: 0 }}>
-              Perbaiki Data Peserta
-            </h2>
-            {subtitle ? (
-              <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-dim)' }}>{subtitle}</p>
-            ) : null}
-          </div>
+          <h2 className="inspector-title" style={{ marginBottom: 0 }}>
+            Perbaiki Data Peserta
+          </h2>
           <button type="button" className="btn btn-quiet" onClick={onClose} aria-label="Tutup">
             Tutup
           </button>
@@ -282,7 +270,6 @@ export function EntryCorrectionDialog({
           <button type="button" className="btn btn-primary" disabled={saving} onClick={() => void save()}>
             {saving ? 'Menyimpan…' : 'Simpan'}
           </button>
-          {extraActions}
           <button type="button" className="btn" onClick={onClose} disabled={saving}>
             Batal
           </button>
