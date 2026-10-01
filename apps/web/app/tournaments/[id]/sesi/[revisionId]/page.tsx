@@ -14,7 +14,6 @@ import {
   categoryKeyDims,
   formatCategoryLabel,
   humanizeCode,
-  weightClassDisplayLabel,
 } from '../../../../../lib/id-labels';
 import { isDraft } from '../../../../../lib/lifecycle';
 import { useApiSWR } from '../../../../../lib/use-api-swr';
@@ -126,9 +125,11 @@ function CategoryTable({
   const weightClass = dims.get('WEIGHT_CLASS');
   const categoryLabels = {
     divisi: ageDivision ? ageDivisionLabel(ageDivision) : '·',
+    // The committee's reference table shows the weight class as its raw rule-set code (e.g. "-42",
+    // "+78"), not a spelled-out "Under/Over ... kg" phrase.
     kelas:
       weightClass && weightClass !== 'INDIVIDUAL' && weightClass !== 'PAIR' && weightClass !== 'TEAM'
-        ? weightClassDisplayLabel(weightClass)
+        ? weightClass
         : '·',
   };
 

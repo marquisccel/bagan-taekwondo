@@ -177,8 +177,12 @@ function MatchVertex({
                   <code className="bracket-name-id">{r.idAtlet}</code>
                   <span className="bracket-name-nama">{r.nama}</span>
                   <span className="bracket-name-kelamin">{r.kelamin}</span>
-                  <span className="bracket-name-divisi">{categoryLabels?.divisi ?? '·'}</span>
-                  <span className="bracket-name-kelas">{categoryLabels?.kelas ?? '·'}</span>
+                  <span className="bracket-name-divisi">
+                    {r.nama === 'BYE' ? '' : (categoryLabels?.divisi ?? '·')}
+                  </span>
+                  <span className="bracket-name-kelas">
+                    {r.nama === 'BYE' ? '' : (categoryLabels?.kelas ?? '·')}
+                  </span>
                   <span className="bracket-name-kontingen">{r.kontingen}</span>
                 </>
               ) : null}
@@ -341,28 +345,25 @@ function useBracketLines(
       // `a.x - 10` was backwards (it walked left, back over the names/number it just came from,
       // instead of right, out toward the target it's actually heading for).
       const spineX = a.x + 10;
+      // One single vertical spine spanning everything it needs to reach (a, b, AND target.y), drawn
+      // exactly once -- drawing it in more than one overlapping stroke (an earlier version drew the
+      // a-to-b span and then a second, mostly-overlapping target-covering span) doubled up the
+      // anti-aliasing at the shared pixels and showed up as a stray extra tick at the corner.
+      // Likewise the target segment lands exactly on target.y, never on the midpoint of a.y/b.y --
+      // those two aren't guaranteed equal (flex-centering, an odd sibling height from a BYE row,
+      // etc.), and using the midpoint instead is what drew that segment on a diagonal.
+      const spineTop = Math.min(a.y, b.y, target.y);
+      const spineBottom = Math.max(a.y, b.y, target.y);
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(spineX, a.y);
+      ctx.moveTo(b.x, b.y);
       ctx.lineTo(spineX, b.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-      // Final segment must land exactly on target.y, not the midpoint of a.y/b.y -- those two
-      // aren't guaranteed equal (flex-centering, an odd sibling height from a BYE row, etc.), and
-      // using the midpoint instead of target.y is what drew this segment on a diagonal. The spine
-      // extends to cover target.y too, so the elbow here is still a clean right angle.
-      ctx.beginPath();
+      ctx.moveTo(spineX, spineTop);
+      ctx.lineTo(spineX, spineBottom);
       ctx.moveTo(spineX, target.y);
       ctx.lineTo(target.x, target.y);
       ctx.stroke();
-      if (target.y !== a.y && target.y !== b.y) {
-        const spineTop = Math.min(a.y, b.y, target.y);
-        const spineBottom = Math.max(a.y, b.y, target.y);
-        ctx.beginPath();
-        ctx.moveTo(spineX, spineTop);
-        ctx.lineTo(spineX, spineBottom);
-        ctx.stroke();
-      }
     };
 
     const numberFieldPoint = (vertexEl: Element, fallback: LinePoint): LinePoint => {
@@ -404,7 +405,7 @@ function useBracketLines(
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, rect.width, rect.height);
       ctx.strokeStyle = lineColor;
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1;
       ctx.lineJoin = 'miter';
       ctx.lineCap = 'butt';
       visit(maxRound, 1);
