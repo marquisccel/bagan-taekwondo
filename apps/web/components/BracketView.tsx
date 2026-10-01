@@ -381,6 +381,21 @@ function useBracketLines(
       return numberEl ? pointOf(numberEl).left : fallback;
     };
 
+    /**
+     * Every vertex's pill naturally centers against its OWN flex box -- correct for a round-2+
+     * vertex (whose box is just the pill itself, nothing else), but NOT for a leaf vertex, whose box
+     * also contains the two name rows: for two equal-height rows that centers the pill exactly on the
+     * boundary between them, half a row short of the actual midpoint between their two underlines,
+     * which is where a line from each underline must visually meet. That mismatch then keeps
+     * propagating upward -- once a leaf's own output point moves to its true center, a round-2+
+     * vertex's two inputs are no longer symmetric around ITS OWN natural (still unmoved) pill
+     * position either.
+     *
+     * So every vertex here, leaf or not, is nudged (via a transform, reset every redraw below) from
+     * its natural position onto the true midpoint of its own two inputs -- whatever they are -- and
+     * reports THAT adjusted position upward as its own output point, so the correction is never lost
+     * one level up the tree.
+     */
     const visit = (round: number, position: number): LinePoint | null => {
       const match = matchByKey.get(`${round}-${position}`);
       if (!match) return null;
@@ -388,6 +403,8 @@ function useBracketLines(
       if (!vertexEl) return null;
       const v = pointOf(vertexEl);
       const target = numberFieldPoint(vertexEl, v.left);
+      let a: LinePoint | null;
+      let b: LinePoint | null;
       if (round === minRound) {
         const row0 = tree.querySelector(`[data-row-key="${round}-${position}-0"]`);
         const row1 = tree.querySelector(`[data-row-key="${round}-${position}-1"]`);
@@ -396,29 +413,18 @@ function useBracketLines(
         // edge regardless of the name's actual length -- exactly the convergence point this pair's
         // lines need. Each line starts from its own row's underline (bottomRight), not the row's
         // vertical middle.
-        //
-        // The pill's OWN rendered position (`target`, measured above) is NOT this true center: the
-        // pill centers against `.bracket-vertex`'s full flex box, which lands it exactly on the
-        // boundary between the two rows (since they're equal height) -- that boundary sits half a
-        // row short of the actual midpoint between the two rows' own underlines, which is where a
-        // line from each underline must visually meet. Rather than leave the pill sitting where the
-        // line doesn't reach it, the pill itself is nudged (via a transform, reset every redraw
-        // below) down onto that true midpoint, so the visible "No." box and the line it feeds always
-        // agree on one shared center point.
-        if (row0 && row1) {
-          const p0 = pointOf(row0).bottomRight;
-          const p1 = pointOf(row1).bottomRight;
-          const trueCenter = (p0.y + p1.y) / 2;
-          const numberEl = numberFieldOf(vertexEl);
-          if (numberEl) (numberEl as HTMLElement).style.transform = `translateY(${trueCenter - target.y}px)`;
-          connect(p0, p1, { x: target.x, y: trueCenter });
-        }
-        return v.right;
+        a = row0 ? pointOf(row0).bottomRight : null;
+        b = row1 ? pointOf(row1).bottomRight : null;
+      } else {
+        a = visit(round - 1, position * 2 - 1);
+        b = visit(round - 1, position * 2);
       }
-      const a = visit(round - 1, position * 2 - 1);
-      const b = visit(round - 1, position * 2);
-      if (a && b) connect(a, b, target);
-      return v.right;
+      if (!a || !b) return v.right;
+      const trueCenter = (a.y + b.y) / 2;
+      const numberEl = numberFieldOf(vertexEl);
+      if (numberEl) (numberEl as HTMLElement).style.transform = `translateY(${trueCenter - target.y}px)`;
+      connect(a, b, { x: target.x, y: trueCenter });
+      return { x: v.right.x, y: trueCenter };
     };
 
     const draw = () => {
