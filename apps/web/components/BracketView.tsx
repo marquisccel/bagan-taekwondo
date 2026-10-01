@@ -334,12 +334,16 @@ function useBracketLines(
       };
     };
 
-    /** The full bracket elbow: two inputs merge onto a vertical spine a few pixels out, then one line
-     * continues from the spine all the way to the target -- the match's own "No." field, found
-     * directly rather than assumed from the vertex's own bounding box, since a LEAF vertex's box also
-     * contains `.bracket-names` (so the vertex's own left edge is the names' left edge, nowhere near
-     * the number). Reaching the number itself, not just stopping in the gap before it, is what makes
-     * this read as one continuous line into "1"/"2"/etc. instead of a line that stops short of it.
+    /** The full bracket connector: a short stub out of each input, then a straight diagonal from each
+     * stub's end funneling onto one convergence point, then one final line continuing from there to
+     * the target -- the match's own "No." field, found directly rather than assumed from the vertex's
+     * own bounding box, since a LEAF vertex's box also contains `.bracket-names` (so the vertex's own
+     * left edge is the names' left edge, nowhere near the number). Reaching the number itself, not
+     * just stopping in the gap before it, is what makes this read as one continuous line into
+     * "1"/"2"/etc. instead of a line that stops short of it. The funnel's point sits at the target's
+     * own y (not a recomputed midpoint of a.y/b.y) -- that's where the final segment must be
+     * perfectly horizontal into the target regardless of a.y/b.y, and it's also the same point the
+     * target's own visual element (the "No." pill) is actually centered on.
      *
      * Every point here comes straight from a real measured DOM edge (a row's own underline, a
      * vertex's own right edge) -- snapping those coordinates to a half-pixel for a "crisper" canvas
@@ -348,27 +352,16 @@ function useBracketLines(
      * it (looked "patah"/disconnected exactly at that seam). Matching the real measured position
      * exactly matters more than stroke crispness. */
     const connect = (a: LinePoint, b: LinePoint, target: LinePoint) => {
-      // The spine sits a little further TOWARD the target than the inputs, never behind them --
-      // `a.x - 10` was backwards (it walked left, back over the names/number it just came from,
-      // instead of right, out toward the target it's actually heading for).
-      const spineX = a.x + 10;
-      // One single vertical spine spanning everything it needs to reach (a, b, AND target.y), drawn
-      // exactly once -- drawing it in more than one overlapping stroke (an earlier version drew the
-      // a-to-b span and then a second, mostly-overlapping target-covering span) doubled up the
-      // anti-aliasing at the shared pixels and showed up as a stray extra tick at the corner.
-      // Likewise the target segment lands exactly on target.y, never on the midpoint of a.y/b.y --
-      // those two aren't guaranteed equal (flex-centering, an odd sibling height from a BYE row,
-      // etc.), and using the midpoint instead is what drew that segment on a diagonal.
-      const spineTop = Math.min(a.y, b.y, target.y);
-      const spineBottom = Math.max(a.y, b.y, target.y);
+      const stubEnd = 6;
+      const pointX = a.x + 10;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
-      ctx.lineTo(spineX, a.y);
+      ctx.lineTo(a.x + stubEnd, a.y);
+      ctx.lineTo(pointX, target.y);
       ctx.moveTo(b.x, b.y);
-      ctx.lineTo(spineX, b.y);
-      ctx.moveTo(spineX, spineTop);
-      ctx.lineTo(spineX, spineBottom);
-      ctx.moveTo(spineX, target.y);
+      ctx.lineTo(b.x + stubEnd, b.y);
+      ctx.lineTo(pointX, target.y);
+      ctx.moveTo(pointX, target.y);
       ctx.lineTo(target.x, target.y);
       ctx.stroke();
     };
