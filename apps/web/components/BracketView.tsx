@@ -37,6 +37,14 @@ function feederRow(feeder: MatchFeeder, bracket: Bracket): FeederRow | null {
   return null;
 }
 
+/** Shown as their own columns on every round-1 row (Divisi, Class), matching the committee's
+ * printed reference table -- every row in one BracketView is already the same category, so these
+ * are the same strings repeated down the column, not looked up per entry. */
+interface CategoryLabels {
+  readonly divisi: string;
+  readonly kelas: string;
+}
+
 /**
  * The "nomor tampilan" (display number) is presentation-only (see match.display_no in
  * packages/db/src/schema/draw.ts) and never touches matchUid/publicCode — those internal codes
@@ -120,7 +128,7 @@ function MatchVertex({
   isLeaf,
   editable,
   savingMatchId,
-  categoryLabel,
+  categoryLabels,
   onSetDisplayNo,
   onSwapEntries,
 }: {
@@ -129,7 +137,7 @@ function MatchVertex({
   isLeaf: boolean;
   editable: boolean;
   savingMatchId: string | null;
-  categoryLabel?: string;
+  categoryLabels?: CategoryLabels;
   onSetDisplayNo?: (matchId: string, displayNo: number | null) => void;
   onSwapEntries?: (entryIdA: string, entryIdB: string) => void;
 }) {
@@ -169,7 +177,8 @@ function MatchVertex({
                   <code className="bracket-name-id">{r.idAtlet}</code>
                   <span className="bracket-name-nama">{r.nama}</span>
                   <span className="bracket-name-kelamin">{r.kelamin}</span>
-                  {categoryLabel ? <span className="bracket-name-kategori">{categoryLabel}</span> : null}
+                  <span className="bracket-name-divisi">{categoryLabels?.divisi ?? '·'}</span>
+                  <span className="bracket-name-kelas">{categoryLabels?.kelas ?? '·'}</span>
                   <span className="bracket-name-kontingen">{r.kontingen}</span>
                 </>
               ) : null}
@@ -204,7 +213,7 @@ function BracketNode({
   bracket,
   editable,
   savingMatchId,
-  categoryLabel,
+  categoryLabels,
   onSetDisplayNo,
   onSwapEntries,
 }: {
@@ -215,7 +224,7 @@ function BracketNode({
   bracket: Bracket;
   editable: boolean;
   savingMatchId: string | null;
-  categoryLabel?: string;
+  categoryLabels?: CategoryLabels;
   onSetDisplayNo?: (matchId: string, displayNo: number | null) => void;
   onSwapEntries?: (entryIdA: string, entryIdB: string) => void;
 }) {
@@ -228,7 +237,7 @@ function BracketNode({
       isLeaf={round === minRound}
       editable={editable}
       savingMatchId={savingMatchId}
-      categoryLabel={categoryLabel}
+      categoryLabels={categoryLabels}
       onSetDisplayNo={onSetDisplayNo}
       onSwapEntries={onSwapEntries}
     />
@@ -245,7 +254,7 @@ function BracketNode({
           bracket={bracket}
           editable={editable}
           savingMatchId={savingMatchId}
-          categoryLabel={categoryLabel}
+          categoryLabels={categoryLabels}
           onSetDisplayNo={onSetDisplayNo}
           onSwapEntries={onSwapEntries}
         />
@@ -257,7 +266,7 @@ function BracketNode({
           bracket={bracket}
           editable={editable}
           savingMatchId={savingMatchId}
-          categoryLabel={categoryLabel}
+          categoryLabels={categoryLabels}
           onSetDisplayNo={onSetDisplayNo}
           onSwapEntries={onSwapEntries}
         />
@@ -338,10 +347,22 @@ function useBracketLines(
       ctx.lineTo(spineX, b.y);
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
+      // Final segment must land exactly on target.y, not the midpoint of a.y/b.y -- those two
+      // aren't guaranteed equal (flex-centering, an odd sibling height from a BYE row, etc.), and
+      // using the midpoint instead of target.y is what drew this segment on a diagonal. The spine
+      // extends to cover target.y too, so the elbow here is still a clean right angle.
       ctx.beginPath();
-      ctx.moveTo(spineX, (a.y + b.y) / 2);
+      ctx.moveTo(spineX, target.y);
       ctx.lineTo(target.x, target.y);
       ctx.stroke();
+      if (target.y !== a.y && target.y !== b.y) {
+        const spineTop = Math.min(a.y, b.y, target.y);
+        const spineBottom = Math.max(a.y, b.y, target.y);
+        ctx.beginPath();
+        ctx.moveTo(spineX, spineTop);
+        ctx.lineTo(spineX, spineBottom);
+        ctx.stroke();
+      }
     };
 
     const numberFieldPoint = (vertexEl: Element, fallback: LinePoint): LinePoint => {
@@ -400,17 +421,14 @@ export function BracketView({
   bracket,
   editable = false,
   savingMatchId = null,
-  categoryLabel,
+  categoryLabels,
   onSetDisplayNo,
   onSwapEntries,
 }: {
   bracket: Bracket;
   editable?: boolean;
   savingMatchId?: string | null;
-  /** Shown as its own column on every round-1 row, matching the committee's own reference bracket
-   * table -- every row in one BracketView is already the same category, so this is the same string
-   * repeated down the column, not looked up per entry. */
-  categoryLabel?: string;
+  categoryLabels?: CategoryLabels;
   onSetDisplayNo?: (matchId: string, displayNo: number | null) => void;
   /** Drag one round-1 athlete's row onto another's to swap their bracket slots (SwapEntry command). */
   onSwapEntries?: (entryIdA: string, entryIdB: string) => void;
@@ -441,7 +459,7 @@ export function BracketView({
           bracket={bracket}
           editable={editable}
           savingMatchId={savingMatchId}
-          categoryLabel={categoryLabel}
+          categoryLabels={categoryLabels}
           onSetDisplayNo={onSetDisplayNo}
           onSwapEntries={onSwapEntries}
         />

@@ -9,7 +9,13 @@ import { RevisionConflictBanner } from '../../../../../components/RevisionConfli
 import { api, type EntryDisplay, type SessionCategory } from '../../../../../lib/api';
 import { friendlyCommandRefusal, friendlyMessage, runCommand } from '../../../../../lib/command-error';
 import { useDevAuth } from '../../../../../lib/dev-auth';
-import { formatCategoryLabel, humanizeCode } from '../../../../../lib/id-labels';
+import {
+  ageDivisionLabel,
+  categoryKeyDims,
+  formatCategoryLabel,
+  humanizeCode,
+  weightClassDisplayLabel,
+} from '../../../../../lib/id-labels';
 import { isDraft } from '../../../../../lib/lifecycle';
 import { useApiSWR } from '../../../../../lib/use-api-swr';
 
@@ -115,6 +121,16 @@ function CategoryTable({
   const multiPool = cat.pools.length > 1;
   const hasBracket = cat.pools.some((p) => p.bracket && p.bracket.matches.length > 0);
   const [view, setView] = useState<'tabel' | 'bracket'>('tabel');
+  const dims = categoryKeyDims(cat.category.category_key);
+  const ageDivision = dims.get('AGE_DIVISION');
+  const weightClass = dims.get('WEIGHT_CLASS');
+  const categoryLabels = {
+    divisi: ageDivision ? ageDivisionLabel(ageDivision) : '·',
+    kelas:
+      weightClass && weightClass !== 'INDIVIDUAL' && weightClass !== 'PAIR' && weightClass !== 'TEAM'
+        ? weightClassDisplayLabel(weightClass)
+        : '·',
+  };
 
   return (
     <section className="panel" style={{ marginBottom: 16 }}>
@@ -201,6 +217,7 @@ function CategoryTable({
                 bracket={p.bracket}
                 editable
                 savingMatchId={savingMatchId}
+                categoryLabels={categoryLabels}
                 onSetDisplayNo={onSetDisplayNo}
                 onSwapEntries={editable ? onSwapEntries : undefined}
               />

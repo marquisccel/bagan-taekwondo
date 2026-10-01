@@ -1315,23 +1315,26 @@ textarea:focus {
   display: flex;
   flex-direction: column;
   line-height: 1.3;
-  width: 640px;
+  width: 960px;
   padding: 5px 24px 5px 2px;
 }
 
-/* A spreadsheet-style row: ID atlet / Nama / Kelamin / Kontingen in fixed-width columns, the same
- * widths on every row in every match in every pool -- so the columns actually line up down the whole
- * bracket, the way the committee's own reference table does, not just within one match's own pair.
- * Every row gets its own underline (border-bottom) too, matching that same reference -- the canvas
- * connector lines start exactly from this edge (see BracketView.tsx's `bottomRight` point), not the
- * row's own vertical middle. */
+/* A spreadsheet-style row: ID atlet / Nama / Kelamin / Divisi / Class / Kontingen in fixed-width
+ * columns, the same widths on every row in every match in every pool -- so the columns actually
+ * line up down the whole bracket, the way the committee's own reference table does, not just
+ * within one match's own pair. Columns are generously fixed-width on purpose, never a shrinking
+ * `fr` a long value could get squeezed out of -- nothing here may ever be truncated, even at the
+ * cost of the whole bracket running wide (it scrolls -- see .bracket-scroll). Every row gets its
+ * own underline (border-bottom) too, matching that same reference -- the canvas connector lines
+ * start exactly from this edge (see BracketView.tsx's `bottomRight` point), not the row's own
+ * vertical middle. */
 .bracket-name-row {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1.6fr) 44px minmax(0, 1.2fr);
+  grid-template-columns: 50px 300px 70px 90px 90px 280px;
   column-gap: 10px;
   align-items: baseline;
   padding: 4px 0;
-  border-bottom: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--bracket-line);
 }
 
 .bracket-name-row[draggable='true'] {
@@ -1352,16 +1355,13 @@ textarea:focus {
   font-size: 10px;
 }
 
-.bracket-name-nama,
-.bracket-name-kelamin,
-.bracket-name-kontingen {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .bracket-name-nama {
   font-weight: 600;
+}
+
+.bracket-name-divisi,
+.bracket-name-kelas {
+  font-size: 11px;
 }
 
 .bracket-name-kontingen {
