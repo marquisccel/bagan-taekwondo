@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 import type { Bracket, BracketMatch, MatchFeeder } from '../lib/api';
 
@@ -11,10 +11,15 @@ const genderWord = (g: string | null | undefined): string =>
  * layout below, so this is only ever called for round-1 leaves; the `kind === 'match'` branch is
  * dead in practice but kept as a defensive fallback rather than assuming the shape.
  */
-function feederRow(
-  feeder: MatchFeeder,
-  bracket: Bracket,
-): { idAtlet: string; label: string; entryId: string | null } | null {
+interface FeederRow {
+  readonly idAtlet: string;
+  readonly nama: string;
+  readonly kelamin: string;
+  readonly kontingen: string;
+  readonly entryId: string | null;
+}
+
+function feederRow(feeder: MatchFeeder, bracket: Bracket): FeederRow | null {
   if (feeder.kind === 'match') return null;
   const slot = bracket.slots.find((s) => s.position === feeder.slot);
   if (!slot) return null;
@@ -22,11 +27,13 @@ function feederRow(
     const a = slot.entry.athletes[0];
     return {
       idAtlet: slot.entry.externalRef ?? '·',
-      label: `${slot.entry.displayName} · ${genderWord(a?.gender)} · ${slot.entry.contingent}`,
+      nama: slot.entry.displayName,
+      kelamin: genderWord(a?.gender),
+      kontingen: slot.entry.contingent,
       entryId: slot.entry.entryId,
     };
   }
-  if (slot.bye_reason) return { idAtlet: '·', label: 'BYE', entryId: null };
+  if (slot.bye_reason) return { idAtlet: '·', nama: 'BYE', kelamin: '·', kontingen: '·', entryId: null };
   return null;
 }
 
@@ -113,6 +120,7 @@ function MatchVertex({
   isLeaf,
   editable,
   savingMatchId,
+  categoryLabel,
   onSetDisplayNo,
   onSwapEntries,
 }: {
@@ -121,6 +129,7 @@ function MatchVertex({
   isLeaf: boolean;
   editable: boolean;
   savingMatchId: string | null;
+  categoryLabel?: string;
   onSetDisplayNo?: (matchId: string, displayNo: number | null) => void;
   onSwapEntries?: (entryIdA: string, entryIdB: string) => void;
 }) {
@@ -129,13 +138,14 @@ function MatchVertex({
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const canDrag = isLeaf && editable && !!onSwapEntries;
   return (
-    <div className="bracket-vertex">
+    <div className="bracket-vertex" data-match-key={`${match.round}-${match.position}`}>
       {isLeaf ? (
         <div className="bracket-names">
           {[rowA, rowB].map((r, i) => (
             <div
               className={`bracket-name-row${dragOverIdx === i ? ' bracket-name-row-over' : ''}`}
               key={i}
+              data-row-key={`${match.round}-${match.position}-${i}`}
               draggable={canDrag && !!r?.entryId}
               onDragStart={(e) => {
                 if (r?.entryId) e.dataTransfer.setData('text/entry-id', r.entryId);
@@ -157,8 +167,10 @@ function MatchVertex({
               {r ? (
                 <>
                   <code className="bracket-name-id">{r.idAtlet}</code>
-                  <span className="bracket-name-sep" aria-hidden="true" />
-                  <span className="bracket-name-label">{r.label}</span>
+                  <span className="bracket-name-nama">{r.nama}</span>
+                  <span className="bracket-name-kelamin">{r.kelamin}</span>
+                  {categoryLabel ? <span className="bracket-name-kategori">{categoryLabel}</span> : null}
+                  <span className="bracket-name-kontingen">{r.kontingen}</span>
                 </>
               ) : null}
             </div>
@@ -180,9 +192,9 @@ function MatchVertex({
 /**
  * A real bracket-line tree (per the team's request to match their printed bracket sheet) instead of
  * plain per-round columns: built recursively from the final match down to round 1, so every match
- * visually connects to the two it was fed by via a bracket-shaped CSS connector
- * (`.bracket-children::before`). There is exactly one match at the highest round in a single pool's
- * bracket, so recursion starts there.
+ * visually connects to the two it was fed by. The connecting lines themselves are drawn separately,
+ * on <canvas> -- see useBracketLines below. There is exactly one match at the highest round in a
+ * single pool's bracket, so recursion starts there.
  */
 function BracketNode({
   round,
@@ -192,6 +204,7 @@ function BracketNode({
   bracket,
   editable,
   savingMatchId,
+  categoryLabel,
   onSetDisplayNo,
   onSwapEntries,
 }: {
@@ -202,6 +215,7 @@ function BracketNode({
   bracket: Bracket;
   editable: boolean;
   savingMatchId: string | null;
+  categoryLabel?: string;
   onSetDisplayNo?: (matchId: string, displayNo: number | null) => void;
   onSwapEntries?: (entryIdA: string, entryIdB: string) => void;
 }) {
@@ -214,6 +228,7 @@ function BracketNode({
       isLeaf={round === minRound}
       editable={editable}
       savingMatchId={savingMatchId}
+      categoryLabel={categoryLabel}
       onSetDisplayNo={onSetDisplayNo}
       onSwapEntries={onSwapEntries}
     />
@@ -230,6 +245,7 @@ function BracketNode({
           bracket={bracket}
           editable={editable}
           savingMatchId={savingMatchId}
+          categoryLabel={categoryLabel}
           onSetDisplayNo={onSetDisplayNo}
           onSwapEntries={onSwapEntries}
         />
@@ -241,6 +257,7 @@ function BracketNode({
           bracket={bracket}
           editable={editable}
           savingMatchId={savingMatchId}
+          categoryLabel={categoryLabel}
           onSetDisplayNo={onSetDisplayNo}
           onSwapEntries={onSwapEntries}
         />
@@ -250,31 +267,172 @@ function BracketNode({
   );
 }
 
+/** A point on the canvas, relative to the `.bracket-tree` container. */
+interface LinePoint {
+  readonly x: number;
+  readonly y: number;
+}
+
+/**
+ * Draws every connecting line of the bracket tree on a `<canvas>` overlaid on `.bracket-tree`,
+ * instead of CSS border tricks on each node -- a canvas line is drawn at an exact measured pixel
+ * position regardless of how wide the tree gets or how far apart two matches end up, which a
+ * per-element CSS connector can't guarantee once names are long and the tree is deliberately
+ * stretched wide (see .bracket-names). Re-measures and redraws on every resize of the tree itself
+ * (a ResizeObserver, not just a window resize listener -- the tree's own size can change from its
+ * content, e.g. a longer name set, without the window changing at all).
+ *
+ * Walks the exact same match tree BracketNode renders (round, position -> its two (round-1) children,
+ * or its two leaf name rows at minRound), reading each one's live position from the DOM via the
+ * `data-match-key`/`data-row-key` attributes MatchVertex renders. A child's own "output" point is its
+ * vertex's right edge; a parent's "input" point is its vertex's left edge -- the same visual joint a
+ * printed bracket sheet draws, one elbow per match.
+ */
+function useBracketLines(
+  treeRef: React.RefObject<HTMLDivElement | null>,
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  matches: readonly BracketMatch[],
+  minRound: number,
+  maxRound: number,
+) {
+  useLayoutEffect(() => {
+    const tree = treeRef.current;
+    const canvas = canvasRef.current;
+    if (!tree || !canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const matchByKey = new Map(matches.map((m) => [`${m.round}-${m.position}`, m]));
+    const lineColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--bracket-line').trim() || '#0f172a';
+
+    const pointOf = (el: Element): { left: LinePoint; right: LinePoint; bottomRight: LinePoint } => {
+      const r = el.getBoundingClientRect();
+      const treeRect = tree.getBoundingClientRect();
+      const y = r.top - treeRect.top + r.height / 2;
+      const yBottom = r.bottom - treeRect.top;
+      return {
+        left: { x: r.left - treeRect.left, y },
+        right: { x: r.right - treeRect.left, y },
+        // A name row now has its own underline (see .bracket-name-row's border-bottom) -- the line
+        // feeding out of it should visibly start FROM that underline, not float at the row's vertical
+        // center above it.
+        bottomRight: { x: r.right - treeRect.left, y: yBottom },
+      };
+    };
+
+    /** The full bracket elbow: two inputs merge onto a vertical spine a few pixels out, then one line
+     * continues from the spine all the way to the target -- the match's own "No." field, found
+     * directly rather than assumed from the vertex's own bounding box, since a LEAF vertex's box also
+     * contains `.bracket-names` (so the vertex's own left edge is the names' left edge, nowhere near
+     * the number). Reaching the number itself, not just stopping in the gap before it, is what makes
+     * this read as one continuous line into "1"/"2"/etc. instead of a line that stops short of it. */
+    const connect = (a: LinePoint, b: LinePoint, target: LinePoint) => {
+      // The spine sits a little further TOWARD the target than the inputs, never behind them --
+      // `a.x - 10` was backwards (it walked left, back over the names/number it just came from,
+      // instead of right, out toward the target it's actually heading for).
+      const spineX = a.x + 10;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(spineX, a.y);
+      ctx.lineTo(spineX, b.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(spineX, (a.y + b.y) / 2);
+      ctx.lineTo(target.x, target.y);
+      ctx.stroke();
+    };
+
+    const numberFieldPoint = (vertexEl: Element, fallback: LinePoint): LinePoint => {
+      const numberEl = vertexEl.querySelector('[class*="match-display-no"]');
+      return numberEl ? pointOf(numberEl).left : fallback;
+    };
+
+    const visit = (round: number, position: number): LinePoint | null => {
+      const match = matchByKey.get(`${round}-${position}`);
+      if (!match) return null;
+      const vertexEl = tree.querySelector(`[data-match-key="${round}-${position}"]`);
+      if (!vertexEl) return null;
+      const v = pointOf(vertexEl);
+      const target = numberFieldPoint(vertexEl, v.left);
+      if (round === minRound) {
+        const row0 = tree.querySelector(`[data-row-key="${round}-${position}-0"]`);
+        const row1 = tree.querySelector(`[data-row-key="${round}-${position}-1"]`);
+        // `.bracket-name-row` stretches to fill `.bracket-names`' full width (a flex column's default
+        // cross-axis stretch), so each row's own right edge already sits at that container's right
+        // edge regardless of the name's actual length -- exactly the convergence point this pair's
+        // lines need, with `target` (the "No." field) reached the same way any other round is. Each
+        // line starts from its own row's underline (bottomRight), not the row's vertical middle.
+        if (row0 && row1) connect(pointOf(row0).bottomRight, pointOf(row1).bottomRight, target);
+        return v.right;
+      }
+      const a = visit(round - 1, position * 2 - 1);
+      const b = visit(round - 1, position * 2);
+      if (a && b) connect(a, b, target);
+      return v.right;
+    };
+
+    const draw = () => {
+      const rect = tree.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.round(rect.width * dpr));
+      canvas.height = Math.max(1, Math.round(rect.height * dpr));
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = 1.5;
+      ctx.lineJoin = 'miter';
+      ctx.lineCap = 'butt';
+      visit(maxRound, 1);
+    };
+
+    draw();
+    const ro = new ResizeObserver(draw);
+    ro.observe(tree);
+    return () => ro.disconnect();
+  }, [treeRef, canvasRef, matches, minRound, maxRound]);
+}
+
 export function BracketView({
   bracket,
   editable = false,
   savingMatchId = null,
+  categoryLabel,
   onSetDisplayNo,
   onSwapEntries,
 }: {
   bracket: Bracket;
   editable?: boolean;
   savingMatchId?: string | null;
+  /** Shown as its own column on every round-1 row, matching the committee's own reference bracket
+   * table -- every row in one BracketView is already the same category, so this is the same string
+   * repeated down the column, not looked up per entry. */
+  categoryLabel?: string;
   onSetDisplayNo?: (matchId: string, displayNo: number | null) => void;
   /** Drag one round-1 athlete's row onto another's to swap their bracket slots (SwapEntry command). */
   onSwapEntries?: (entryIdA: string, entryIdB: string) => void;
 }) {
-  if (bracket.matches.length === 0) {
+  const treeRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const hasMatches = bracket.matches.length > 0;
+  const rounds = hasMatches ? [...new Set(bracket.matches.map((m) => m.round))].sort((a, b) => a - b) : [];
+  const minRound = rounds[0] ?? 0;
+  const maxRound = rounds[rounds.length - 1] ?? 0;
+  const matchByKey = new Map(bracket.matches.map((m) => [`${m.round}-${m.position}`, m]));
+
+  useBracketLines(treeRef, canvasRef, bracket.matches, minRound, maxRound);
+
+  if (!hasMatches) {
     return <p style={{ color: 'var(--text-dim)' }}>No matches (single entry or fully walkover pool).</p>;
   }
-  const rounds = [...new Set(bracket.matches.map((m) => m.round))].sort((a, b) => a - b);
-  const minRound = rounds[0] as number;
-  const maxRound = rounds[rounds.length - 1] as number;
-  const matchByKey = new Map(bracket.matches.map((m) => [`${m.round}-${m.position}`, m]));
 
   return (
     <div className="bracket-scroll">
-      <div className="bracket-tree">
+      <div className="bracket-tree" ref={treeRef}>
+        <canvas className="bracket-lines-canvas" ref={canvasRef} aria-hidden="true" />
         <BracketNode
           round={maxRound}
           position={1}
@@ -283,6 +441,7 @@ export function BracketView({
           bracket={bracket}
           editable={editable}
           savingMatchId={savingMatchId}
+          categoryLabel={categoryLabel}
           onSetDisplayNo={onSetDisplayNo}
           onSwapEntries={onSwapEntries}
         />
