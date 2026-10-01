@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { useApiSWR } from '../../../../../lib/use-api-swr';
 
@@ -16,6 +16,9 @@ import { useDevAuth } from '../../../../../lib/dev-auth';
 export default function DrawRunPage() {
   const { id, drawRunId } = useParams<{ id: string; drawRunId: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const dayNumber = searchParams.get('dayNumber');
+  const arenaCode = searchParams.get('arenaCode');
   const { actorId } = useDevAuth();
   const {
     data: run,
@@ -33,8 +36,12 @@ export default function DrawRunPage() {
   const revisionId = tournament?.latestRevision?.id ?? null;
 
   useEffect(() => {
-    if (run?.status === 'SAFE' && revisionId) router.replace(`/tournaments/${id}/sesi/${revisionId}`);
-  }, [run?.status, revisionId, id, router]);
+    if (run?.status === 'SAFE' && revisionId) {
+      const slotQuery =
+        dayNumber && arenaCode ? `?dayNumber=${dayNumber}&arenaCode=${encodeURIComponent(arenaCode)}` : '';
+      router.replace(`/tournaments/${id}/sesi/${revisionId}${slotQuery}`);
+    }
+  }, [run?.status, revisionId, id, router, dayNumber, arenaCode]);
 
   if (isLoading) return <main className="content state-loading">Memuat…</main>;
   if (error) return <main className="content state-error">Gagal memuat: {error.message}</main>;

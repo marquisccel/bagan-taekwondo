@@ -61,7 +61,9 @@ export default function JadwalPage() {
     try {
       const seed = seedForSlot(params.id, dayNumber, arenaCode);
       const res = await api.generateFromSchedule(auth.actorId, params.id, { dayNumber, arenaCode, seed });
-      router.push(`/tournaments/${params.id}/draws/${res.drawRunId}`);
+      router.push(
+        `/tournaments/${params.id}/draws/${res.drawRunId}?dayNumber=${dayNumber}&arenaCode=${encodeURIComponent(arenaCode)}`,
+      );
     } catch (e) {
       setErrors((prev) => ({ ...prev, [key]: e instanceof Error ? e.message : String(e) }));
       setBusyKey(null);

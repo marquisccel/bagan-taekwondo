@@ -1,6 +1,6 @@
 import type { Db } from '@bagantkd/db';
 import { compareCategoriesByWeightClass, resolveMatchNumbers } from '@bagantkd/shared';
-import { Controller, Get, Inject, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Inject, Param, Query, UseGuards } from '@nestjs/common';
 
 import { ActorGuard } from '../auth/actor.guard';
 import { TournamentScope } from '../auth/tournament-scope.decorator';
@@ -12,6 +12,18 @@ function sessionCategorySort(a: { category_key: string; gender: string }, b: typ
     { categoryKey: a.category_key, gender: a.gender },
     { categoryKey: b.category_key, gender: b.gender },
   );
+}
+
+/** `categoryKey` is `TEMPLATE|DIM=VALUE|DIM=VALUE|...` (packages/intake/src/categories.ts,
+ * `deriveCategory`) -- a plain lookup, not a re-derivation. Duplicated from
+ * schedule.controller.ts's own copy rather than shared, matching that file's existing pattern. */
+function categoryKeyDims(categoryKey: string): ReadonlyMap<string, string> {
+  const dims = new Map<string, string>();
+  for (const part of categoryKey.split('|').slice(1)) {
+    const eq = part.indexOf('=');
+    if (eq > 0) dims.set(part.slice(0, eq), part.slice(eq + 1));
+  }
+  return dims;
 }
 
 interface EntryDisplay {
@@ -111,16 +123,27 @@ export class RevisionReadController {
    * the committee's own SPS arena tab rather than one category at a time. Pool assignment and match
    * numbering both happen from here; the per-category detail page stays available separately but is
    * no longer the primary path.
+   *
+   * A revision accumulates every category ever drawn into it across every arena/day slot the team
+   * has clicked "Lihat Bagan" for, so by default this returns everything -- the team asked for an
+   * arena/day's own slot to narrow that down to just what the printed sheet for that slot shows,
+   * matching the matching logic `POST .../draw-runs/from-schedule` already uses to decide a slot's
+   * scope in the first place (schedule_entry joined on discipline/stream/gender/age division/weight
+   * class or format, never re-deriving the category key itself).
    */
   @Get('session')
-  async session(@Param('id') id: string): Promise<readonly Record<string, unknown>[]> {
+  async session(
+    @Param('id') id: string,
+    @Query('dayNumber') dayNumberRaw?: string,
+    @Query('arenaCode') arenaCode?: string,
+  ): Promise<readonly Record<string, unknown>[]> {
     const [rev] = await this.db.query<{ draw_run_id: string; tournament_id: string }>(
       `select draw_run_id, tournament_id from draw_revision where id = $1`,
       [id],
     );
     if (!rev) throw new ApiError('REVISION_NOT_FOUND');
 
-    const categories = await this.db.query<{
+    let categories = await this.db.query<{
       category_id: string;
       category_key: string;
       stream: string;
@@ -134,6 +157,35 @@ export class RevisionReadController {
        where rc.draw_run_id = $1 order by c.category_key`,
       [rev.draw_run_id],
     );
+
+    const dayNumber = dayNumberRaw !== undefined ? Number(dayNumberRaw) : null;
+    if (dayNumber !== null && Number.isInteger(dayNumber) && arenaCode) {
+      const slotRows = await this.db.query<{
+        stream: string;
+        discipline: string;
+        gender: string;
+        age_division_code: string;
+        weight_class_or_format: string;
+      }>(
+        `select se.stream, se.discipline, se.gender, se.age_division_code, se.weight_class_or_format
+         from schedule_entry se join arena a on a.id = se.arena_id
+         where se.tournament_id = $1 and se.day_number = $2 and a.code = $3`,
+        [rev.tournament_id, dayNumber, arenaCode],
+      );
+      categories = categories.filter((c) => {
+        const dims = categoryKeyDims(c.category_key);
+        return slotRows.some(
+          (row) =>
+            dims.get('DISCIPLINE') === row.discipline &&
+            dims.get('STREAM') === row.stream &&
+            dims.get('GENDER') === row.gender &&
+            dims.get('AGE_DIVISION') === row.age_division_code &&
+            (dims.get('WEIGHT_CLASS') === row.weight_class_or_format ||
+              dims.get('FORMAT') === row.weight_class_or_format),
+        );
+      });
+    }
+
     if (categories.length === 0) return [];
     categories.sort(sessionCategorySort);
 

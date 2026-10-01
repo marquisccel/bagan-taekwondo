@@ -6,9 +6,11 @@ import { api } from '../../../../../lib/api';
 import DrawRunPage from './page';
 
 const replace = vi.fn();
+let searchParams = new URLSearchParams();
 vi.mock('next/navigation', () => ({
   useParams: () => ({ id: 't1', drawRunId: 'run-1' }),
   useRouter: () => ({ replace }),
+  useSearchParams: () => searchParams,
 }));
 vi.mock('../../../../../lib/api', () => ({
   api: { drawRun: vi.fn(), tournament: vi.fn() },
@@ -76,5 +78,31 @@ describe('DrawRunPage — a waiting room, not a destination', () => {
     });
     renderIsolated(<DrawRunPage />);
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/tournaments/t1/sesi/rev-1'));
+  });
+
+  it('forwards the dayNumber/arenaCode it was opened with onto the session redirect, so the session page can filter to that same slot', async () => {
+    searchParams = new URLSearchParams({ dayNumber: '1', arenaCode: 'C' });
+    vi.mocked(api.drawRun).mockResolvedValue({ ...baseRun, status: 'SAFE', unsafe_reasons: [] });
+    vi.mocked(api.tournament).mockResolvedValue({
+      id: 't1',
+      code: 'T1',
+      name: 'Piala Test',
+      eventStart: '2026-08-27',
+      eventEnd: '2026-08-30',
+      totalEntries: 0,
+      totalContingents: 0,
+      activeRuleSetStatus: 'ACTIVE',
+      latestDrawRun: null,
+      latestRevision: { id: 'rev-1', revision_no: 1, lifecycle: 'DRAFT', lock_version: 0 },
+      categoryCounts: { total: 0, ready: 0, blocked: 0 },
+      warningCount: 0,
+      errorCount: 0,
+      participantsNeedingReview: 0,
+    });
+    renderIsolated(<DrawRunPage />);
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith('/tournaments/t1/sesi/rev-1?dayNumber=1&arenaCode=C'),
+    );
+    searchParams = new URLSearchParams();
   });
 });

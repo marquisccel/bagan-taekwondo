@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 
 import { BracketView } from '../../../../../components/BracketView';
 import { ExportPanel } from '../../../../../components/ExportPanel';
@@ -232,6 +232,10 @@ function CategoryTable({
 
 export default function SesiPage() {
   const { id, revisionId } = useParams<{ id: string; revisionId: string }>();
+  const searchParams = useSearchParams();
+  const dayNumber = searchParams.get('dayNumber');
+  const arenaCode = searchParams.get('arenaCode');
+  const slotLabel = dayNumber && arenaCode ? `DAY ${dayNumber} · Arena ${arenaCode}` : null;
   const { actorId } = useDevAuth();
   const [conflict, setConflict] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
@@ -247,7 +251,9 @@ export default function SesiPage() {
     mutate: mutateSession,
     error: sessionError,
     isLoading,
-  } = useApiSWR(actorId ? ['session', revisionId, actorId] : null, () => api.session(actorId, revisionId));
+  } = useApiSWR(actorId ? ['session', revisionId, actorId, dayNumber, arenaCode] : null, () =>
+    api.session(actorId, revisionId, dayNumber ? Number(dayNumber) : undefined, arenaCode ?? undefined),
+  );
 
   const reload = () => {
     setConflict(false);
@@ -350,6 +356,7 @@ export default function SesiPage() {
         revisionId={revisionId}
         revisionLifecycle={revision.lifecycle}
         availableTypes={['SEMI_PRESTASI_COMPACT_DRAW_SHEET', 'TOURNAMENT_DRAW_BOOK']}
+        slotLabel={slotLabel ?? undefined}
       />
 
       {!editable ? (

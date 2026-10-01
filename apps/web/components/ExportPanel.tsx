@@ -30,6 +30,7 @@ export function ExportPanel({
   categoryId,
   poolId,
   bare,
+  slotLabel,
 }: {
   revisionId: string;
   /** Picks the export mode automatically -- see the `mode` comment below. */
@@ -40,6 +41,10 @@ export function ExportPanel({
   /** Renders just the type selector + "Buat Ekspor" row, no wrapping panel/heading of its own --
    * for embedding inside another card (the dashboard's greeting card) that already provides both. */
   bare?: boolean;
+  /** Replaces the plain "Ekspor" heading with the arena/day slot the session view is scoped to
+   * (e.g. "DAY 1 · Arena C") -- so it's visible right next to the controls that export exactly that
+   * slot, not just inferred from the page the team happened to click through to get here. */
+  slotLabel?: string;
 }) {
   const { actorId, role } = useDevAuth();
   const [exportType, setExportType] = useState<ExportType>(availableTypes[0] ?? 'TOURNAMENT_DRAW_BOOK');
@@ -105,41 +110,49 @@ export function ExportPanel({
 
   if (role === null) return null;
 
-  const body = (
-    <>
-      {error ? (
-        <div className="banner banner-conflict" role="alert">
-          <span>{error}</span>
-          <button className="btn" onClick={() => setError(null)}>
-            Tutup
-          </button>
-        </div>
-      ) : null}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <select
-          aria-label="Jenis ekspor"
-          value={exportType}
-          onChange={(e) => setExportType(e.target.value as ExportType)}
-        >
-          {availableTypes.map((t) => (
-            <option key={t} value={t}>
-              {TYPE_LABEL[t]}
-            </option>
-          ))}
-        </select>
-        <button className="btn btn-primary" disabled={busy} onClick={() => void requestExport()}>
-          {busy ? 'Memproses…' : 'Buat Ekspor'}
-        </button>
-      </div>
-    </>
+  const controls = (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+      <select
+        aria-label="Jenis ekspor"
+        value={exportType}
+        onChange={(e) => setExportType(e.target.value as ExportType)}
+      >
+        {availableTypes.map((t) => (
+          <option key={t} value={t}>
+            {TYPE_LABEL[t]}
+          </option>
+        ))}
+      </select>
+      <button className="btn btn-primary" disabled={busy} onClick={() => void requestExport()}>
+        {busy ? 'Memproses…' : 'Buat Ekspor'}
+      </button>
+    </div>
   );
 
-  if (bare) return body;
+  const errorBanner = error ? (
+    <div className="banner banner-conflict" role="alert">
+      <span>{error}</span>
+      <button className="btn" onClick={() => setError(null)}>
+        Tutup
+      </button>
+    </div>
+  ) : null;
+
+  if (bare)
+    return (
+      <>
+        {errorBanner}
+        {controls}
+      </>
+    );
 
   return (
     <div className="panel" style={{ marginBottom: 16 }}>
-      <h3 style={{ marginTop: 0, marginBottom: 12 }}>Ekspor</h3>
-      {body}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <h3 style={{ margin: 0 }}>{slotLabel ?? 'Ekspor'}</h3>
+        {controls}
+      </div>
+      {errorBanner}
     </div>
   );
 }

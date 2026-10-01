@@ -364,8 +364,15 @@ export const api = {
     get<CategorySummary[]>(`/revisions/${revisionId}/categories`, actorId),
   category: (actorId: string, revisionId: string, categoryId: string) =>
     get<CategoryDetail>(`/revisions/${revisionId}/categories/${categoryId}`, actorId),
-  session: (actorId: string, revisionId: string) =>
-    get<SessionCategory[]>(`/revisions/${revisionId}/session`, actorId),
+  session: (actorId: string, revisionId: string, dayNumber?: number, arenaCode?: string) =>
+    get<SessionCategory[]>(
+      `/revisions/${revisionId}/session${
+        dayNumber !== undefined && arenaCode
+          ? `?dayNumber=${dayNumber}&arenaCode=${encodeURIComponent(arenaCode)}`
+          : ''
+      }`,
+      actorId,
+    ),
   audit: (actorId: string, tournamentId: string, before?: string) =>
     get<{ events: AuditEvent[]; nextCursor: string | null }>(
       `/tournaments/${tournamentId}/audit${before ? `?before=${before}` : ''}`,
