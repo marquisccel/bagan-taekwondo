@@ -392,8 +392,16 @@ describe('PesertaPage', () => {
     expect(screen.getByRole('button', { name: 'Berikutnya' })).toBeDisabled();
   });
 
+  it('shows a "Perbaiki Semua" button with the count of participants needing review, and it opens the walkthrough', async () => {
+    vi.mocked(api.entries).mockResolvedValue(list([entry()], { total: 7 }));
+    renderIsolated(<PesertaPage />);
+    const button = await screen.findByRole('button', { name: 'Perbaiki Semua (7)' });
+    fireEvent.click(button);
+    expect(await screen.findByRole('dialog', { name: 'Perbaiki Data Peserta' })).toBeInTheDocument();
+  });
+
   it('shows an empty state and API errors in Indonesian', async () => {
-    vi.mocked(api.entries).mockResolvedValueOnce(list([]));
+    vi.mocked(api.entries).mockResolvedValue(list([]));
     renderIsolated(<PesertaPage />);
     expect(await screen.findByTestId('entry-empty')).toHaveTextContent(/tidak ada peserta/i);
   });
@@ -403,6 +411,7 @@ describe('PesertaPage', () => {
     vi.mocked(api.correctEntry).mockResolvedValue({ ok: true });
     renderIsolated(<PesertaPage />);
     await screen.findByTestId('entry-row');
+    const callsBeforeSave = vi.mocked(api.entries).mock.calls.length;
 
     fireEvent.click(screen.getByRole('button', { name: 'Perbaiki data Budi Santoso' }));
     const dialog = await screen.findByRole('dialog', { name: 'Perbaiki Data Peserta' });
@@ -417,7 +426,9 @@ describe('PesertaPage', () => {
         expect.objectContaining({ weightG: 45500 }),
       ),
     );
-    await waitFor(() => expect(api.entries).toHaveBeenCalledTimes(2));
+    // Reloads both the visible list and the "Perbaiki Semua" review count -- not asserting an exact
+    // number of underlying api.entries calls, just that a reload actually happened after saving.
+    await waitFor(() => expect(vi.mocked(api.entries).mock.calls.length).toBeGreaterThan(callsBeforeSave));
     expect(screen.queryByRole('dialog', { name: 'Perbaiki Data Peserta' })).not.toBeInTheDocument();
   });
 

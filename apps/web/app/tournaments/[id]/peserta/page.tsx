@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { BulkCorrectionDialog } from '../../../../components/BulkCorrectionDialog';
 import { EntryCorrectionDialog } from '../../../../components/EntryCorrectionDialog';
 import { api, type EntryListItem, type EntryListParams } from '../../../../lib/api';
 import { useDevAuth } from '../../../../lib/dev-auth';
@@ -266,6 +267,15 @@ export default function PesertaPage() {
   }));
   const [offset, setOffset] = useState(0);
   const [correcting, setCorrecting] = useState<EntryListItem | null>(null);
+  const [bulkCorrecting, setBulkCorrecting] = useState(false);
+
+  // Independent of the filters above (and of pagination) -- this is always the TRUE count of
+  // entries needing review, for the "Perbaiki Semua" button, whether or not the team currently has
+  // some other filter narrowing what's on screen.
+  const { data: reviewCount, mutate: mutateReviewCount } = useApiSWR(
+    actorId && id ? ['entries-needing-review-count', id, actorId] : null,
+    () => api.entries(actorId, id, { hasIssues: true, limit: 1 }),
+  );
 
   // Free-text fields debounce so typing doesn't fire a request per keystroke; every other filter
   // (a select, a deliberate click) applies the instant it changes -- there's no separate "Terapkan"
@@ -304,10 +314,18 @@ export default function PesertaPage() {
 
   return (
     <main className="content content-wide">
-      <h1>Peserta</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+        <h1>Peserta</h1>
+        {reviewCount && reviewCount.total > 0 ? (
+          <button type="button" className="btn btn-primary" onClick={() => setBulkCorrecting(true)}>
+            Perbaiki Semua ({reviewCount.total})
+          </button>
+        ) : null}
+      </div>
       <p style={{ color: 'var(--text-dim)' }}>
         Pemeriksaan data peserta yang sudah tersimpan (hanya-baca). Kelayakan dan masalah data berasal dari
-        hasil validasi sistem.
+        hasil validasi sistem. Peserta bermasalah bisa diperbaiki langsung di sini -- tidak perlu mengubah
+        file SPS dan unggah ulang.
       </p>
 
       <div className="filters" role="search" aria-label="Filter peserta">
@@ -440,6 +458,23 @@ export default function PesertaPage() {
           onSaved={() => {
             setCorrecting(null);
             void mutate();
+            void mutateReviewCount();
+          }}
+        />
+      ) : null}
+
+      {bulkCorrecting ? (
+        <BulkCorrectionDialog
+          tournamentId={id}
+          actorId={actorId}
+          onClose={() => {
+            setBulkCorrecting(false);
+            void mutate();
+            void mutateReviewCount();
+          }}
+          onProgress={() => {
+            void mutate();
+            void mutateReviewCount();
           }}
         />
       ) : null}
