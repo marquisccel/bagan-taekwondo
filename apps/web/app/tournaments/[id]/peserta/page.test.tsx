@@ -241,6 +241,32 @@ describe('PesertaPage', () => {
     expect(rowEl.querySelector('.issue-summary-popover')).not.toBeInTheDocument();
   });
 
+  it('shows a single issue directly, with no click needed to see what it is', async () => {
+    vi.mocked(api.entries).mockResolvedValue(
+      list([
+        entry({
+          issues: [
+            {
+              id: 'i1',
+              code: 'NIK_INVALID_FORMAT',
+              severity: 'WARNING',
+              status: 'OPEN',
+              field: 'nik',
+              subjectType: 'ATHLETE',
+            },
+          ],
+          openIssueCounts: { error: 0, warning: 1, info: 0 },
+        }),
+      ]),
+    );
+    renderIsolated(<PesertaPage />);
+    const rowEl = await screen.findByTestId('entry-row');
+    expect(within(rowEl).getByText(/Peringatan/, { selector: 'strong' })).toBeInTheDocument();
+    // No button, no popover -- just the one issue's text, right in the cell.
+    expect(within(rowEl).queryByRole('button', { name: /peringatan/i })).not.toBeInTheDocument();
+    expect(rowEl.querySelector('.issue-summary-popover')).not.toBeInTheDocument();
+  });
+
   it('applies the search, contingent, discipline, category, eligibility and review filters live, with no separate apply step', async () => {
     vi.mocked(api.entries).mockResolvedValue(list([entry()]));
     renderIsolated(<PesertaPage />);

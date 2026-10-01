@@ -92,6 +92,26 @@ function IssueSummary({ entry }: { entry: EntryListItem }) {
   }, [open]);
 
   if (entry.issues.length === 0) return <span style={{ color: 'var(--text-dim)' }}>Tidak ada</span>;
+  // A single issue is shown directly -- no click needed to find out what the one-word summary
+  // ("1 peringatan") actually means, and nothing to open a popover for anyway.
+  const [singleIssue] = entry.issues;
+  if (entry.issues.length === 1 && singleIssue) {
+    return (
+      <span
+        style={{
+          color:
+            singleIssue.severity === 'ERROR'
+              ? 'var(--red)'
+              : singleIssue.severity === 'WARNING'
+                ? 'var(--yellow)'
+                : undefined,
+        }}
+      >
+        <strong>{issueSeverityLabel(singleIssue.severity)}</strong>: {issueCodeLabel(singleIssue.code)}
+        {singleIssue.status !== 'OPEN' ? ` · ${issueStatusLabel(singleIssue.status)}` : null}
+      </span>
+    );
+  }
   const parts = [
     error > 0 ? `${error} kesalahan` : null,
     warning > 0 ? `${warning} peringatan` : null,

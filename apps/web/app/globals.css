@@ -136,9 +136,13 @@ textarea {
   gap: 16px;
   padding: 0 24px;
   height: 58px;
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  /* `position: sticky` + `backdrop-filter` on a long, dense page (Cek & Atur Bagan's tables) hits a
+     Chromium/Brave compositing bug: the blurred backdrop doesn't fully repaint on every scroll frame,
+     so a ghost of rows scrolled underneath keeps showing through, well after the scroll has settled.
+     Forcing the bar onto its own GPU layer (`transform`/`isolation`) doesn't stop it -- confirmed live
+     by toggling `backdrop-filter` off against the real bug. A solid, near-opaque background (no blur
+     to resample) is the only reliable fix, at the cost of the "frosted glass" look. */
+  background: rgba(255, 255, 255, 0.98);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   position: sticky;
@@ -216,9 +220,8 @@ textarea {
   gap: 4px;
   padding: 0 24px;
   height: 42px;
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  /* See .topbar -- same sticky + backdrop-filter ghosting fix. */
+  background: rgba(255, 255, 255, 0.98);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   position: sticky;
