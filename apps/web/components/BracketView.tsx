@@ -334,26 +334,24 @@ function useBracketLines(
       };
     };
 
-    // Canvas anti-aliases a line drawn at a fractional pixel into a soft 2px blur instead of the
-    // crisp 1px a CSS border renders -- snapping every coordinate to a half-pixel (the standard
-    // canvas crisp-line trick) makes a 1-wide stroke land on exactly one device pixel, matching the
-    // name row's own 1px underline instead of looking thinner/fuzzier next to it.
-    const snap = (v: number) => Math.round(v) + 0.5;
-
     /** The full bracket elbow: two inputs merge onto a vertical spine a few pixels out, then one line
      * continues from the spine all the way to the target -- the match's own "No." field, found
      * directly rather than assumed from the vertex's own bounding box, since a LEAF vertex's box also
      * contains `.bracket-names` (so the vertex's own left edge is the names' left edge, nowhere near
      * the number). Reaching the number itself, not just stopping in the gap before it, is what makes
-     * this read as one continuous line into "1"/"2"/etc. instead of a line that stops short of it. */
+     * this read as one continuous line into "1"/"2"/etc. instead of a line that stops short of it.
+     *
+     * Every point here comes straight from a real measured DOM edge (a row's own underline, a
+     * vertex's own right edge) -- snapping those coordinates to a half-pixel for a "crisper" canvas
+     * stroke was tried and reverted, because it moved the line's endpoint away from the CSS border's
+     * actual sub-pixel position, breaking the visual join right where the line is supposed to touch
+     * it (looked "patah"/disconnected exactly at that seam). Matching the real measured position
+     * exactly matters more than stroke crispness. */
     const connect = (a: LinePoint, b: LinePoint, target: LinePoint) => {
       // The spine sits a little further TOWARD the target than the inputs, never behind them --
       // `a.x - 10` was backwards (it walked left, back over the names/number it just came from,
       // instead of right, out toward the target it's actually heading for).
-      const spineX = snap(a.x + 10);
-      const ay = snap(a.y);
-      const by = snap(b.y);
-      const ty = snap(target.y);
+      const spineX = a.x + 10;
       // One single vertical spine spanning everything it needs to reach (a, b, AND target.y), drawn
       // exactly once -- drawing it in more than one overlapping stroke (an earlier version drew the
       // a-to-b span and then a second, mostly-overlapping target-covering span) doubled up the
@@ -361,17 +359,17 @@ function useBracketLines(
       // Likewise the target segment lands exactly on target.y, never on the midpoint of a.y/b.y --
       // those two aren't guaranteed equal (flex-centering, an odd sibling height from a BYE row,
       // etc.), and using the midpoint instead is what drew that segment on a diagonal.
-      const spineTop = Math.min(ay, by, ty);
-      const spineBottom = Math.max(ay, by, ty);
+      const spineTop = Math.min(a.y, b.y, target.y);
+      const spineBottom = Math.max(a.y, b.y, target.y);
       ctx.beginPath();
-      ctx.moveTo(snap(a.x), ay);
-      ctx.lineTo(spineX, ay);
-      ctx.moveTo(snap(b.x), by);
-      ctx.lineTo(spineX, by);
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(spineX, a.y);
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(spineX, b.y);
       ctx.moveTo(spineX, spineTop);
       ctx.lineTo(spineX, spineBottom);
-      ctx.moveTo(spineX, ty);
-      ctx.lineTo(snap(target.x), ty);
+      ctx.moveTo(spineX, target.y);
+      ctx.lineTo(target.x, target.y);
       ctx.stroke();
     };
 
