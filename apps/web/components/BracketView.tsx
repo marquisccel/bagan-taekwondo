@@ -373,8 +373,11 @@ function useBracketLines(
       ctx.stroke();
     };
 
+    const numberFieldOf = (vertexEl: Element): Element | null =>
+      vertexEl.querySelector('[class*="match-display-no"]');
+
     const numberFieldPoint = (vertexEl: Element, fallback: LinePoint): LinePoint => {
-      const numberEl = vertexEl.querySelector('[class*="match-display-no"]');
+      const numberEl = numberFieldOf(vertexEl);
       return numberEl ? pointOf(numberEl).left : fallback;
     };
 
@@ -391,13 +394,25 @@ function useBracketLines(
         // `.bracket-name-row` stretches to fill `.bracket-names`' full width (a flex column's default
         // cross-axis stretch), so each row's own right edge already sits at that container's right
         // edge regardless of the name's actual length -- exactly the convergence point this pair's
-        // lines need, with `target` (the "No." field's own real position) reached the same way any
-        // other round is. Each line starts from its own row's underline (bottomRight), not the row's
-        // vertical middle. `target` must stay the field's own measured position here, not a
-        // recomputed midpoint of the two underlines -- that field is the actual visible pill the
-        // lines have to land on, and a separately-computed midpoint drifts away from it by however
-        // much its padding differs from exactly half a row height, pulling the line off the pill.
-        if (row0 && row1) connect(pointOf(row0).bottomRight, pointOf(row1).bottomRight, target);
+        // lines need. Each line starts from its own row's underline (bottomRight), not the row's
+        // vertical middle.
+        //
+        // The pill's OWN rendered position (`target`, measured above) is NOT this true center: the
+        // pill centers against `.bracket-vertex`'s full flex box, which lands it exactly on the
+        // boundary between the two rows (since they're equal height) -- that boundary sits half a
+        // row short of the actual midpoint between the two rows' own underlines, which is where a
+        // line from each underline must visually meet. Rather than leave the pill sitting where the
+        // line doesn't reach it, the pill itself is nudged (via a transform, reset every redraw
+        // below) down onto that true midpoint, so the visible "No." box and the line it feeds always
+        // agree on one shared center point.
+        if (row0 && row1) {
+          const p0 = pointOf(row0).bottomRight;
+          const p1 = pointOf(row1).bottomRight;
+          const trueCenter = (p0.y + p1.y) / 2;
+          const numberEl = numberFieldOf(vertexEl);
+          if (numberEl) (numberEl as HTMLElement).style.transform = `translateY(${trueCenter - target.y}px)`;
+          connect(p0, p1, { x: target.x, y: trueCenter });
+        }
         return v.right;
       }
       const a = visit(round - 1, position * 2 - 1);
@@ -407,6 +422,11 @@ function useBracketLines(
     };
 
     const draw = () => {
+      // Reset every leaf pill's nudge before re-measuring -- otherwise each redraw would compute its
+      // offset against the PREVIOUS redraw's already-nudged position and the shift would compound.
+      tree.querySelectorAll('[class*="match-display-no"]').forEach((el) => {
+        (el as HTMLElement).style.transform = '';
+      });
       const rect = tree.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
       canvas.width = Math.max(1, Math.round(rect.width * dpr));
