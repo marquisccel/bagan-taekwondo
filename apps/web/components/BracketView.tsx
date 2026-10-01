@@ -334,6 +334,12 @@ function useBracketLines(
       };
     };
 
+    // Canvas anti-aliases a line drawn at a fractional pixel into a soft 2px blur instead of the
+    // crisp 1px a CSS border renders -- snapping every coordinate to a half-pixel (the standard
+    // canvas crisp-line trick) makes a 1-wide stroke land on exactly one device pixel, matching the
+    // name row's own 1px underline instead of looking thinner/fuzzier next to it.
+    const snap = (v: number) => Math.round(v) + 0.5;
+
     /** The full bracket elbow: two inputs merge onto a vertical spine a few pixels out, then one line
      * continues from the spine all the way to the target -- the match's own "No." field, found
      * directly rather than assumed from the vertex's own bounding box, since a LEAF vertex's box also
@@ -344,7 +350,10 @@ function useBracketLines(
       // The spine sits a little further TOWARD the target than the inputs, never behind them --
       // `a.x - 10` was backwards (it walked left, back over the names/number it just came from,
       // instead of right, out toward the target it's actually heading for).
-      const spineX = a.x + 10;
+      const spineX = snap(a.x + 10);
+      const ay = snap(a.y);
+      const by = snap(b.y);
+      const ty = snap(target.y);
       // One single vertical spine spanning everything it needs to reach (a, b, AND target.y), drawn
       // exactly once -- drawing it in more than one overlapping stroke (an earlier version drew the
       // a-to-b span and then a second, mostly-overlapping target-covering span) doubled up the
@@ -352,17 +361,17 @@ function useBracketLines(
       // Likewise the target segment lands exactly on target.y, never on the midpoint of a.y/b.y --
       // those two aren't guaranteed equal (flex-centering, an odd sibling height from a BYE row,
       // etc.), and using the midpoint instead is what drew that segment on a diagonal.
-      const spineTop = Math.min(a.y, b.y, target.y);
-      const spineBottom = Math.max(a.y, b.y, target.y);
+      const spineTop = Math.min(ay, by, ty);
+      const spineBottom = Math.max(ay, by, ty);
       ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(spineX, a.y);
-      ctx.moveTo(b.x, b.y);
-      ctx.lineTo(spineX, b.y);
+      ctx.moveTo(snap(a.x), ay);
+      ctx.lineTo(spineX, ay);
+      ctx.moveTo(snap(b.x), by);
+      ctx.lineTo(spineX, by);
       ctx.moveTo(spineX, spineTop);
       ctx.lineTo(spineX, spineBottom);
-      ctx.moveTo(spineX, target.y);
-      ctx.lineTo(target.x, target.y);
+      ctx.moveTo(spineX, ty);
+      ctx.lineTo(snap(target.x), ty);
       ctx.stroke();
     };
 
@@ -384,9 +393,17 @@ function useBracketLines(
         // `.bracket-name-row` stretches to fill `.bracket-names`' full width (a flex column's default
         // cross-axis stretch), so each row's own right edge already sits at that container's right
         // edge regardless of the name's actual length -- exactly the convergence point this pair's
-        // lines need, with `target` (the "No." field) reached the same way any other round is. Each
-        // line starts from its own row's underline (bottomRight), not the row's vertical middle.
-        if (row0 && row1) connect(pointOf(row0).bottomRight, pointOf(row1).bottomRight, target);
+        // lines need. Each line starts from its own row's underline (bottomRight), not the row's
+        // vertical middle. The elbow's own y is the true midpoint between those two underlines, NOT
+        // `target`'s measured y -- the "No." field centers against the whole vertex box (including
+        // its top/bottom padding), which lands it on row0's own underline rather than halfway between
+        // the two rows, and reusing that y drew the exit line from the top of the pair instead of its
+        // middle. Only `target`'s x (the field's actual horizontal position) still comes from it.
+        if (row0 && row1) {
+          const p0 = pointOf(row0).bottomRight;
+          const p1 = pointOf(row1).bottomRight;
+          connect(p0, p1, { x: target.x, y: (p0.y + p1.y) / 2 });
+        }
         return v.right;
       }
       const a = visit(round - 1, position * 2 - 1);
