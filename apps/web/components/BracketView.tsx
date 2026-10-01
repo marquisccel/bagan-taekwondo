@@ -445,6 +445,20 @@ function useBracketLines(
       ctx.lineWidth = 1;
       ctx.lineJoin = 'miter';
       ctx.lineCap = 'butt';
+      // Drawn on <canvas> rather than left as each row's own CSS border-bottom, so the underline
+      // renders with the exact same stroke (color, width, anti-aliasing) as the elbow lines it joins
+      // -- a CSS border and a canvas stroke render crisp-vs-anti-aliased differently even at the same
+      // nominal color/width, which looked like a visible "patah" (break) right where a connector
+      // line met the underline it's supposed to continue from.
+      const treeRect = tree.getBoundingClientRect();
+      tree.querySelectorAll('.bracket-name-row').forEach((rowEl) => {
+        const r = rowEl.getBoundingClientRect();
+        const y = r.bottom - treeRect.top;
+        ctx.beginPath();
+        ctx.moveTo(r.left - treeRect.left, y);
+        ctx.lineTo(r.right - treeRect.left, y);
+        ctx.stroke();
+      });
       visit(maxRound, 1);
     };
 
