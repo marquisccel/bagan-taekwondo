@@ -267,6 +267,62 @@ describe('PesertaPage', () => {
     expect(rowEl.querySelector('.issue-summary-popover')).not.toBeInTheDocument();
   });
 
+  it('treats an INFO-only issue (e.g. an auto-normalized value) as nothing to review', async () => {
+    vi.mocked(api.entries).mockResolvedValue(
+      list([
+        entry({
+          issues: [
+            {
+              id: 'i1',
+              code: 'CLASS_FORMAT_NORMALIZED',
+              severity: 'INFO',
+              status: 'OPEN',
+              field: 'class',
+              subjectType: 'IMPORT_ROW',
+            },
+          ],
+          openIssueCounts: { error: 0, warning: 0, info: 1 },
+        }),
+      ]),
+    );
+    renderIsolated(<PesertaPage />);
+    const rowEl = await screen.findByTestId('entry-row');
+    expect(within(rowEl).getByText('Tidak ada')).toBeInTheDocument();
+  });
+
+  it('shows a WARNING directly even when an INFO issue rides along, instead of forcing a click to see both', async () => {
+    vi.mocked(api.entries).mockResolvedValue(
+      list([
+        entry({
+          issues: [
+            {
+              id: 'i1',
+              code: 'NIK_INVALID_FORMAT',
+              severity: 'WARNING',
+              status: 'OPEN',
+              field: 'nik',
+              subjectType: 'ATHLETE',
+            },
+            {
+              id: 'i2',
+              code: 'CLASS_FORMAT_NORMALIZED',
+              severity: 'INFO',
+              status: 'OPEN',
+              field: 'class',
+              subjectType: 'IMPORT_ROW',
+            },
+          ],
+          openIssueCounts: { error: 0, warning: 1, info: 1 },
+        }),
+      ]),
+    );
+    renderIsolated(<PesertaPage />);
+    const rowEl = await screen.findByTestId('entry-row');
+    expect(within(rowEl).getByText(/Format NIK tidak valid/)).toBeInTheDocument();
+    expect(rowEl.textContent).not.toMatch(/Class Format Normalized/i);
+    expect(within(rowEl).queryByRole('button', { name: /peringatan/i })).not.toBeInTheDocument();
+  });
+
   it('applies the search, contingent, discipline, category, eligibility and review filters live, with no separate apply step', async () => {
     vi.mocked(api.entries).mockResolvedValue(list([entry()]));
     renderIsolated(<PesertaPage />);

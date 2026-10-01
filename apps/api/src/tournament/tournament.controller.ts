@@ -96,6 +96,7 @@ export class TournamentController {
            select 1 from validation_issue vi
            where vi.tournament_id = e.tournament_id
              and vi.status = 'OPEN'
+             and vi.severity != 'INFO'
              and (
                (vi.subject_type = 'ENTRY' and vi.subject_id = e.id)
                or (vi.subject_type = 'ATHLETE' and vi.subject_id in (

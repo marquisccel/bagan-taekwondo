@@ -58,7 +58,12 @@ const VIEWPORT_MARGIN = 12;
  * row below it down the page.
  */
 function IssueSummary({ entry }: { entry: EntryListItem }) {
-  const { error, warning, info } = entry.openIssueCounts;
+  const { error, warning } = entry.openIssueCounts;
+  // INFO-severity issues (e.g. CLASS_FORMAT_NORMALIZED -- "the system auto-corrected this during
+  // import, original value kept") are the system noting what it already silently fixed, not
+  // something the committee needs to act on; several don't even have an Indonesian label yet. Only
+  // ERROR/WARNING ever surfaces here.
+  const actionable = entry.issues.filter((i) => i.severity !== 'INFO');
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -91,11 +96,11 @@ function IssueSummary({ entry }: { entry: EntryListItem }) {
     };
   }, [open]);
 
-  if (entry.issues.length === 0) return <span style={{ color: 'var(--text-dim)' }}>Tidak ada</span>;
+  if (actionable.length === 0) return <span style={{ color: 'var(--text-dim)' }}>Tidak ada</span>;
   // A single issue is shown directly -- no click needed to find out what the one-word summary
   // ("1 peringatan") actually means, and nothing to open a popover for anyway.
-  const [singleIssue] = entry.issues;
-  if (entry.issues.length === 1 && singleIssue) {
+  const [singleIssue] = actionable;
+  if (actionable.length === 1 && singleIssue) {
     return (
       <span
         style={{
@@ -115,9 +120,8 @@ function IssueSummary({ entry }: { entry: EntryListItem }) {
   const parts = [
     error > 0 ? `${error} kesalahan` : null,
     warning > 0 ? `${warning} peringatan` : null,
-    info > 0 ? `${info} info` : null,
   ].filter(Boolean);
-  const summary = parts.length > 0 ? parts.join(', ') : `${entry.issues.length} sudah ditangani`;
+  const summary = parts.length > 0 ? parts.join(', ') : `${actionable.length} sudah ditangani`;
 
   const toggle = () => {
     if (!open) {
@@ -154,7 +158,7 @@ function IssueSummary({ entry }: { entry: EntryListItem }) {
                 style={{ top: pos.top, left: pos.left }}
               >
                 <ul>
-                  {entry.issues.map((i) => (
+                  {actionable.map((i) => (
                     <li key={i.id}>
                       <strong>{issueSeverityLabel(i.severity)}</strong>: {issueCodeLabel(i.code)}
                       {i.status !== 'OPEN' ? ` · ${issueStatusLabel(i.status)}` : null}

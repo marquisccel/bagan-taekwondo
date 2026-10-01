@@ -157,8 +157,11 @@ export class EntryInspectionController {
     if (categoryId === 'NONE') where.push('e.category_id is null');
     else if (categoryId) where.push(`e.category_id = ${bind(categoryId)}`);
     if (hasIssues === 'true')
+      // INFO-severity issues (e.g. CLASS_FORMAT_NORMALIZED) are the system noting what it already
+      // silently auto-corrected, not something the committee needs to review -- "Perlu Ditinjau"
+      // means ERROR/WARNING only, matching what Peserta's own "Masalah Data" column shows.
       where.push(
-        `exists (select 1 from validation_issue vi where vi.tournament_id = e.tournament_id and vi.status = 'OPEN' and ${ISSUE_MATCH})`,
+        `exists (select 1 from validation_issue vi where vi.tournament_id = e.tournament_id and vi.status = 'OPEN' and vi.severity != 'INFO' and ${ISSUE_MATCH})`,
       );
     const whereSql = where.join(' and ');
     const filterParams = [...params];
