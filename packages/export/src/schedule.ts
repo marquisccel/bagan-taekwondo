@@ -48,24 +48,23 @@ export function findScheduleSlot(schedule: Schedule, category: ExportCategory): 
 }
 
 /**
- * Every category of `categories` that this ONE arena/day slot schedules, in the slot's own row
- * order (matching the committee's own "Jadwal FIX" sheet) -- a full day/arena bracket document
- * covers every category fought there, not just one weight class. A schedule row with no matching
- * category (not yet drawn, or excluded from this export's scope) is silently skipped, never
+ * Every category of `categories` that this ONE arena/day slot schedules -- a full day/arena bracket
+ * document covers every category fought there, not just one weight class. A schedule row with no
+ * matching category (not yet drawn, or excluded from this export's scope) is silently skipped, never
  * fabricated; a category is never listed twice even if the schedule mentions it more than once.
+ *
+ * Kept in `categories`' OWN given order (gender then weight ascending -- see
+ * `compareCategoriesByWeightClass`, the exact order `buildExportModel` already sorted it into), not
+ * the schedule's own row order: that order is also what every match's printed number was resolved
+ * over (match-numbering.ts), so printing the slot's categories out of that order made an unedited
+ * match's number jump around the page unpredictably -- correct on its own, but unrecognizable as
+ * "starting from 1" the way the web session view reads. The team asked for the printed page to look
+ * exactly like the web view, filtered down to one slot, not reshuffled into the committee's own
+ * schedule-sheet row order.
  */
 export function categoriesForSlot(
   categories: readonly ExportCategory[],
   slot: ScheduleSlot,
 ): readonly ExportCategory[] {
-  const seen = new Set<string>();
-  const out: ExportCategory[] = [];
-  for (const key of slot.categories) {
-    const category = categories.find((c) => !seen.has(c.id) && matches(key, c));
-    if (category) {
-      seen.add(category.id);
-      out.push(category);
-    }
-  }
-  return out;
+  return categories.filter((c) => slot.categories.some((key) => matches(key, c)));
 }

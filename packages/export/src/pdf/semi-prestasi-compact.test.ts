@@ -730,18 +730,26 @@ describe('FINAL/OFFICIAL arena/day SESSION document (buildSemiPrestasiSessionShe
     expect(preview).toContain(formatOperatorCategoryTitle(categoryOf(kyorugi, 'S-K1')));
   });
 
-  it("includes every category the schedule places in the slot, in the schedule's own order -- Kyorugi and Poomsae alike", () => {
+  it('includes every category the schedule places in the slot, in the SAME order the web session view uses -- Kyorugi and Poomsae alike, regardless of the schedule row order', () => {
     const mixed = makeSemiPrestasiFixtureModel([
       { key: 'S-K1', discipline: 'KYORUGI', poolSizes: [4, 3], weightClassCode: '-45' },
       { key: 'S-P1', discipline: 'POOMSAE', poolSizes: [4] },
     ]);
+    // The schedule row order here is deliberately the OPPOSITE of the web's own category order
+    // (Poomsae has no weight class, so it always sorts last) -- the printed page must still follow
+    // the web's order, not this row order, so an unedited match's number reads the same way on
+    // paper as it does on screen.
     const slot = slotFor(mixed, ['S-P1', 'S-K1']);
     const { html } = buildSemiPrestasiSessionSheetHtml(mixed, { ...opts, mode: 'OFFICIAL' }, slot);
     const kName = categoryOf(mixed, 'S-K1').pools[0]!.members[0]!.displayName;
     const pName = categoryOf(mixed, 'S-P1').pools[0]!.members[0]!.displayName;
     expect(html).toContain(kName);
     expect(html).toContain(pName);
-    expect(html.indexOf(pName)).toBeLessThan(html.indexOf(kName));
+    const webOrderIds = mixed.categories.map((c) => c.id);
+    const kIdx = webOrderIds.indexOf(categoryOf(mixed, 'S-K1').id);
+    const pIdx = webOrderIds.indexOf(categoryOf(mixed, 'S-P1').id);
+    expect(kIdx).toBeLessThan(pIdx);
+    expect(html.indexOf(kName)).toBeLessThan(html.indexOf(pName));
   });
 
   it('numbers each drawn match with its own resolvedDisplayNo, the same number the web session view shows', () => {
