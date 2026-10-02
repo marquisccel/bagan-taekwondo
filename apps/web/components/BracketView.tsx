@@ -145,52 +145,62 @@ function MatchVertex({
   const rowB = isLeaf ? feederRow(match.feederB, bracket) : null;
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const canDrag = isLeaf && editable && !!onSwapEntries;
+  // A genuine bye pairing (one real entry, no opponent at all) is never drawn as a boxed pair with a
+  // "BYE" placeholder row, matching the committee's own printed sheet (bracket-geometry.ts's export
+  // equivalent): only the real entry's own row renders, with no "No." field of its own either, since
+  // nothing was actually played here -- the advancing entry's line runs straight through to whatever
+  // match it actually plays (see useBracketLines' handling of a lone leaf row below).
+  const byeIdx = isLeaf ? [rowA, rowB].findIndex((r) => r?.nama === 'BYE') : -1;
+  const isWalkoverLeaf = byeIdx !== -1 && !!([rowA, rowB][1 - byeIdx] ?? null)?.entryId;
   return (
     <div className="bracket-vertex" data-match-key={`${match.round}-${match.position}`}>
       {isLeaf ? (
         <div className="bracket-names">
-          {[rowA, rowB].map((r, i) => (
-            <div
-              className={`bracket-name-row${dragOverIdx === i ? ' bracket-name-row-over' : ''}`}
-              key={i}
-              data-row-key={`${match.round}-${match.position}-${i}`}
-              draggable={canDrag && !!r?.entryId}
-              onDragStart={(e) => {
-                if (r?.entryId) e.dataTransfer.setData('text/entry-id', r.entryId);
-              }}
-              onDragOver={(e) => {
-                if (!canDrag || !r?.entryId) return;
-                e.preventDefault();
-                setDragOverIdx(i);
-              }}
-              onDragLeave={() => setDragOverIdx((cur) => (cur === i ? null : cur))}
-              onDrop={(e) => {
-                if (!canDrag || !r?.entryId) return;
-                e.preventDefault();
-                setDragOverIdx(null);
-                const draggedId = e.dataTransfer.getData('text/entry-id');
-                if (draggedId && draggedId !== r.entryId) onSwapEntries?.(draggedId, r.entryId);
-              }}
-            >
-              {r ? (
-                <>
-                  <code className="bracket-name-id">{r.idAtlet}</code>
-                  <span className="bracket-name-nama">{r.nama}</span>
-                  <span className="bracket-name-kelamin">{r.kelamin}</span>
-                  <span className="bracket-name-divisi">
-                    {r.nama === 'BYE' ? '' : (categoryLabels?.divisi ?? '·')}
-                  </span>
-                  <span className="bracket-name-kelas">
-                    {r.nama === 'BYE' ? '' : (categoryLabels?.kelas ?? '·')}
-                  </span>
-                  <span className="bracket-name-kontingen">{r.kontingen}</span>
-                </>
-              ) : null}
-            </div>
-          ))}
+          {[rowA, rowB].map((r, i) => {
+            if (isWalkoverLeaf && i === byeIdx) return null;
+            return (
+              <div
+                className={`bracket-name-row${dragOverIdx === i ? ' bracket-name-row-over' : ''}`}
+                key={i}
+                data-row-key={`${match.round}-${match.position}-${i}`}
+                draggable={canDrag && !!r?.entryId}
+                onDragStart={(e) => {
+                  if (r?.entryId) e.dataTransfer.setData('text/entry-id', r.entryId);
+                }}
+                onDragOver={(e) => {
+                  if (!canDrag || !r?.entryId) return;
+                  e.preventDefault();
+                  setDragOverIdx(i);
+                }}
+                onDragLeave={() => setDragOverIdx((cur) => (cur === i ? null : cur))}
+                onDrop={(e) => {
+                  if (!canDrag || !r?.entryId) return;
+                  e.preventDefault();
+                  setDragOverIdx(null);
+                  const draggedId = e.dataTransfer.getData('text/entry-id');
+                  if (draggedId && draggedId !== r.entryId) onSwapEntries?.(draggedId, r.entryId);
+                }}
+              >
+                {r ? (
+                  <>
+                    <code className="bracket-name-id">{r.idAtlet}</code>
+                    <span className="bracket-name-nama">{r.nama}</span>
+                    <span className="bracket-name-kelamin">{r.kelamin}</span>
+                    <span className="bracket-name-divisi">
+                      {r.nama === 'BYE' ? '' : (categoryLabels?.divisi ?? '·')}
+                    </span>
+                    <span className="bracket-name-kelas">
+                      {r.nama === 'BYE' ? '' : (categoryLabels?.kelas ?? '·')}
+                    </span>
+                    <span className="bracket-name-kontingen">{r.kontingen}</span>
+                  </>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
       ) : null}
-      {onSetDisplayNo ? (
+      {onSetDisplayNo && !isWalkoverLeaf ? (
         <DisplayNoField
           match={match}
           editable={editable}
@@ -408,6 +418,14 @@ function useBracketLines(
       if (round === minRound) {
         const row0 = tree.querySelector(`[data-row-key="${round}-${position}-0"]`);
         const row1 = tree.querySelector(`[data-row-key="${round}-${position}-1"]`);
+        // A bye pairing renders only the real entry's own row (MatchVertex skips the BYE row
+        // entirely) -- there is no second input to merge and no "No." field of its own here, so this
+        // match reports that lone row's own point straight up as its output, with no elbow drawn at
+        // this level at all. The parent's own connect() call then draws the only elbow this entry
+        // ever gets, directly from their row into the match they actually play -- exactly the
+        // "straight through, skip this round's own number" look the printed sheet uses for a bye.
+        if (row0 && !row1) return pointOf(row0).bottomRight;
+        if (row1 && !row0) return pointOf(row1).bottomRight;
         // `.bracket-name-row` stretches to fill `.bracket-names`' full width (a flex column's default
         // cross-axis stretch), so each row's own right edge already sits at that container's right
         // edge regardless of the name's actual length -- exactly the convergence point this pair's

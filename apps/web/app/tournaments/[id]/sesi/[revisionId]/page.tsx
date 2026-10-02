@@ -120,6 +120,11 @@ function CategoryTable({
   const multiPool = cat.pools.length > 1;
   const hasBracket = cat.pools.some((p) => p.bracket && p.bracket.matches.length > 0);
   const [view, setView] = useState<'tabel' | 'bracket'>('tabel');
+  // Every swap and "No." edit already saves itself immediately (runCommand fires on the action
+  // itself, no separate draft state) -- this button doesn't send anything of its own. It exists
+  // because the team asked for an explicit, visible confirmation that their changes are saved,
+  // not because anything here is actually held back waiting for it.
+  const [justSaved, setJustSaved] = useState(false);
   const dims = categoryKeyDims(cat.category.category_key);
   const ageDivision = dims.get('AGE_DIVISION');
   const weightClass = dims.get('WEIGHT_CLASS');
@@ -225,6 +230,29 @@ function CategoryTable({
               />
             ) : null,
           )}
+          {editable ? (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: 8,
+                marginTop: 12,
+              }}
+            >
+              {justSaved ? <span style={{ color: 'var(--green)', fontSize: 12 }}>Tersimpan</span> : null}
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setJustSaved(true);
+                  setTimeout(() => setJustSaved(false), 2000);
+                }}
+              >
+                Simpan
+              </button>
+            </div>
+          ) : null}
         </div>
       )}
     </section>

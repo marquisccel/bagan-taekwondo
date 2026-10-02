@@ -58,19 +58,30 @@ describe('BracketView', () => {
     expect(document.querySelectorAll('.bracket-children')).toHaveLength(31);
   });
 
-  it('resolves round-1 entries through bracket_slot and shows BYE for an empty-but-marked slot', () => {
-    const bracket = buildBracket(2);
-    const withBye: Bracket = {
+  it('a genuine bye pairing (a real entry with no opponent at all) renders only the real entry, no BYE placeholder row and no "No." field of its own', () => {
+    // A realistic shape: a 3-real-entry pool padded to 4 slots, so round-1 match 1 is a bye
+    // (e1 vs nobody) while round-1 match 2 and the round-2 final are ordinary played matches.
+    const bracket = buildBracket(4);
+    const walkover: Bracket = {
       ...bracket,
-      slots: [
-        bracket.slots[0]!,
-        { ...bracket.slots[1]!, entry_id: null, entry: null, bye_reason: { code: 'ODD_COUNT' } },
-      ],
+      matches: bracket.matches.map((m) =>
+        m.round === 1 && m.position === 1 ? { ...m, status: 'WALKOVER' } : m,
+      ),
+      slots: bracket.slots.map((s) =>
+        s.position === 2 ? { ...s, entry_id: null, entry: null, bye_reason: { code: 'ODD_COUNT' } } : s,
+      ),
     };
-    render(<BracketView bracket={withBye} />);
+    render(<BracketView bracket={walkover} onSetDisplayNo={() => {}} />);
     expect(screen.getByText(/Athlete 1/)).toBeInTheDocument();
-    expect(screen.getByText('BYE')).toBeInTheDocument();
     expect(screen.getByText('R1')).toBeInTheDocument();
+    expect(screen.queryByText('BYE')).not.toBeInTheDocument();
+    // Only one name row is rendered for the bye match (the real entry), not a boxed pair.
+    expect(document.querySelectorAll('[data-row-key^="1-1-"]')).toHaveLength(1);
+    // No "No." field for a match nobody actually played -- the real entry's line runs straight
+    // through into the match it actually plays instead.
+    expect(document.querySelector('[data-match-key="1-1"] [class*="match-display-no"]')).toBeNull();
+    // The real, played final still gets its own "No." field as usual.
+    expect(document.querySelector('[data-match-key="2-1"] [class*="match-display-no"]')).not.toBeNull();
   });
 
   it('shows "no matches" for a walkover/single-entry pool instead of an empty bracket', () => {
