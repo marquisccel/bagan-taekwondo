@@ -265,21 +265,27 @@ export class RevisionReadController {
     const poolById = new Map(pools.map((p) => [p.id, p]));
     const bracketById = new Map(brackets.map((b) => [b.id, b]));
     const categoryIndexById = new Map(categories.map((c, i) => [c.category_id, i]));
+    // A WALKOVER match (a bye pairing) was never actually played and is never shown a number at all
+    // -- see MatchVertex's isWalkoverLeaf in BracketView.tsx -- so it must never consume a number
+    // slot here either; counting it anyway is exactly what silently skipped a number (e.g. "7") the
+    // team never sees used, right before the next real match.
     const resolvedNumbers = resolveMatchNumbers(
-      matches.map((m) => {
-        const bracket = bracketById.get(m.bracket_id);
-        const pool = bracket ? poolById.get(bracket.pool_id) : undefined;
-        return {
-          id: m.id,
-          displayNo: m.display_no,
-          order: [
-            pool ? (categoryIndexById.get(pool.category_id) ?? 0) : 0,
-            pool?.ordinal ?? 0,
-            m.round,
-            m.position,
-          ],
-        };
-      }),
+      matches
+        .filter((m) => m.status !== 'WALKOVER')
+        .map((m) => {
+          const bracket = bracketById.get(m.bracket_id);
+          const pool = bracket ? poolById.get(bracket.pool_id) : undefined;
+          return {
+            id: m.id,
+            displayNo: m.display_no,
+            order: [
+              pool ? (categoryIndexById.get(pool.category_id) ?? 0) : 0,
+              pool?.ordinal ?? 0,
+              m.round,
+              m.position,
+            ],
+          };
+        }),
     );
 
     return categories.map((c) => ({
@@ -450,12 +456,16 @@ export class RevisionReadController {
 
     const poolById = new Map(pools.map((p) => [p.id, p]));
     const bracketById = new Map(brackets.map((b) => [b.id, b]));
+    // See the identical filter/comment in session() above: a WALKOVER match never gets shown a
+    // number at all, so it must never consume a number slot in this resolution either.
     const resolvedNumbers = resolveMatchNumbers(
-      matches.map((m) => {
-        const bracket = bracketById.get(m.bracket_id);
-        const pool = bracket ? poolById.get(bracket.pool_id) : undefined;
-        return { id: m.id, displayNo: m.display_no, order: [0, pool?.ordinal ?? 0, m.round, m.position] };
-      }),
+      matches
+        .filter((m) => m.status !== 'WALKOVER')
+        .map((m) => {
+          const bracket = bracketById.get(m.bracket_id);
+          const pool = bracket ? poolById.get(bracket.pool_id) : undefined;
+          return { id: m.id, displayNo: m.display_no, order: [0, pool?.ordinal ?? 0, m.round, m.position] };
+        }),
     );
 
     const result = pools.map((p) => {

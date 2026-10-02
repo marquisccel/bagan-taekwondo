@@ -297,21 +297,28 @@ export function buildExportModel(args: BuildExportModelArgs): ExportModel {
   const categoryIndexById = new Map(sortedCategories.map((c, i) => [c.id, i]));
   const poolById = new Map(args.pools.map((p) => [p.id, p]));
   const bracketById = new Map(args.brackets.map((b) => [b.id, b]));
+  // A WALKOVER match (a bye pairing) was never actually played and is never shown a number at all
+  // (see the web bracket's isWalkoverLeaf and this file's own bracket-geometry.ts walkover
+  // handling), so it must never consume a number slot in this resolution either -- counting it
+  // anyway silently skipped a number (e.g. "7") nobody ever sees used, right before the next real
+  // match's number.
   const resolvedNumberByMatchId = resolveMatchNumbers(
-    args.matches.map((m) => {
-      const bracket = bracketById.get(m.bracketId);
-      const pool = bracket ? poolById.get(bracket.poolId) : undefined;
-      return {
-        id: m.id,
-        displayNo: m.displayNo ?? null,
-        order: [
-          pool ? (categoryIndexById.get(pool.categoryId) ?? 0) : 0,
-          pool?.ordinal ?? 0,
-          m.round,
-          m.position,
-        ],
-      };
-    }),
+    args.matches
+      .filter((m) => m.status !== 'WALKOVER')
+      .map((m) => {
+        const bracket = bracketById.get(m.bracketId);
+        const pool = bracket ? poolById.get(bracket.poolId) : undefined;
+        return {
+          id: m.id,
+          displayNo: m.displayNo ?? null,
+          order: [
+            pool ? (categoryIndexById.get(pool.categoryId) ?? 0) : 0,
+            pool?.ordinal ?? 0,
+            m.round,
+            m.position,
+          ],
+        };
+      }),
   );
 
   const categories: ExportCategory[] = sortedCategories.map((c) => {
