@@ -442,8 +442,23 @@ function useBracketLines(
         // v.right and a round-2+ match's v.right) already includes that gap. Using the row's own
         // (shorter) x here put this input's x behind the other input's x, pointing connect()'s spine
         // the wrong way and collapsing its elbow into what looked like a single flat line.
-        if (row0 && !row1) return { x: v.right.x, y: pointOf(row0).bottomRight.y };
-        if (row1 && !row0) return { x: v.right.x, y: pointOf(row1).bottomRight.y };
+        //
+        // That reported point sits past where the row's own underline visually ends, though -- with
+        // no pill of its own there to visually justify the extra distance (unlike a normal leaf,
+        // where that same extra distance is exactly where its pill sits). A short extra segment
+        // closes that gap, so the row's underline reads as one continuous line all the way to
+        // whatever it feeds, not a line that stops short and resumes further out.
+        const extendRowTo = (row: Element): LinePoint => {
+          const rowPoint = pointOf(row).bottomRight;
+          const out = { x: v.right.x, y: rowPoint.y };
+          ctx.beginPath();
+          ctx.moveTo(rowPoint.x, rowPoint.y);
+          ctx.lineTo(out.x, out.y);
+          ctx.stroke();
+          return out;
+        };
+        if (row0 && !row1) return extendRowTo(row0);
+        if (row1 && !row0) return extendRowTo(row1);
         // `.bracket-name-row` stretches to fill `.bracket-names`' full width (a flex column's default
         // cross-axis stretch), so each row's own right edge already sits at that container's right
         // edge regardless of the name's actual length -- exactly the convergence point this pair's
