@@ -51,8 +51,16 @@ describe('semiPrestasiFingerprintSubject', () => {
     expect(fp(build(), null)).toBe(fp(build(), null));
   });
 
-  it('does not change when only a PRESTASI category changes (scope = its own content)', () => {
-    expect(fp(build(4), null)).toBe(fp(build(3), null));
+  it('changes when a PRESTASI category changes, because it shifts the printed match numbers of every semi-prestasi category sorted after it', () => {
+    // Match numbers are resolved once over the WHOLE revision (every category, every stream, in
+    // one shared gender/weight-ascending order -- see model.ts), the same order the web session
+    // view numbers from, so a number never disagrees between screen and paper. One side effect:
+    // changing a PRESTASI category's own match count (3 real matches vs 2, here) shifts the
+    // resolvedDisplayNo of every category that sorts after it, including semi-prestasi ones whose
+    // own content didn't change at all -- and since those shifted numbers are genuinely printed on
+    // this document, its fingerprint (embedded on the page as the verification code) must change
+    // too, or the same code would appear on two documents that print different numbers.
+    expect(fp(build(4), null)).not.toBe(fp(build(3), null));
   });
 
   it('changes when a semi-prestasi category changes, and differs per category scope', () => {
