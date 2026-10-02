@@ -260,7 +260,7 @@ function CategoryTable({
 }
 
 export default function SesiPage() {
-  const { id, revisionId } = useParams<{ id: string; revisionId: string }>();
+  const { revisionId } = useParams<{ id: string; revisionId: string }>();
   const searchParams = useSearchParams();
   const dayNumber = searchParams.get('dayNumber');
   const arenaCode = searchParams.get('arenaCode');
@@ -369,13 +369,6 @@ export default function SesiPage() {
 
   return (
     <main className="content content-wide">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-        <h1>Cek &amp; Atur Bagan</h1>
-        <a className="btn" href={`/tournaments/${id}/jadwal`}>
-          Kembali ke Jadwal
-        </a>
-      </div>
-
       <ExportPanel
         revisionId={revisionId}
         revisionLifecycle={revision.lifecycle}

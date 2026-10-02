@@ -82,6 +82,12 @@ describe('BracketView', () => {
     expect(document.querySelector('[data-match-key="1-1"] [class*="match-display-no"]')).toBeNull();
     // The real, played final still gets its own "No." field as usual.
     expect(document.querySelector('[data-match-key="2-1"] [class*="match-display-no"]')).not.toBeNull();
+    // The bye match (1-1) reads as "sat out this round" -- it renders BELOW the real pairing (1-2)
+    // regardless of its raw engine-assigned position, matching the printed PDF sheet's own ordering.
+    const order = [...document.querySelectorAll('[data-match-key^="1-"]')].map((el) =>
+      el.getAttribute('data-match-key'),
+    );
+    expect(order).toEqual(['1-2', '1-1']);
   });
 
   it('shows "no matches" for a walkover/single-entry pool instead of an empty bracket', () => {

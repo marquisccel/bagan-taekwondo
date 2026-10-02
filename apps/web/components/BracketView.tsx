@@ -257,12 +257,23 @@ function BracketNode({
     />
   );
   if (round === minRound) return vertex;
+  // A bye pairing reads as "sat out this round", not "played and is shown first" -- so when one of
+  // the two children feeding this match is a WALKOVER, it renders BELOW the other, real-pairing
+  // child, regardless of which raw position the draw engine happened to assign it (structural
+  // reference: bracket-geometry.ts's identical reordering for the printed PDF sheet). Only the visual
+  // order changes here; useBracketLines reads each row's actual rendered position from the DOM, so
+  // the connecting lines automatically follow wherever these two end up.
+  const posA = position * 2 - 1;
+  const posB = position * 2;
+  const aIsWalkover = matchByKey.get(`${round - 1}-${posA}`)?.status === 'WALKOVER';
+  const bIsWalkover = matchByKey.get(`${round - 1}-${posB}`)?.status === 'WALKOVER';
+  const [topPos, bottomPos] = aIsWalkover && !bIsWalkover ? [posB, posA] : [posA, posB];
   return (
     <div className="bracket-node">
       <div className="bracket-children">
         <BracketNode
           round={round - 1}
-          position={position * 2 - 1}
+          position={topPos}
           minRound={minRound}
           matchByKey={matchByKey}
           bracket={bracket}
@@ -274,7 +285,7 @@ function BracketNode({
         />
         <BracketNode
           round={round - 1}
-          position={position * 2}
+          position={bottomPos}
           minRound={minRound}
           matchByKey={matchByKey}
           bracket={bracket}
