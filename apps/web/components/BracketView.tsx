@@ -435,8 +435,15 @@ function useBracketLines(
         // this level at all. The parent's own connect() call then draws the only elbow this entry
         // ever gets, directly from their row into the match they actually play -- exactly the
         // "straight through, skip this round's own number" look the printed sheet uses for a bye.
-        if (row0 && !row1) return pointOf(row0).bottomRight;
-        if (row1 && !row0) return pointOf(row1).bottomRight;
+        //
+        // The reported x is the VERTEX's own right edge (v.right.x), not the row's -- `.bracket-
+        // name-row` only spans `.bracket-names`' own width, stopping short of the extra gap a normal
+        // leaf's number field sits in, while every other match's reported x (both a normal leaf's
+        // v.right and a round-2+ match's v.right) already includes that gap. Using the row's own
+        // (shorter) x here put this input's x behind the other input's x, pointing connect()'s spine
+        // the wrong way and collapsing its elbow into what looked like a single flat line.
+        if (row0 && !row1) return { x: v.right.x, y: pointOf(row0).bottomRight.y };
+        if (row1 && !row0) return { x: v.right.x, y: pointOf(row1).bottomRight.y };
         // `.bracket-name-row` stretches to fill `.bracket-names`' full width (a flex column's default
         // cross-axis stretch), so each row's own right edge already sits at that container's right
         // edge regardless of the name's actual length -- exactly the convergence point this pair's
