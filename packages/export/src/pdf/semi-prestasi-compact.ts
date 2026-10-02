@@ -531,7 +531,10 @@ export function buildSemiPrestasiCompactSheetHtml(
   const title = single
     ? `${L.documentTitle} · ${singleCategoryTitle}`
     : `${L.documentTitle} · ${model.tournament.name}`;
-  // FINAL/OFFICIAL match numbers run 1, 2, 3, ... across the WHOLE document, in its category/pool order.
+  // Each real match prints its own `resolvedDisplayNo` (see compact-bracket-svg.ts), the same number
+  // already shown on the web bracket view -- `documentMatchNumbers` here only still supplies a number
+  // for the one case that has no match row to carry one: a pool with no drawable bracket at all (a
+  // lone walkover participant).
   const matchNumbers = documentMatchNumbers(categories.flatMap((c) => c.pools));
   const body = `${docHeader(model, opts, singleCategoryTitle)}${qualityLine}${categories.map((c) => categorySection(c, !single, opts.mode, matchNumbers)).join('')}`;
   const html = `<!doctype html>
@@ -596,7 +599,10 @@ export function buildSemiPrestasiSessionSheetHtml(
     throw new Error(`no semi-prestasi categories scheduled for DAY ${slot.dayNumber} ${slot.arena}`);
   }
   const title = `${L.documentTitle} · DAY ${slot.dayNumber} · ${slot.arena}`;
-  // FINAL/OFFICIAL match numbers run 1, 2, 3, ... across the WHOLE arena/day document.
+  // Each real match prints its own `resolvedDisplayNo` (see compact-bracket-svg.ts), the same number
+  // already shown on the web bracket view -- `documentMatchNumbers` here only still supplies a number
+  // for the one case that has no match row to carry one: a pool with no drawable bracket at all (a
+  // lone walkover participant).
   const matchNumbers = documentMatchNumbers(categories.flatMap((c) => c.pools));
   // FINAL/OFFICIAL (structural reference: the legacy sheet): no per-category heading between weight
   // classes either -- the row's own division/weight-class columns already say which category a leaf

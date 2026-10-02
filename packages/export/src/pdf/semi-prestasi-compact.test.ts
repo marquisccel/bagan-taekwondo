@@ -460,9 +460,18 @@ describe('FINAL/OFFICIAL full-width bracket presentation', () => {
       expect(html).not.toMatch(/[A-Z]\d+-R\d+-\d+/);
       const bracket = m.categories[0]!.pools[0]!.bracket!;
       for (const mm of bracket.matches) if (mm.publicCode) expect(html).not.toContain(mm.publicCode);
-      const drawn = bracket.matches.filter((mm) => mm.status !== 'WALKOVER').length;
-      const numbers = texts(html).filter((x) => /^\d+$/.test(x));
-      expect(numbers).toEqual(Array.from({ length: drawn }, (_, i) => String(i + 1)).sort());
+      // Each drawn match prints its own `resolvedDisplayNo` (the same number the web bracket view
+      // shows), not a fresh 1..N count local to this card -- a WALKOVER match still consumes a number
+      // in that shared resolution even though it's never drawn, so the printed numbers for an isolated
+      // single-pool fixture like this one can still have gaps.
+      const drawnMatches = bracket.matches.filter((mm) => mm.status !== 'WALKOVER');
+      const expectedNumbers = drawnMatches
+        .map((mm) => String(mm.resolvedDisplayNo))
+        .sort((a, b) => Number(a) - Number(b));
+      const numbers = texts(html)
+        .filter((x) => /^\d+$/.test(x))
+        .sort((a, b) => Number(a) - Number(b));
+      expect(numbers).toEqual(expectedNumbers);
     }
   });
 
@@ -559,21 +568,34 @@ describe('FINAL/OFFICIAL document-sequential match numbering', () => {
       .slice(1)
       .map((card) => [...card.matchAll(/font-weight="700">(\d+)<\/text>/g)].map((m) => Number(m[1])));
 
-  it('never restarts between pools: one contiguous sequence with no duplicates', () => {
+  // Each drawn match's printed number is its own `resolvedDisplayNo` (the same number the web
+  // session view resolves, over the whole revision's weight-ascending category order) -- not a fresh
+  // count local to this document. A WALKOVER match still consumes a number in that shared resolution
+  // even though it's never drawn, so the sequence can have gaps; it is never required to be
+  // contiguous, only increasing and duplicate-free.
+  const expectedPoolNumbers = (): number[][] =>
+    multi.categories.flatMap((c) =>
+      c.pools.map((p) =>
+        (p.bracket?.matches ?? [])
+          .filter((m) => m.status !== 'WALKOVER')
+          .map((m) => m.resolvedDisplayNo as number),
+      ),
+    );
+
+  it('matches each drawn match to its own resolvedDisplayNo, with no duplicates, never restarting between pools', () => {
     const pools = perPool(officialHtml());
     expect(pools).toHaveLength(5);
+    expect(pools).toEqual(expectedPoolNumbers());
     const all = pools.flat();
-    expect(all).toEqual(Array.from({ length: all.length }, (_, i) => i + 1));
     expect(new Set(all).size).toBe(all.length);
-    // 4-person: 3 matches, 3-person: 2, 2-person: 1, 3-person: 2, 4-person: 3
+    // 4-person: 3 drawn matches, 3-person: 2, 2-person: 1, 3-person: 2, 4-person: 3
     expect(pools.map((p) => p.length)).toEqual([3, 2, 1, 2, 3]);
-    expect(pools.map((p) => p[0])).toEqual([1, 4, 6, 7, 9]);
   });
 
   it('within a pool, earlier-round matches are numbered before later-round ones (the final is last)', () => {
     const pools = perPool(officialHtml());
     for (const p of pools) expect([...p].sort((a, b) => a - b)).toEqual(p);
-    expect(pools[0]).toEqual([1, 2, 3]);
+    expect(pools[0]).toEqual(expectedPoolNumbers()[0]);
   });
 
   it('a collapsed WALKOVER match receives no number, and internal codes/uids stay untouched', () => {
@@ -722,11 +744,22 @@ describe('FINAL/OFFICIAL arena/day SESSION document (buildSemiPrestasiSessionShe
     expect(html.indexOf(pName)).toBeLessThan(html.indexOf(kName));
   });
 
-  it('numbers matches sequentially across the WHOLE arena/day document, not restarting per category', () => {
+  it('numbers each drawn match with its own resolvedDisplayNo, the same number the web session view shows', () => {
     const slot = slotFor(kyorugi, ['S-K1', 'S-K2']);
     const { html } = buildSemiPrestasiSessionSheetHtml(kyorugi, { ...opts, mode: 'OFFICIAL' }, slot);
     const numbers = [...html.matchAll(/font-weight="700">(\d+)<\/text>/g)].map((m) => Number(m[1]));
-    expect(numbers).toEqual(Array.from({ length: numbers.length }, (_, i) => i + 1));
+    // Not required to be a contiguous 1..N run -- a WALKOVER match still consumes a number in the
+    // shared resolution even though it's never drawn, so printed numbers can have gaps. What must
+    // hold is that every printed number is exactly the matching match's own `resolvedDisplayNo`.
+    const expected = ['S-K1', 'S-K2'].flatMap((key) =>
+      categoryOf(kyorugi, key).pools.flatMap((p) =>
+        (p.bracket?.matches ?? [])
+          .filter((m) => m.status !== 'WALKOVER')
+          .map((m) => m.resolvedDisplayNo as number),
+      ),
+    );
+    expect(numbers).toEqual(expected);
+    expect(new Set(numbers).size).toBe(numbers.length);
   });
 
   it('skips a schedule row with no matching category, and throws when the slot matches nothing at all', () => {

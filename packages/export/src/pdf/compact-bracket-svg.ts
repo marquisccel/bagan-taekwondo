@@ -103,27 +103,22 @@ export function presentationMatchNumbers(
 }
 
 /**
- * Document-level numbering for FINAL/OFFICIAL: ONE sequence across every pool of the document, in
- * the order the pools are given (the document's own deterministic category/pool order) and
- * round/position within each pool's own bracket.
+ * A number for the one case that has no `ExportMatch` row to carry one: a pool with no drawable
+ * bracket at all (a single-participant "walkover" pool with nobody to pair it against), keyed by the
+ * pool's own id -- matching the committee's own SPS sheet, which numbers every pool's line in
+ * sequence whether or not it has a real match (e.g. a lone entry still gets written down as "... 3"
+ * in the sheet). A bracket too large for this compact card (deferred to the separate full-size
+ * bracket sheet) takes no number here instead, since its real match count can't be enumerated from
+ * this card alone -- semi-prestasi pools never actually reach that size in practice (max pool size 4,
+ * well under COMPACT_BRACKET_MAX_SIZE), so this is a defensive fallback, not an expected case.
  *
- * A pool with no drawable bracket at all (a single-participant "walkover" pool with nobody to pair
- * it against) still consumes exactly one number, keyed by the pool's own id -- matching the
- * committee's own SPS sheet, which numbers every pool's line in sequence whether or not it has a
- * real match (e.g. a lone entry still gets written down as "... 3" in the sheet). A bracket too
- * large for this compact card (deferred to the separate full-size bracket sheet) takes no number
- * here instead, since its real match count can't be enumerated from this card alone -- semi-prestasi
- * pools never actually reach that size in practice (max pool size 4, well under
- * COMPACT_BRACKET_MAX_SIZE), so this is a defensive fallback, not an expected case.
- *
- * A number the team already pinned on screen (`ExportMatch.displayNo`, via SET_MATCH_DISPLAY_NO --
- * see `resolveMatchNumbers` in @bagantkd/shared) is never displaced or renumbered here: every other
- * match fills the smallest unused number in this document's own reading order. This is what keeps
- * an edited match's number identical between the web bracket view and this printed sheet -- the
- * same guarantee `resolveMatchNumbers` already gives the web session view, applied here over this
- * document's own pool ordering instead of the revision-wide one `ExportMatch.resolvedDisplayNo` was
- * computed with (a session/arena-day document's category order is the committee's own schedule
- * order, not necessarily the revision's weight-ascending order).
+ * Every REAL match prints its own `ExportMatch.resolvedDisplayNo` instead (see the `code` assignment
+ * in `renderCompactBracketSvg`) -- the exact same number already resolved for the web bracket view,
+ * over the whole revision's own weight-ascending category order. This function used to also supply
+ * real matches' numbers, walked in this document's own (arena/day schedule) pool order instead --
+ * which only ever agreed with the web's number for a match the team had manually pinned, so every
+ * other, still-auto-numbered match printed a different number than the screen showed for it. Kept
+ * only for the pool-id fallback now, where there genuinely is no other number to use.
  */
 export function documentMatchNumbers(
   pools: readonly { readonly id: string; readonly bracket: ExportBracket | null }[],
@@ -391,8 +386,16 @@ export function renderCompactBracketSvg(bracket: ExportBracket, opts: CompactBra
       );
     }
 
+    // FINAL/OFFICIAL prints each match's own `resolvedDisplayNo` -- the exact number the web bracket
+    // view already shows for this match (see model.ts: resolved over the whole revision's
+    // weight-ascending category order, the same order the web session view numbers from). It must
+    // NOT come from `matchNumber`/`documentMatchNumbers` (this document's own, DIFFERENT arena/day
+    // pool order): the two schemes only ever agree for a match the team manually pinned a number on,
+    // so using the document-local one here printed a different number than the screen for every
+    // still-auto-numbered match -- exactly the kind of screen/paper mismatch that defeats the whole
+    // point of printing a number at all.
     const code = integrated
-      ? String(matchNumber.get(node.match.matchUid) ?? '')
+      ? String(node.match.resolvedDisplayNo ?? '')
       : clip(node.match.publicCode ?? node.match.matchUid, 14);
     const below = !isFinal && codeSide.get(node.match.matchUid) === 'below';
     const labelY = below ? y + (integrated ? 13 : 8) : y - 2.5;
