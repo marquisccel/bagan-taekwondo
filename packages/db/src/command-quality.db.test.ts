@@ -339,5 +339,55 @@ for (const backend of testBackends()) {
       expect(afterSecond.find((r) => r.position === slotA.position)?.entry_id).toBe(m1.entryId);
       expect(afterSecond.find((r) => r.position === slotB.position)?.entry_id).toBe(m2.entryId);
     }, 120_000);
+
+    it('swaps two entries across different pools of the same category, moving pool membership and rebuilding both brackets', async () => {
+      const s = await scenario([
+        ...[150, 151, 152, 153, 154, 155, 156, 157].map((h, i) =>
+          athlete(`Peserta ${i + 1}`, `Kota ${'ABACADAB'[i]}`, { heightCm: h }),
+        ),
+      ]);
+      const pools = await s.pools();
+      expect(pools.length).toBeGreaterThanOrEqual(2);
+      const [poolA, poolB] = pools;
+      const entryA = poolA?.members[0];
+      const entryB = poolB?.members[0];
+      if (!poolA || !poolB || !entryA || !entryB)
+        throw new Error('expected 2 pools with at least 1 member each');
+
+      const membersOf = async (poolUid: string): Promise<string[]> =>
+        (await s.pools()).find((p) => p.poolUid === poolUid)?.members.map((m) => m.entryId) ?? [];
+
+      // Swapping across pools changes each pool's height/weight/belt spread, which can soft-degrade
+      // quality (YELLOW) same as a same-pool swap can -- a reason is required to proceed, exactly
+      // like the other quality-gated commands in this file.
+      const result = await s.swap(entryA.entryId, entryB.entryId, 'cross-pool rebalance for testing');
+      expect(result).toMatchObject({ outcome: 'APPLIED' });
+
+      const afterA = await membersOf(poolA.poolUid);
+      const afterB = await membersOf(poolB.poolUid);
+      expect(afterA).not.toContain(entryA.entryId);
+      expect(afterA).toContain(entryB.entryId);
+      expect(afterB).not.toContain(entryB.entryId);
+      expect(afterB).toContain(entryA.entryId);
+
+      // Both pools' brackets must have been rebuilt with the new membership -- the swapped entry
+      // actually has a bracket slot in its new pool, not just a dangling pool_member row.
+      const slotEntryIdsOf = async (poolUid: string): Promise<(string | null)[]> =>
+        db
+          .query<{ entry_id: string | null }>(
+            `select bs.entry_id from bracket_slot bs join bracket b on b.id = bs.bracket_id
+             join pool p on p.id = b.pool_id where p.pool_uid = $1 and p.revision_id = $2`,
+            [poolUid, s.revisionId],
+          )
+          .then((rows) => rows.map((r) => r.entry_id));
+      expect(await slotEntryIdsOf(poolA.poolUid)).toContain(entryB.entryId);
+      expect(await slotEntryIdsOf(poolB.poolUid)).toContain(entryA.entryId);
+
+      // Swapping them back must restore the original membership, not no-op or duplicate.
+      const back = await s.swap(entryB.entryId, entryA.entryId, 'cross-pool rebalance for testing');
+      expect(back).toMatchObject({ outcome: 'APPLIED' });
+      expect(await membersOf(poolA.poolUid)).toEqual(expect.arrayContaining([entryA.entryId]));
+      expect(await membersOf(poolB.poolUid)).toEqual(expect.arrayContaining([entryB.entryId]));
+    }, 120_000);
   });
 }

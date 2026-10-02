@@ -165,7 +165,8 @@ function CategoryTable({
           {multiPool ? (
             <p style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 0 }}>
               Kategori ini punya {cat.pools.length} pool. Geser (drag) nama peserta ke bagian pool lain di
-              bawah untuk menukar.
+              bawah untuk memindahkannya ke pool itu. Untuk menukar posisi dua peserta tertentu (sesama pool
+              atau beda pool), gunakan tab Bracket.
             </p>
           ) : null}
           <div style={{ overflowX: 'auto' }}>
@@ -208,7 +209,7 @@ function CategoryTable({
           <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 10 }}>
             Nomor pertandingan: isi kotak &quot;No.&quot; di bawah tiap pertandingan.
             {editable
-              ? ' Geser (drag) nama peserta ke peserta lain untuk menukar posisi mereka di bagan.'
+              ? ' Geser (drag) nama peserta ke peserta lain untuk menukar posisi mereka -- bisa sesama pool maupun beda pool, selama masih satu kategori.'
               : ''}
           </div>
           {cat.pools.map((p) =>
