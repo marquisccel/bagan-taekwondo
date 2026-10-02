@@ -346,11 +346,6 @@ export default function SesiPage() {
           Kembali ke Jadwal
         </a>
       </div>
-      <p style={{ color: 'var(--text-dim)' }}>
-        Tampilan sesuai tab SPS. Setiap kategori di bawah menampilkan pesertanya; kalau kategori punya lebih
-        dari satu pool, geser (drag) nama peserta ke pool lain untuk menukar. Isi nomor pertandingan di bagan
-        di bawah tiap kategori.
-      </p>
 
       <ExportPanel
         revisionId={revisionId}

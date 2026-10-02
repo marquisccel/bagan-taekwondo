@@ -71,16 +71,22 @@ const INTEGRATED_CONTINGENT_CHARS = 72;
  * since there is no wrapped second line. Column x-offsets/char budgets are fixed proportions of
  * `INTEGRATED_COLUMNS_LEAF_WIDTH` (see `OFFICIAL_BRACKET_AREA` in semi-prestasi-compact.ts). */
 const INTEGRATED_ROW_COLUMNS = 28;
+// Name and Kontingen are free-text fields a committee can enter arbitrarily long (a long full name,
+// a long club/school name) -- they get the most generous budgets here, with the fixed-vocabulary
+// columns (gender/division/weight class, each only ever one of a handful of short known values)
+// sized tightly instead of evenly, so a long name/contingent has real room rather than running into
+// its neighbor (previously 42/46 chars here still visibly overlapped a long name like
+// "SHANGRILLAH BATRISYIA PUTRI AL RACHMAN" into the Jenis Kelamin column next to it).
 const LEAF_COLUMNS = [
   { key: 'id', x: 2, chars: 7 },
-  { key: 'name', x: 50, chars: 42, bold: true },
-  { key: 'gender', x: 320, chars: 11 },
-  { key: 'division', x: 404, chars: 18 },
-  { key: 'weightClass', x: 542, chars: 7 },
+  { key: 'name', x: 50, chars: 50, bold: true },
+  { key: 'gender', x: 390, chars: 10 },
+  { key: 'division', x: 474, chars: 15 },
+  { key: 'weightClass', x: 602, chars: 7 },
   // The last column before the leaf area ends (OFFICIAL_BRACKET_AREA.leafWidth) -- a wide enough
   // budget that a real contingent name is never visibly clipped with an ellipsis, while still
   // stopping short of the bracket's own connector columns that start right after leafWidth.
-  { key: 'contingent', x: 592, chars: 46 },
+  { key: 'contingent', x: 662, chars: 50 },
 ] as const;
 
 /**

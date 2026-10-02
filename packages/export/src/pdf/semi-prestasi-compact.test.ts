@@ -529,7 +529,7 @@ describe('FINAL/OFFICIAL full-width bracket presentation', () => {
     const t = texts(html);
     expect(t.some((x) => x.endsWith('…') || longName.startsWith(x))).toBe(true);
     for (const x of t) expect(x.length).toBeLessThanOrEqual(78);
-    expect(html).toContain('viewBox="0 0 1400');
+    expect(html).toContain('viewBox="0 0 1500');
   });
 
   it('a lone walkover participant is still listed once (no table to carry them)', () => {

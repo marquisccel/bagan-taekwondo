@@ -65,7 +65,7 @@ const POOL_BRACKET_AREA = { width: 640, leafWidth: 130, nameChars: 30 } as const
 
 /** FINAL/OFFICIAL: the bracket IS the participant list (name + contingent on each leaf), so it spans the
  * whole card width -- nominal 1000 user units, scaled to 100% of the container by the SVG viewBox. */
-const OFFICIAL_BRACKET_AREA = { width: 1400, leafWidth: 900, nameChars: 50, integrated: true } as const;
+const OFFICIAL_BRACKET_AREA = { width: 1500, leafWidth: 1000, nameChars: 50, integrated: true } as const;
 
 /**
  * A pool whose table is roughly a page tall (>= ~30 participants) may fragment across pages; keeping it in

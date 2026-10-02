@@ -149,7 +149,11 @@ export function ExportPanel({
   return (
     <div className="panel" style={{ marginBottom: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-        <h3 style={{ margin: 0 }}>{slotLabel ?? 'Ekspor'}</h3>
+        {slotLabel ? (
+          <h2 style={{ margin: 0, fontSize: 22 }}>{slotLabel}</h2>
+        ) : (
+          <h3 style={{ margin: 0 }}>Ekspor</h3>
+        )}
         {controls}
       </div>
       {errorBanner}
