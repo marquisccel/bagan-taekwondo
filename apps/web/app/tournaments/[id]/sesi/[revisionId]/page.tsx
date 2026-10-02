@@ -4,9 +4,16 @@ import { useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 
 import { BracketView } from '../../../../../components/BracketView';
+import { ReasonPrompt } from '../../../../../components/CommandFeedback';
 import { ExportPanel } from '../../../../../components/ExportPanel';
 import { RevisionConflictBanner } from '../../../../../components/RevisionConflictBanner';
-import { api, type EntryDisplay, type SessionCategory } from '../../../../../lib/api';
+import {
+  api,
+  type CommandOutcome,
+  type CommandVerdict,
+  type EntryDisplay,
+  type SessionCategory,
+} from '../../../../../lib/api';
 import { friendlyCommandRefusal, friendlyMessage, runCommand } from '../../../../../lib/command-error';
 import { useDevAuth } from '../../../../../lib/dev-auth';
 import {
@@ -17,6 +24,8 @@ import {
 } from '../../../../../lib/id-labels';
 import { isDraft } from '../../../../../lib/lifecycle';
 import { useApiSWR } from '../../../../../lib/use-api-swr';
+
+type CommandCall = (reason: string | null) => Promise<CommandOutcome>;
 
 const fmtHeight = (mm: number | null): string => (mm !== null ? `${Math.round(mm / 10)} cm` : '·');
 const fmtWeight = (g: number | null): string => (g !== null ? `${(g / 1000).toFixed(1)} kg` : '·');
@@ -269,6 +278,8 @@ export default function SesiPage() {
   const [conflict, setConflict] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
   const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
+  const [pending, setPending] = useState<{ call: CommandCall; verdict: CommandVerdict } | null>(null);
+  const [reasonBusy, setReasonBusy] = useState(false);
 
   const {
     data: revision,
@@ -300,48 +311,56 @@ export default function SesiPage() {
 
   const editable = isDraft(revision.lifecycle);
 
-  const handleMove = async (entryId: string, toPoolUid: string) => {
-    const result = await runCommand(() =>
+  /**
+   * Runs a command through the server's canonical verdict (AUD-005), same pattern as the
+   * category-detail page's own withOutcomeHandling: applied -> reload; REASON_REQUIRED -> hold the
+   * call and ask for a reason via ReasonPrompt, then resend the SAME call with it (a fresh
+   * idempotency key is baked into `call` itself); any other refusal -> plain banner, nothing changed.
+   * Without this, a swap/move that merely degrades grouping quality (not a hard violation) had no
+   * way to proceed at all from this page -- the same action the Bracket/Tabel tabs' own text
+   * promises is possible (any pool, any category member) was silently blocked.
+   */
+  const withOutcomeHandling = async (call: CommandCall, reason: string | null = null) => {
+    const result = await runCommand(() => call(reason));
+    if (result.ok) {
+      setPending(null);
+      setBanner(null);
+      reload();
+    } else if (result.code === 'REVISION_CONFLICT') {
+      setPending(null);
+      setConflict(true);
+    } else if (result.code === 'REASON_REQUIRED' && result.verdict) {
+      setPending({ call, verdict: result.verdict });
+    } else {
+      setPending(null);
+      setBanner(friendlyCommandRefusal(result) ?? friendlyMessage(result.code, result.message));
+    }
+  };
+
+  const handleMove = (entryId: string, toPoolUid: string) =>
+    withOutcomeHandling((reason) =>
       api.moveEntry(actorId, revisionId, {
         entryId,
         toPoolUid,
         toSlot: null,
         expectedLockVersion: revision.lock_version,
         idempotencyKey: crypto.randomUUID(),
-        reason: null,
+        reason,
         complaintId: null,
       }),
     );
-    if (result.ok) {
-      setBanner(null);
-      reload();
-    } else if (result.code === 'REVISION_CONFLICT') {
-      setConflict(true);
-    } else {
-      setBanner(friendlyCommandRefusal(result) ?? friendlyMessage(result.code, result.message));
-    }
-  };
 
-  const handleSwapEntries = async (entryIdA: string, entryIdB: string) => {
-    const result = await runCommand(() =>
+  const handleSwapEntries = (entryIdA: string, entryIdB: string) =>
+    withOutcomeHandling((reason) =>
       api.swapEntry(actorId, revisionId, {
         entryA: entryIdA,
         entryB: entryIdB,
         expectedLockVersion: revision.lock_version,
         idempotencyKey: crypto.randomUUID(),
-        reason: null,
+        reason,
         complaintId: null,
       }),
     );
-    if (result.ok) {
-      setBanner(null);
-      reload();
-    } else if (result.code === 'REVISION_CONFLICT') {
-      setConflict(true);
-    } else {
-      setBanner(friendlyCommandRefusal(result) ?? friendlyMessage(result.code, result.message));
-    }
-  };
 
   const handleSetDisplayNo = async (matchId: string, displayNo: number | null) => {
     setSavingMatchId(matchId);
@@ -404,6 +423,18 @@ export default function SesiPage() {
           onSwapEntries={handleSwapEntries}
         />
       ))}
+
+      {pending ? (
+        <ReasonPrompt
+          verdict={pending.verdict}
+          busy={reasonBusy}
+          onCancel={() => setPending(null)}
+          onConfirm={(reason) => {
+            setReasonBusy(true);
+            void withOutcomeHandling(pending.call, reason).finally(() => setReasonBusy(false));
+          }}
+        />
+      ) : null}
     </main>
   );
 }
